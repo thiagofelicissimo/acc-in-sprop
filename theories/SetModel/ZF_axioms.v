@@ -1,0 +1,89 @@
+Set Primitive Projections.
+Set Universe Polymorphism.
+Set Definitional UIP.
+
+Require Import library.
+
+(* Skolemised ZF with ω Grothendieck universes *)
+
+(* Classical logic *)
+Axiom LEM : forall (P : SProp), P ∨ (¬ P).
+
+(* Type of sets *)
+Parameter ZFSet : Type.
+
+(* Membership relation *)
+Parameter ZFin : ZFSet -> ZFSet -> SProp.
+Notation "A ∈ B" := (ZFin A B) (at level 45, no associativity).
+Notation "'∃' a '∈' A ',' P" := (exS ZFSet (fun x => x ∈ A ∧ (fun a => P) x)) (at level 100, a at level 44).
+Notation "'∃!' a '∈' A ',' P" := (exU ZFSet (fun x => x ∈ A ∧ (fun a => P) x)) (at level 100, a at level 44).
+Notation "'∀' a '∈' A ',' P" := (forall x : ZFSet, x ∈ A -> (fun a => P) x) (at level 100, a at level 44).
+
+(* Subset relation *)
+Definition ZFsub (A B : ZFSet) : SProp :=
+  forall (a : ZFSet), a ∈ A -> a ∈ B.
+Notation "A ⊂ B" := (ZFsub A B) (at level 45, no associativity).
+
+(* Extensionality axiom *)
+Axiom ZFext : forall (A B : ZFSet), A ⊂ B -> B ⊂ A -> A ≡ B.
+
+(* Skolemised empty set axiom *)
+Parameter ZFempty : ZFSet.
+Notation "∅" := ZFempty.
+Axiom ZFinempty : ∀ a ∈ ∅, FalseS.
+
+(* Skolemised comprehension scheme *)
+Parameter ZFcomp : forall (A : ZFSet) (φ : ZFSet -> SProp), ZFSet.
+Notation "'{' x 'ϵ' A '∣' F '}'" := (ZFcomp A (fun x => F)) (at level 0).
+Axiom ZFincomp : forall (A : ZFSet) (φ : ZFSet -> SProp) (a : ZFSet), a ∈ { x ϵ A ∣ φ x } ↔ (a ∈ A) ∧ φ a.
+
+(* Skolemised pairing axiom *)
+Parameter ZFpairing : forall (a b : ZFSet), ZFSet.
+Notation "'{' a ';' b '}'" := (ZFpairing a b) (at level 0).
+Axiom ZFinpairing : forall (a b x : ZFSet), x ∈ { a ; b } ↔ x ≡ a ∨ x ≡ b.
+
+(* Definition of singleton from pairing *)
+Definition setSingl (a : ZFSet) : ZFSet := { a ; a }.
+Lemma inSetSingl (a : ZFSet) : forall x, x ∈ setSingl a ↔ x ≡ a.
+Proof.
+  intro x. split.
+  - intro H. apply (ZFinpairing a a x) in H. now destruct H.
+  - intro H. apply (sndS (ZFinpairing a a x)). now left.
+Qed.
+
+(* Skolemised union axiom *)
+Parameter ZFunion : forall (A : ZFSet), ZFSet.
+Notation "⋃" := ZFunion.
+Axiom ZFinunion : forall (A a : ZFSet), a ∈ ⋃ A ↔ ∃ x ∈ A, a ∈ x.
+
+(* Skolemised replacement scheme *)
+Parameter ZFreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp), ZFSet.
+Notation "'{' y '∥' P '∥' x 'ϵ' A '}'" := (ZFreplacement A (fun x y => P)) (at level 0).
+Axiom ZFinreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp) (φε : ∀ x ∈ A, exU ZFSet (φ x)) (b : ZFSet),
+    b ∈ { y ∥ φ x y ∥ x ϵ A } ↔ ∃ x ∈ A, φ x b.
+
+(* Skolemised infinity axiom *)
+Parameter ZFinfinity : ZFSet.
+Definition ω := ZFinfinity.
+Definition ZFsuc (x : ZFSet) := { x ; setSingl x }.
+Axiom ZFininfinity : forall (x : ZFSet), x ∈ ω ↔ forall (P : ZFSet -> SProp) (Pz : P ∅) (Ps : forall x, P x -> P (ZFsuc x)), P x.
+
+(* Skolemised powerset axiom *)
+Parameter ZFpower : ZFSet -> ZFSet.
+Definition 𝒫 := ZFpower.
+Axiom ZFinpower : forall (A x : ZFSet), x ∈ 𝒫 A ↔ x ⊂ A.
+
+(* Hilbert's epsilon operator *)
+Parameter ZFchoice : ZFSet -> ZFSet.
+Definition ε := ZFchoice.
+Axiom ZFinchoice : forall (A : ZFSet), (exS ZFSet (fun a => a ∈ A)) -> ε A ∈ A.
+
+(* countably many uncountable Grothendieck universes *)
+Parameter ZFuniv : nat -> ZFSet.
+Definition 𝕍 := ZFuniv.
+Axiom ZFuniv_uncountable : forall n, ω ∈ 𝕍 n.
+Axiom ZFuniv_hierarchy : forall n, 𝕍 n ∈ 𝕍 (n+1).
+Axiom ZFuniv_trans : forall n x y, x ∈ y -> y ∈ 𝕍 n -> x ∈ 𝕍 n.
+Axiom ZFuniv_pair : forall n x y, x ∈ 𝕍 n -> y ∈ 𝕍 n -> { x ; y } ∈ 𝕍 n.
+Axiom ZFuniv_power : forall n x, x ∈ 𝕍 n -> 𝒫 x ∈ 𝕍 n.
+(* Axiom ZFuniv_union : forall n I (φ : ZFSet -> ZFSet -> SProp), *)
