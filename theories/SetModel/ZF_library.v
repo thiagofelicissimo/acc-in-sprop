@@ -1,6 +1,5 @@
 Set Primitive Projections.
 Set Universe Polymorphism.
-Set Definitional UIP.
 
 Require Import library.
 Require Import ZF_axioms.
@@ -9,7 +8,8 @@ Require Import ZF_axioms.
 
 Definition setRel := ZFSet -> ZFSet -> SProp.
 Definition relId : setRel := fun x y => x ≡ y.
-Definition relComp (A B C : ZFSet) (φ ψ : setRel) : setRel := fun x z => ∃ y ∈ B, φ x y ∧ ψ y z.
+Definition relComp (A B C : ZFSet) (φ ψ : setRel) : setRel :=
+  fun x z => ∃ y ∈ B, φ x y ∧ ψ y z.
 
 Definition isFunRel (A B : ZFSet) (φ : setRel) : SProp :=
   ∀ a ∈ A, ∃! b ∈ B, φ a b.
@@ -76,16 +76,6 @@ Proof.
   pose proof (funRelApp_inRel Hcomp Ha) as H. destruct H as [ b' [ Hb' [ Hab' H ] ] ].
   pose proof (funRel_unique Hφ Ha Hb Hb' Hab Hab') as H1. apply (transpS (fun x => ψ x (funRelApp A C (relComp A B C φ ψ) a)) (sym H1)) in H.
   exact (funRel_unique Hψ Hb (funRelApp_typing Hcomp Ha) Hc H Hbc).
-Qed.
-
-(* Type theoretic style reasoning *)
-
-Definition El (A : ZFSet) : Type := Sigma ZFSet (fun a => a ∈ A).
-
-Lemma El_eq {A : ZFSet} {a b : El A} : fst a ≡ fst b -> a ≡ b.
-Proof.
-  intro H.
-  exact (eqS_sind ZFSet (fst a) (fun x e => a ≡ mkSigma x (transpS (fun x => x ∈ A) e (snd a))) (eqS_refl a) (fst b) H).
 Qed.
 
 (* Basic constructions in ZF set theory *)
@@ -226,86 +216,6 @@ Proof.
   apply (transpS (fun y => y ≡ ⟨ setFstPair A B y; setSndPair A B y ⟩) (sym H)). clear x Hx H.
   apply (transpS (fun x => ⟨ x ; b ⟩ ≡ ⟨ setFstPair A B ⟨ a ; b ⟩; setSndPair A B ⟨ a ; b ⟩ ⟩) (setPairβ1 Ha Hb)).
   apply (transpS (fun x => ⟨ setFstPair A B ⟨ a ; b ⟩ ; x ⟩ ≡ ⟨ setFstPair A B ⟨ a ; b ⟩; setSndPair A B ⟨ a ; b ⟩ ⟩) (setPairβ2 Ha Hb)).
-  reflexivity.
-Qed.
-
-Definition elMkPair {A B : ZFSet} : El A -> El B -> El (A × B).
-Proof.
-  intros a b. unshelve econstructor.
-  - exact (setMkPair (fst a) (fst b)).
-  - exact (setMkPair_typing (snd a) (snd b)).
-Defined.
-
-Definition elFst {A B : ZFSet} : El (A × B) -> El A.
-Proof.
-  intro x. unshelve econstructor.
-  - exact (setFstPair A B (fst x)).
-  - exact (setFstPair_typing (snd x)).
-Defined.
-
-Definition elSnd {A B : ZFSet} : El (A × B) -> El B.
-Proof.
-  intro x. unshelve econstructor.
-  - exact (setSndPair A B (fst x)).
-  - exact (setSndPair_typing (snd x)).
-Defined.
-
-Lemma elPairβ1 {A B : ZFSet} (a : El A) (b : El B) : elFst (elMkPair a b) ≡ a.
-Proof.
-  apply El_eq. apply (setPairβ1 (snd a) (snd b)).
-Qed.
-
-Lemma elPairβ2 {A B : ZFSet} (a : El A) (b : El B) : elSnd (elMkPair a b) ≡ b.
-Proof.
-  apply El_eq. apply (setPairβ2 (snd a) (snd b)).
-Qed.
-
-Lemma elPairη {A B : ZFSet} (x : El (A × B)) : x ≡ elMkPair (elFst x) (elSnd x).
-Proof.
-  apply El_eq. apply (setPairη (snd x)).
-Qed.
-
-(* Subsets *)
-
-Definition setSubtype (A : ZFSet) (P : El A -> SProp) : ZFSet :=
-  { a ϵ A ∣ andD (a ∈ A) (fun Ha => P (mkSigma a Ha)) }.
-Notation "{{ a 'ϵ' A ∣ P }}" := (setSubtype A (fun a => P)) (at level 0).
-
-Lemma inSubtype (A : ZFSet) (P : El A -> SProp) (a : El A) : fst a ∈ {{ a ϵ A ∣ P a }} ↔ P a.
-Proof.
-  split.
-  - intro H. apply ZFincomp in H. destruct H as [ _ [ Ha H ] ]. exact H.
-  - intro p. apply ZFincomp. split. exact (snd a). exists (snd a). exact p.
-Qed.
-
-Definition elMkSub {A : ZFSet} {P : El A -> SProp} (a : El A) (p : P a) : El {{ a ϵ A ∣ P a }}.
-Proof.
-  unshelve econstructor.
-  - exact (fst a).
-  - apply ZFincomp. split.
-    + exact (snd a).
-    + exists (snd a). exact p.
-Defined.
-
-Definition elFstSub {A : ZFSet} {P : El A -> SProp} (x : El {{ a ϵ A ∣ P a }}) : El A.
-Proof.
-  unshelve econstructor.
-  - exact (fst x).
-  - pose proof (snd x) as Hx. cbn in Hx. apply ZFincomp in Hx. exact (fstS Hx).
-Defined.
-
-Lemma elSubβ {A : ZFSet} {P : El A -> SProp} (a : El A) (p : P a) : elFstSub (elMkSub a p) ≡ a.
-Proof.
-  reflexivity.
-Qed.
-
-Lemma elSndSub {A : ZFSet} {P : El A -> SProp} (x : El {{ a ϵ A ∣ P a }}) : P (elFstSub x).
-Proof.
-  pose proof (snd x) as Hx. cbn in Hx. apply ZFincomp in Hx. exact (sndD (sndS Hx)).
-Qed.
-
-Lemma elSubη {A : ZFSet} {P : El A -> SProp} (x : El {{ a ϵ A ∣ P a }}) : x = elMkSub (elFstSub x) (elSndSub x).
-Proof.
   reflexivity.
 Qed.
 

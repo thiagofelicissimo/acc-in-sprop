@@ -1,15 +1,13 @@
 Set Primitive Projections.
 Set Universe Polymorphism.
-Set Definitional UIP.
 
 Require Import library.
 
-(* Skolemised ZF with ω Grothendieck universes *)
+(* This file postulates the ZF axioms in higher order logic (HOL), which has itself been embedded in
+   the logic of Rocq (see library.v).
+   The axioms are skolemised, meaning that we replace existential axioms with higher-order functions *)
 
-(* Classical logic *)
-Axiom LEM : forall (P : SProp), P ∨ (¬ P).
-
-(* Type of sets *)
+(* Sort for sets *)
 Parameter ZFSet : Type.
 
 (* Membership relation *)
@@ -20,8 +18,8 @@ Notation "'∃!' a '∈' A ',' P" := (exU ZFSet (fun x => x ∈ A ∧ (fun a => 
 Notation "'∀' a '∈' A ',' P" := (forall x : ZFSet, x ∈ A -> (fun a => P) x) (at level 100, a at level 44).
 
 (* Subset relation *)
-Definition ZFsub (A B : ZFSet) : SProp :=
-  forall (a : ZFSet), a ∈ A -> a ∈ B.
+Definition ZFsub : ZFSet -> ZFSet -> SProp :=
+  fun A B => forall (a : ZFSet), a ∈ A -> a ∈ B.
 Notation "A ⊂ B" := (ZFsub A B) (at level 45, no associativity).
 
 (* Extensionality axiom *)
@@ -32,18 +30,21 @@ Parameter ZFempty : ZFSet.
 Notation "∅" := ZFempty.
 Axiom ZFinempty : ∀ a ∈ ∅, FalseS.
 
-(* Skolemised comprehension scheme *)
-Parameter ZFcomp : forall (A : ZFSet) (φ : ZFSet -> SProp), ZFSet.
+(* Skolemised comprehension axiom. In the usual first-order presentation of ZF, comprehension has to
+   be formulated as an axiom scheme. Here, we are using a higher-order presentation, so we can use
+   quantification over predicates. *)
+Parameter ZFcomp : ZFSet -> (ZFSet -> SProp) -> ZFSet.
 Notation "'{' x 'ϵ' A '∣' F '}'" := (ZFcomp A (fun x => F)) (at level 0).
 Axiom ZFincomp : forall (A : ZFSet) (φ : ZFSet -> SProp) (a : ZFSet), a ∈ { x ϵ A ∣ φ x } ↔ (a ∈ A) ∧ φ a.
 
 (* Skolemised pairing axiom *)
-Parameter ZFpairing : forall (a b : ZFSet), ZFSet.
+Parameter ZFpairing : ZFSet -> ZFSet -> ZFSet.
 Notation "'{' a ';' b '}'" := (ZFpairing a b) (at level 0).
 Axiom ZFinpairing : forall (a b x : ZFSet), x ∈ { a ; b } ↔ x ≡ a ∨ x ≡ b.
 
 (* Definition of singleton from pairing *)
-Definition setSingl (a : ZFSet) : ZFSet := { a ; a }.
+Definition setSingl : ZFSet -> ZFSet :=
+  fun a => { a ; a }.
 Lemma inSetSingl (a : ZFSet) : forall x, x ∈ setSingl a ↔ x ≡ a.
 Proof.
   intro x. split.
@@ -52,21 +53,25 @@ Proof.
 Qed.
 
 (* Skolemised union axiom *)
-Parameter ZFunion : forall (A : ZFSet), ZFSet.
+Parameter ZFunion : ZFSet -> ZFSet.
 Notation "⋃" := ZFunion.
 Axiom ZFinunion : forall (A a : ZFSet), a ∈ ⋃ A ↔ ∃ x ∈ A, a ∈ x.
 
-(* Skolemised replacement scheme *)
-Parameter ZFreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp), ZFSet.
+(* Skolemised replacement axiom. Here again, we use a higher-order axiom instead of an axiom scheme. *)
+Parameter ZFreplacement : ZFSet -> (ZFSet -> ZFSet -> SProp) -> ZFSet.
 Notation "'{' y '∥' P '∥' x 'ϵ' A '}'" := (ZFreplacement A (fun x y => P)) (at level 0).
-Axiom ZFinreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp) (φε : ∀ x ∈ A, exU ZFSet (φ x)) (b : ZFSet),
-    b ∈ { y ∥ φ x y ∥ x ϵ A } ↔ ∃ x ∈ A, φ x b.
+Axiom ZFinreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp) (b : ZFSet),
+    (∀ x ∈ A, exU ZFSet (φ x)) -> (b ∈ { y ∥ φ x y ∥ x ϵ A } ↔ ∃ x ∈ A, φ x b).
 
-(* Skolemised infinity axiom *)
+(* Skolemised infinity axiom.
+   TODO: this formulation allows induction over ω for all HOL predicates. This is unusual: the
+   traditional method consists in postulating a set closed under successor, and then carving ω
+   out of it with comprehension.
+   *)
 Parameter ZFinfinity : ZFSet.
 Definition ω := ZFinfinity.
-Definition ZFsuc (x : ZFSet) := { x ; setSingl x }.
-Axiom ZFininfinity : forall (x : ZFSet), x ∈ ω ↔ forall (P : ZFSet -> SProp) (Pz : P ∅) (Ps : forall x, P x -> P (ZFsuc x)), P x.
+Definition ZFsuc : ZFSet -> ZFSet := fun x => { x ; setSingl x }.
+Axiom ZFininfinity : forall (x : ZFSet), x ∈ ω ↔ forall (P : ZFSet -> SProp), P ∅ -> (forall x, P x -> P (ZFsuc x)) -> P x.
 
 (* Skolemised powerset axiom *)
 Parameter ZFpower : ZFSet -> ZFSet.
