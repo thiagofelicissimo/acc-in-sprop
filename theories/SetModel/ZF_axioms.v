@@ -1,6 +1,3 @@
-Set Primitive Projections.
-Set Universe Polymorphism.
-
 Require Import library.
 
 (* This file postulates the ZF axioms in higher order logic (HOL), which has itself been embedded in
@@ -8,7 +5,7 @@ Require Import library.
    The axioms are skolemised, meaning that we replace existential axioms with higher-order functions *)
 
 (* Sort for sets *)
-Parameter ZFSet : Type.
+Parameter ZFSet : Set.
 
 (* Membership relation *)
 Parameter ZFin : ZFSet -> ZFSet -> SProp.
@@ -57,7 +54,8 @@ Parameter ZFunion : ZFSet -> ZFSet.
 Notation "⋃" := ZFunion.
 Axiom ZFinunion : forall (A a : ZFSet), a ∈ ⋃ A ↔ ∃ x ∈ A, a ∈ x.
 
-(* Skolemised replacement axiom. Here again, we use a higher-order axiom instead of an axiom scheme. *)
+(* Skolemised replacement axiom. Here again, we use a higher-order axiom instead of an axiom scheme.
+   TODO: we don't really need replacement since we have Grothendieck universes... *)
 Parameter ZFreplacement : ZFSet -> (ZFSet -> ZFSet -> SProp) -> ZFSet.
 Notation "'{' y '∥' P '∥' x 'ϵ' A '}'" := (ZFreplacement A (fun x y => P)) (at level 0).
 Axiom ZFinreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp) (b : ZFSet),
@@ -83,7 +81,7 @@ Parameter ZFchoice : ZFSet -> ZFSet.
 Definition ε := ZFchoice.
 Axiom ZFinchoice : forall (A : ZFSet), (exS ZFSet (fun a => a ∈ A)) -> ε A ∈ A.
 
-(* countably many uncountable Grothendieck universes *)
+(* countably many Grothendieck universes *)
 Parameter ZFuniv : nat -> ZFSet.
 Definition 𝕍 := ZFuniv.
 Axiom ZFuniv_uncountable : forall n, ω ∈ 𝕍 n.

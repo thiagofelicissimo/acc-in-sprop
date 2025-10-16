@@ -1,21 +1,21 @@
-Set Primitive Projections.
-Set Universe Polymorphism.
-
 Require Import library.
 Require Import ZF_axioms.
+
+(* In this file, we replicate the basic set theoretic constructions (cartesian products, function
+   types, dependent sums, dependent products, etc). *)
 
 (* Functional relations *)
 
 Definition setRel := ZFSet -> ZFSet -> SProp.
-Definition relId : setRel := fun x y => x ≡ y.
-Definition relComp (A B C : ZFSet) (φ ψ : setRel) : setRel :=
-  fun x z => ∃ y ∈ B, φ x y ∧ ψ y z.
 
 Definition isFunRel (A B : ZFSet) (φ : setRel) : SProp :=
   ∀ a ∈ A, ∃! b ∈ B, φ a b.
 
 Definition funRelApp (A B : ZFSet) (φ : setRel) (a : ZFSet) : ZFSet :=
   ε { b ϵ B ∣ φ a b }.
+
+Definition HO_rel (φ : ZFSet -> ZFSet) : setRel :=
+  fun a b => φ a ≡ b.
 
 Lemma funRelApp_pretyping {A B a : ZFSet} {φ : setRel} (Hφ : isFunRel A B φ) (Ha : a ∈ A) :
   funRelApp A B φ a ∈ { b ϵ B ∣ φ a b }.
@@ -46,39 +46,69 @@ Proof.
   exact (trans (sym e1) e2).
 Qed.
 
-Lemma funRelId_typing (A : ZFSet) : isFunRel A A relId.
+Lemma HO_rel_typing (A B : ZFSet) (φ : ZFSet -> ZFSet) (Hφ : ∀ a ∈ A, φ a ∈ B) :
+  isFunRel A B (HO_rel φ).
 Proof.
-  intros a Ha. exists a. split.
-  - split. exact Ha. reflexivity.
-  - intros a' [ Ha' H ]. exact H.
+  intros a Ha. unshelve econstructor.
+  - exact (φ a).
+  - split. split.
+    + now apply Hφ.
+    + unfold HO_rel. reflexivity.
+    + intros b [ Hb1 Hb2 ]. unfold HO_rel in Hb2. now symmetry.
 Qed.
 
-Lemma funRelComp_typing {A B C : ZFSet} {φ ψ : setRel} (Hφ : isFunRel A B φ) (Hψ : isFunRel B C ψ) : isFunRel A C (relComp A B C φ ψ).
+(* From functional relations to higher order functions and back *)
+
+Lemma rel_HO_rel {A B : ZFSet} {φ : setRel} (Hφ : isFunRel A B φ) {a b : ZFSet} (Ha : a ∈ A) (Hb : b ∈ B) :
+  φ a b ↔ HO_rel (funRelApp A B φ) a b.
 Proof.
-  intros a Ha.
-  pose proof (Hφ a Ha) as Hφ'. destruct Hφ' as [ b [ [ Hb Hab ] Hbu ] ].
-  specialize (Hψ b Hb) as Hψ'. destruct Hψ' as [ c [ [ Hc Hbc ] Hcu ] ].
-  exists c. split.
-  - split. exact Hc. exists b. now split.
-  - intros c' [ Hc' [ b' [ Hb' [ Hab' Hb'c' ] ] ] ].
-    pose proof (funRel_unique Hφ Ha Hb Hb' Hab Hab') as H. apply (transpS (fun x => ψ x c') (sym H)) in Hb'c'.
-    exact (funRel_unique Hψ Hb Hc Hc' Hbc Hb'c').
+  split.
+  - intro Hab. unfold HO_rel.
+    exact (funRel_unique Hφ Ha (funRelApp_typing Hφ Ha) Hb (funRelApp_inRel Hφ Ha) Hab).
+  - intro Hab. unfold HO_rel in Hab. 
+    refine (transpS (φ a) Hab _). now apply funRelApp_inRel.
+Qed.
+
+Lemma HO_rel_HO {A B : ZFSet} {φ : ZFSet -> ZFSet} (Hφ : ∀ a ∈ A, φ a ∈ B) {a : ZFSet} (Ha : a ∈ A) :
+  φ a ≡ funRelApp A B (HO_rel φ) a.
+Proof.
+  pose proof (funRelApp_pretyping (HO_rel_typing A B φ Hφ) Ha) as H.
+  apply ZFincomp in H. destruct H as [ _ H ]. unfold HO_rel in H. now symmetry.
+Qed.
+
+(* Identity and composition *)
+  
+Definition relId : setRel := HO_rel (fun x => x).
+
+Definition relComp (A B C : ZFSet) (φ ψ : setRel) : setRel :=
+  fun x z => ∃ y ∈ B, φ x y ∧ ψ y z.
+
+Definition funRelComp (A B C : ZFSet) (φ ψ : setRel) : setRel :=
+  HO_rel (fun x => funRelApp B C ψ (funRelApp A B φ x)).
+
+Lemma funRelId_typing (A : ZFSet) : isFunRel A A relId.
+Proof.
+  now apply HO_rel_typing. 
+Qed.
+
+Lemma funRelComp_typing {A B C : ZFSet} {φ ψ : setRel} (Hφ : isFunRel A B φ) (Hψ : isFunRel B C ψ) : isFunRel A C (funRelComp A B C φ ψ).
+Proof.
+  apply HO_rel_typing. intros a Ha.
+  apply funRelApp_typing. assumption.
+  now apply funRelApp_typing.
 Qed.
 
 Lemma funRelComp_eval {A B C a : ZFSet} {φ ψ : setRel} (Hφ : isFunRel A B φ) (Hψ : isFunRel B C ψ) (Ha : a ∈ A) :
-  funRelApp A C (relComp A B C φ ψ) a ≡ funRelApp B C ψ (funRelApp A B φ a).
+  funRelApp A C (funRelComp A B C φ ψ) a ≡ funRelApp B C ψ (funRelApp A B φ a).
 Proof.
-  set (b := funRelApp A B φ a). pose proof (funRelApp_typing Hφ Ha) as Hb. change (b ∈ B) in Hb.
-  pose proof (funRelApp_inRel Hφ Ha) as Hab. change (φ a b) in Hab. clearbody b.
-  set (c := funRelApp B C ψ b). pose proof (funRelApp_typing Hψ Hb) as Hc. change (c ∈ C) in Hc.
-  pose proof (funRelApp_inRel Hψ Hb) as Hbc. change (ψ b c) in Hbc. clearbody c.
-  pose proof (funRelComp_typing Hφ Hψ) as Hcomp.
-  pose proof (funRelApp_inRel Hcomp Ha) as H. destruct H as [ b' [ Hb' [ Hab' H ] ] ].
-  pose proof (funRel_unique Hφ Ha Hb Hb' Hab Hab') as H1. apply (transpS (fun x => ψ x (funRelApp A C (relComp A B C φ ψ) a)) (sym H1)) in H.
-  exact (funRel_unique Hψ Hb (funRelApp_typing Hcomp Ha) Hc H Hbc).
+  symmetry. apply (HO_rel_HO (φ := fun x => funRelApp B C ψ (funRelApp A B φ x))).
+  - intros a' Ha'. apply funRelApp_typing. assumption.
+    now apply funRelApp_typing.
+  - assumption.
 Qed.
 
-(* Basic constructions in ZF set theory *)
+(* Union of two sets *)
+
 Definition setUnion (A B : ZFSet) : ZFSet := ⋃ { A ; B }.
 Notation "A ∪ B" := (setUnion A B) (at level 35, right associativity).
 Lemma inSetUnion (A B : ZFSet) : forall x, x ∈ A ∪ B ↔ x ∈ A ∨ x ∈ B.
@@ -97,6 +127,8 @@ Proof.
       * assumption.
 Qed.
 
+(* Intersection of two sets *)
+
 Definition setInter (A B : ZFSet) : ZFSet := { x ϵ A ∣ x ∈ B }.
 Notation "A ∩ B" := (setInter A B) (at level 30, right associativity).
 Lemma inSetInter (A B : ZFSet) : forall x, x ∈ A ∩ B ↔ x ∈ A ∧ x ∈ B.
@@ -106,7 +138,7 @@ Proof.
   + intro H. apply ZFincomp. exact H.
 Qed.
 
-(* Kuratowski pairs *)
+(* Kuratowski pairs and cartesian products *)
 
 Definition setMkPair (a b : ZFSet) := { setSingl a ; {a ; b} }.
 Notation "⟨ a ; b ⟩" := (setMkPair a b) (at level 0).
@@ -219,85 +251,90 @@ Proof.
   reflexivity.
 Qed.
 
-(* Image of a function *)
+(* Image of a higher-order function (without replacement) *)
 
-Definition setIm (A B : ZFSet) (f : setRel) : ZFSet :=
+Definition setRelIm (A B : ZFSet) (f : setRel) : ZFSet :=
   { b ϵ B ∣ ∃ a ∈ A, f a b }.
 
-Lemma setImInj_typing {A B a : ZFSet} {f : setRel} (Hf : isFunRel A B f) (Ha : a ∈ A) : funRelApp A B f a ∈ setIm A B f.
+Definition setIm (A B : ZFSet) (f : ZFSet -> ZFSet) : ZFSet :=
+  setRelIm A B (HO_rel f).
+
+Lemma setIm_typing {A B a : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ B) (Ha : a ∈ A) : f a ∈ setIm A B f.
 Proof.
   apply ZFincomp. split.
-  - exact (funRelApp_typing Hf Ha).
-  - exists a. split. exact Ha. exact (funRelApp_inRel Hf Ha).
+  - now apply Hf.
+  - exists a. now split.
 Qed.
 
 (* Union of an indexed family in 𝕍 n *)
 
-Definition setFamUnion (n : nat) (A : ZFSet) (f : setRel) : ZFSet :=
+Definition setFamUnion (n : nat) (A : ZFSet) (f : ZFSet -> ZFSet) : ZFSet :=
   ⋃ (setIm A (𝕍 n) f).
 
-Lemma setFamUnionInj_typing {n : nat} {A a b : ZFSet} {f : setRel} (Hf : isFunRel A (𝕍 n) f) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) f a)
-  : b ∈ setFamUnion n A f.
+Lemma setFamUnion_typing {n : nat} {A a b : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ f a) :
+  b ∈ setFamUnion n A f.
 Proof.
-  apply ZFinunion. exists (funRelApp A (𝕍 n) f a). split.
-  - exact (setImInj_typing Hf Ha).
+  apply ZFinunion. exists (f a). split.
+  - exact (setIm_typing Hf Ha).
   - exact Hb.
 Qed.
 
 (* Sigma types *)
 
-Definition setSigma (n : nat) (A : ZFSet) (B : setRel) : ZFSet :=
-  { x ϵ (A × setFamUnion n A B) ∣ setSndPair A (setFamUnion n A B) x ∈ funRelApp A (𝕍 n) B (setFstPair A (setFamUnion n A B) x) }.
+Definition setSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
+  { x ϵ (A × setFamUnion n A B) ∣ setSndPair A (setFamUnion n A B) x ∈ B (setFstPair A (setFamUnion n A B) x) }.
 
 Definition setMkSigma (a b : ZFSet) := ⟨ a ; b ⟩.
-Definition setFstSigma (n : nat) (A : ZFSet) (B : setRel) (x : ZFSet) : ZFSet := setFstPair A (setFamUnion n A B) x.
-Definition setSndSigma (n : nat) (A : ZFSet) (B : setRel) (x : ZFSet) : ZFSet := setSndPair A (setFamUnion n A B) x.
+Definition setFstSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) (x : ZFSet) : ZFSet :=
+  setFstPair A (setFamUnion n A B) x.
+Definition setSndSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) (x : ZFSet) : ZFSet :=
+  setSndPair A (setFamUnion n A B) x.
 
-Lemma setMkSigma_typing {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+Lemma setMkSigma_typing {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : ⟨ a ; b ⟩ ∈ setSigma n A B.
 Proof.
   apply ZFincomp. split.
-  - exact (setMkPair_typing Ha (setFamUnionInj_typing HB Ha Hb)).
-  - apply (transpS (fun x => x ∈ funRelApp A (𝕍 n) B (setFstPair A (setFamUnion n A B) ⟨ a; b ⟩))
-                   (sym (setPairβ2 Ha (setFamUnionInj_typing HB Ha Hb)))).
-    apply (transpS (fun x => b ∈ funRelApp A (𝕍 n) B x) (sym (setPairβ1 Ha (setFamUnionInj_typing HB Ha Hb)))).
+  - apply (setMkPair_typing Ha). apply (setFamUnion_typing HB Ha Hb).
+  - apply (transpS (fun x => x ∈ B (setFstPair A (setFamUnion n A B) ⟨ a; b ⟩))
+                   (sym (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)))).
+    apply (transpS (fun x => b ∈ B x) (sym (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)))).
     exact Hb.
 Qed.
 
-Lemma setFstSigma_typing {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
+Lemma setFstSigma_typing {n : nat} {A x : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Hx : x ∈ setSigma n A B)
   : setFstSigma n A B x ∈ A.
 Proof.
   apply ZFincomp in Hx.
   exact (setFstPair_typing (fstS Hx)).
 Qed.
 
-Lemma setSndSigma_typing {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
-  : setSndSigma n A B x ∈ (funRelApp A (𝕍 n) B (setFstSigma n A B x)).
+Lemma setSndSigma_typing {n : nat} {A x : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Hx : x ∈ setSigma n A B)
+  : setSndSigma n A B x ∈ B (setFstSigma n A B x).
 Proof.
   apply ZFincomp in Hx.
   exact (sndS Hx).
 Qed.
 
-Lemma setSigmaβ1 {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+Lemma setSigmaβ1 {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : setFstSigma n A B ⟨ a ; b ⟩ ≡ a.
 Proof.
-  exact (setPairβ1 Ha (setFamUnionInj_typing HB Ha Hb)).
+  exact (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)).
 Qed.
 
-Lemma setSigmaβ2 {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+Lemma setSigmaβ2 {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : setSndSigma n A B ⟨ a ; b ⟩ ≡ b.
 Proof.
-  exact (setPairβ2 Ha (setFamUnionInj_typing HB Ha Hb)).
+  exact (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)).
 Qed.
 
-Lemma setSigmaη {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
+Lemma setSigmaη {n : nat} {A x : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Hx : x ∈ setSigma n A B)
   : x ≡ ⟨ setFstSigma n A B x ; setSndSigma n A B x ⟩.
 Proof.
   apply ZFincomp in Hx. apply fstS in Hx.
   exact (setPairη Hx).
 Qed.
 
-(* Function sets as sets of graphs *)
+(* Function types (exponentials) as sets of graphs *)
 
 Definition graphToRel (R : ZFSet) : setRel := fun a b => ⟨ a ; b ⟩ ∈ R.
 
@@ -308,11 +345,10 @@ Definition setAppArr (A B f x : ZFSet) := funRelApp A B (graphToRel f) x.
 
 Definition relToGraph (A B : ZFSet) (φ : setRel) : ZFSet := { x ϵ A × B ∣ φ (setFstPair A B x) (setSndPair A B x) }.
 
-Definition setIdArr' (A : ZFSet) := { x ϵ A × A ∣ setFstPair A A x ≡ setSndPair A A x }.
 Definition setIdArr (A : ZFSet) := relToGraph A A (fun x y => x ≡ y).
 
-Definition setCompArr' (A B C f g : ZFSet) := { x ϵ A × C ∣ ∃ y ∈ B, ⟨ setFstPair A C x ; y ⟩ ∈ f ∧ ⟨ y ; setSndPair A C x ⟩ ∈ g }.
-Definition setCompArr (A B C f g : ZFSet) := relToGraph A C (relComp A B C (graphToRel f) (graphToRel g)). (* definitionally the same *)
+Definition setCompArr' (A B C f g : ZFSet) := relToGraph A C (relComp A B C (graphToRel f) (graphToRel g)).
+Definition setCompArr (A B C f g : ZFSet) := relToGraph A C (funRelComp A B C (graphToRel f) (graphToRel g)).
 
 Lemma graphToRel_typing {A B f} (Hf : f ∈ A ⇒ B) : isFunRel A B (graphToRel f).
 Proof.
@@ -456,8 +492,78 @@ Proof.
   reflexivity.
 Qed.
 
-(* Pi types *)
+(* Older versions with functional relations instead of higher-order functions *)
 
-Definition setPi (n : nat) (A : ZFSet) (B : setRel) :=
-  { f ϵ A ⇒ (setFamUnion n A B) ∣ ∀ a ∈ A, setAppArr A (setFamUnion n A B) f a ∈ funRelApp A (𝕍 n) B a }.
+(*
+Definition setIm (A B : ZFSet) (f : setRel) : ZFSet :=
+  { b ϵ B ∣ ∃ a ∈ A, f a b }.
 
+Lemma setIm_typing {A B a : ZFSet} {f : setRel} (Hf : isFunRel A B f) (Ha : a ∈ A) : funRelApp A B f a ∈ setIm A B f.
+Proof.
+  apply ZFincomp. split.
+  - exact (funRelApp_typing Hf Ha).
+  - exists a. split. exact Ha. exact (funRelApp_inRel Hf Ha).
+Qed.
+
+Definition setFamUnion (n : nat) (A : ZFSet) (f : setRel) : ZFSet :=
+  ⋃ (setIm A (𝕍 n) f).
+
+Lemma setFamUnion_typing {n : nat} {A a b : ZFSet} {f : setRel} (Hf : isFunRel A (𝕍 n) f) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) f a)
+  : b ∈ setFamUnion n A f.
+Proof.
+  apply ZFinunion. exists (funRelApp A (𝕍 n) f a). split.
+  - exact (setIm_typing Hf Ha).
+  - exact Hb.
+Qed.
+
+Definition setSigma (n : nat) (A : ZFSet) (B : setRel) : ZFSet :=
+  { x ϵ (A × setFamUnion n A B) ∣ setSndPair A (setFamUnion n A B) x ∈ funRelApp A (𝕍 n) B (setFstPair A (setFamUnion n A B) x) }.
+
+Definition setMkSigma (a b : ZFSet) := ⟨ a ; b ⟩.
+Definition setFstSigma (n : nat) (A : ZFSet) (B : setRel) (x : ZFSet) : ZFSet := setFstPair A (setFamUnion n A B) x.
+Definition setSndSigma (n : nat) (A : ZFSet) (B : setRel) (x : ZFSet) : ZFSet := setSndPair A (setFamUnion n A B) x.
+
+Lemma setMkSigma_typing {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+  : ⟨ a ; b ⟩ ∈ setSigma n A B.
+Proof.
+  apply ZFincomp. split.
+  - exact (setMkPair_typing Ha (setFamUnion_typing HB Ha Hb)).
+  - apply (transpS (fun x => x ∈ funRelApp A (𝕍 n) B (setFstPair A (setFamUnion n A B) ⟨ a; b ⟩))
+                   (sym (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)))).
+    apply (transpS (fun x => b ∈ funRelApp A (𝕍 n) B x) (sym (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)))).
+    exact Hb.
+Qed.
+
+Lemma setFstSigma_typing {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
+  : setFstSigma n A B x ∈ A.
+Proof.
+  apply ZFincomp in Hx.
+  exact (setFstPair_typing (fstS Hx)).
+Qed.
+
+Lemma setSndSigma_typing {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
+  : setSndSigma n A B x ∈ (funRelApp A (𝕍 n) B (setFstSigma n A B x)).
+Proof.
+  apply ZFincomp in Hx.
+  exact (sndS Hx).
+Qed.
+
+Lemma setSigmaβ1 {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+  : setFstSigma n A B ⟨ a ; b ⟩ ≡ a.
+Proof.
+  exact (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)).
+Qed.
+
+Lemma setSigmaβ2 {n : nat} {A a b : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Ha : a ∈ A) (Hb : b ∈ funRelApp A (𝕍 n) B a)
+  : setSndSigma n A B ⟨ a ; b ⟩ ≡ b.
+Proof.
+  exact (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)).
+Qed.
+
+Lemma setSigmaη {n : nat} {A x : ZFSet} {B : setRel} (HB : isFunRel A (𝕍 n) B) (Hx : x ∈ setSigma n A B)
+  : x ≡ ⟨ setFstSigma n A B x ; setSndSigma n A B x ⟩.
+Proof.
+  apply ZFincomp in Hx. apply fstS in Hx.
+  exact (setPairη Hx).
+Qed.
+*)
