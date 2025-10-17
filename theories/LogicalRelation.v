@@ -38,6 +38,33 @@ Fixpoint mk_Nat k :=
     | S k => succ (mk_Nat k)
     end.
 
+Lemma sim_nat_to_eq k Γ l v A : Γ ⊢< l > (mk_Nat k) ~ v : A -> mk_Nat k = v.
+Proof.
+    generalize Γ l v A. clear  Γ l v A. destruct k.
+    - intros. apply aconv_inv in H. eauto.
+    - intros. apply aconv_inv in H. simpl in H. rewrite H. eauto.
+Qed.  
+    
+
+Lemma sim_left_redd_whnf_mknat Γ l t k u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t -->>! mk_Nat k : A ->
+    Γ ⊢< l > u -->>! mk_Nat k : A.
+Proof.
+    intros. eapply sim_left_redd_whnf in H0 as (v & H1 & H2); eauto.
+    eapply sim_nat_to_eq in H2. subst. eauto.
+Qed.
+
+
+Lemma sim_left_redd_whnf_sort Γ l t l' u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t -->>! Sort l' : A ->
+    Γ ⊢< l > u -->>! Sort l' : A.
+Proof.
+    intros. eapply sim_left_redd_whnf in H0 as (v & H1 & H2); eauto.
+    eapply aconv_inv in H2. simpl in H2. subst. eauto.
+Qed.
+
 Lemma leq_ru_left {i} {k} : i ⊴ Ru i (ty k).
 Proof.
     destruct i; simpl; lia. 
@@ -309,6 +336,15 @@ Proof.
       intros. rewrite H in H2. destruct H2. eauto using conv_conv, redd_whnf_to_conv, conv_sym.
 Qed.
 
+
+Lemma conv_aux i j s1 s2 S1 T1 T2 : 
+    ∙ ⊢< i > s1 ≡ s2 : S1 -> ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j -> ∙ ⊢< Ax j > T1 <[ s1 ..] ≡ T2 <[ s2.. ] : Sort j.
+Proof.
+    intros. assert (Sort j = Sort j <[ s1 ..]). ssimpl; eauto.
+    rewrite H1. eapply subst. eapply (conv_scons _ _ _ ∙  i S1). ssimpl. eapply refl_subst. eapply subst_id. eauto using ctx_typing.
+    ssimpl. eauto. eauto.
+Qed.
+
 Lemma LR_erasure l A B R : 
     LR l A B R -> 
     (forall A' B', 
@@ -336,16 +372,12 @@ Proof.
           eapply aconv_inv in nat_sim. simpl in nat_sim. subst.
           apply LR_nat; eauto.
         + rewrite H in *. destruct H2 as (k & t_redd_k & u_redd_k).
-          unfold ϵNat. exists k.
-        admit.
-          (* exists k. apply redd_to_conv in A1_red_nat as A1_conv_nat. 
-          split; eauto 7 using sim_left_redd, sim_sym, redd_conv, conv_sym. *)
-    - admit.
-    (* - intros. split; intros.
-        + apply LR_U; eauto using sim_left_redd, sim_sym.
+          unfold ϵNat. exists k. eauto 8 using sim_left_redd_whnf_mknat, sim_sym, aconv_conv, redd_whnf_to_conv.
+    - intros. split; intros.
+        + apply LR_U; eauto using sim_left_redd, sim_sym, sim_left_redd_whnf_sort.
         + rewrite H0 in *. destruct H3 as (R' & lr). destruct (H t u R' lr).
-          apply redd_to_conv in A1_red_U as A1_conv_U.
-          exists R'. eapply H3; eauto using sim_conv, conv_sym. *)
+          apply redd_whnf_to_conv in A1_red_U as A1_conv_U.
+          exists R'. eapply H3; eauto using aconv_conv, conv_sym.
     - intros. split; intros.
         + eapply sim_left_redd_whnf in A1_red_pi as (_pi & A'_redd_pi & pi_sim); eauto.
           eapply aconv_inv in pi_sim. simpl in pi_sim. subst.
@@ -370,9 +402,10 @@ Proof.
                eapply type_inv_pi in pi1 as (S1_Wt & T1_Wt).
                eapply aconv_app; eauto using validity_conv_left, refl_ty.
                eapply aconv_conv; eauto.
-               admit. 
-Admitted.
-
+               eapply aconv_conv. 2: eauto using conv_aux, conv_sym.
+               eapply aconv_app; eauto 7 using refl_ty, validity_conv_right, conv_ty_in_ctx_conv. 
+               eapply aconv_conv; eauto. eapply conv_trans; eauto. eauto using conv_pi.
+Qed.
 
 Definition LR_inv_type l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : Prop :=
     match l, A1' with 
@@ -439,7 +472,12 @@ Proof.
       assert (ϵT s1 s2 (proj2 (H2 s1 s2) ϵs) (app i (ty k) S1 T1 t1 s1) (app i (ty k) S2 T2 t2 s2)).
       apply H4.
       destruct (LR_erasure _ _ _ _ (LR_T s1 s2 (proj2 (H2 s1 s2) ϵs))).
-      eapply H8; eauto. admit. admit. 
+      apply LR_escape in LR_S' as temp. pose proof ϵs as s1_conv_s2. apply (proj2 temp) in s1_conv_s2. clear temp.
+      eapply H8; eauto. 
+      eapply aconv_app; eauto using refl_ty, validity_conv_left, aconv_refl.
+      eapply aconv_conv. 2: eapply conv_aux. 2,3:eapply conv_sym. 2:eauto. 2: eapply T1_eq_T2.
+      eapply aconv_app; eauto 8 using refl_ty, validity_conv_left, aconv_refl, conv_trans, conv_sym, validity_conv_right, type_conv, conv_ty_in_ctx_conv.
+      admit.
       intro. rewrite H.
       unfold ϵPi. destruct H3. split; auto.
       intros. assert (forall s1 s2 ϵs, ϵT s1 s2 ϵs <~> ϵT' s1 s2 (proj1 (H2 s1 s2) ϵs)).

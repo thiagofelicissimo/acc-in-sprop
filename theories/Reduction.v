@@ -98,32 +98,12 @@ Inductive ann_conv : ctx -> level -> term -> term -> term -> Prop :=
       Γ ⊢< Ru i j > t ~ t' : Pi i j A B →
       Γ ⊢< i > u : A →
       Γ ⊢< j > app i j A B t u ~ app i j A' B' t' u : B <[ u .. ] 
-
-
-(* | aconv_succ : 
-    ∀ Γ t t', 
-      Γ ⊢< ty 0 > t ~ t' : Nat ->
-      Γ ⊢< ty 0 > succ t ~ succ t' : Nat
-
-| aconv_rec : 
-    ∀ Γ l P p_zero p_succ t P' p_zero' p_succ' t',
-      Γ ,, (ty 0 , Nat) ⊢< Ax l > P ~ P' : Sort l ->
-      Γ ⊢< l > p_zero ~ p_zero' : P <[ zero .. ] -> 
-      Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ ~ p_succ' : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-      Γ ⊢< ty 0 > t ~ t' : Nat ->
-      Γ ⊢< l > rec l P p_zero p_succ t ~ rec l P' p_zero' p_succ' t' : P <[ t .. ] *)
   
 | aconv_conv : 
     ∀ Γ l A B t t',
       Γ ⊢< l > t ~ t' : A -> 
       Γ ⊢< Ax l > A ≡ B : Sort l ->
       Γ ⊢< l > t ~ t' : B
-
-(* | aconv_irrel : 
-    ∀ Γ A t t',
-      Γ ⊢< prop > t : A -> 
-      Γ ⊢< prop > t' : A ->
-      Γ ⊢< prop > t ~ t' : A *)
 
 where "Γ ⊢< l > t ~ u : A" := (ann_conv Γ l t u A).
 
@@ -169,36 +149,6 @@ Proof.
     - exists t1. exists t2. exists t3. apply type_inv_app' in H as (_ & AWt & BWt & tWT & _). repeat split; eauto using refl_ty, ann_conv.
     - exists A'. exists B'. exists t'. repeat split; eauto.
 Qed.
-
-(* Lemma aconv_inv Γ i j A B t u v l T :
-    Γ ⊢< l > app i j A B t u ~ v : T ->
-    exists A' B' t', 
-        v = app i j A' B' t' u /\
-        Γ ⊢< Ax i > A ≡ A' : Sort i /\
-        Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j /\
-        Γ ⊢< Ru i j > t ~ t' : Pi i j A B.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-  - exists A. exists B. exists t. apply type_inv_app' in H as (_ & AWt & BWt & tWT & _). repeat split; eauto using refl_ty, ann_conv.
-  - exists A'. exists B'. exists t'. repeat split; eauto.
-Qed.
-
-Lemma aconv_inv Γ i j A B t v l T :
-    Γ ⊢< l > lam i j A B t ~ v : T ->
-    v = lam i j A B t.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-  
-Lemma aconv_inv Γ i P p_zero p_succ n v l T :
-    Γ ⊢< l > rec i P p_zero p_succ n ~ v : T ->
-    v = rec i P p_zero p_succ n.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed. *)
   
 
 Lemma sim_left_red Γ l t t' u A :
@@ -311,12 +261,98 @@ Proof.
 Qed.
 
 
+Definition red_inv_type Γ t v :=
+    match t with 
+    | app i j A B (lam i' j' A' B' t) u => 
+        i = i' /\ 
+        j = j' /\
+        v = t <[ u.. ] /\ 
+        Γ ⊢< Ax i > A ≡ A' : Sort i /\
+        Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j /\
+        Γ ,, (i , A) ⊢< j > t : B /\ 
+        Γ ⊢< i > u : A 
+    | app i j A B t u =>
+        exists t', 
+            v = app i j A B t' u /\
+            Γ ⊢< Ax i > A : Sort i /\ 
+            Γ ,, (i, A) ⊢< Ax j > B : Sort j /\
+            Γ ⊢< Ru i j > t --> t' : Pi i j A B /\
+            Γ ⊢< i > u : A
+    | rec l P p_zero p_succ zero => 
+        v = p_zero /\ 
+        Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
+        Γ ⊢< l > p_zero : P <[ zero .. ] /\
+        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ]
+    | rec l P p_zero p_succ (succ n) => 
+        v = p_succ <[  (rec l P p_zero p_succ n) .: n ..] /\
+        Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
+        Γ ⊢< l > p_zero : P <[ zero .. ] /\
+        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
+        Γ ⊢< ty 0 > n : Nat
+    | rec l P p_zero p_succ n => 
+        exists n',
+            v = rec l P p_zero p_succ n' /\
+            Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
+            Γ ⊢< l > p_zero : P <[ zero .. ] /\
+            Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
+            Γ ⊢< ty 0 > n --> n' : Nat
+    | _ => False
+    end.
+
+Fixpoint size (t : term) : nat := 
+  match t with 
+  | var _ => 0
+  | Sort _ => 0
+  | Pi _ _ A B => 1 + size A + size B
+  | lam _ _ A B t => 1 + size A + size B + size t
+  | app _ _ A B t u => 1 + size A + size B + size t + size u
+  | Nat => 0
+  | zero => 0
+  | succ t => 1 + size t
+  | rec _ P p0 ps t => 1 + size P + size p0 + size ps + size t
+  | box => 0
+end.
+
+
+Lemma red_inv Γ l t u T : Γ ⊢< l > t --> u : T -> red_inv_type Γ t u.
+Proof.
+    generalize t Γ l u T. clear t Γ l u T.
+    refine (@well_founded_ind _ (fun t u => size t < size u) _ _ _). 
+    eauto using wf_inverse_image, lt_wf.
+    intros. induction H0.
+    - destruct t.
+      4: (unshelve eapply (H _ _) in H2; simpl). 4: lia. 4: inversion H2.
+      all: simpl.
+      all: eexists; eauto. 
+    - simpl. split; eauto. split; eauto.
+    - destruct n.
+      7,8 :(unshelve eapply (H _ _) in H3; simpl). 7,8: lia. 7,8: inversion H3.
+      all: simpl.
+      all: eexists; eauto.
+    - simpl. split; eauto. 
+    - simpl. split; eauto.
+    - eapply IHred. eauto.
+Qed.
+
+
 Lemma red_det Γ l t u v A : 
     Γ ⊢< l > t --> u : A -> 
     Γ ⊢< l > t --> v : A ->
     u = v.
 Proof.
-Admitted.
+    intros. 
+    generalize v H0. clear v H0. induction H; intros.
+    - apply red_inv in H3. destruct t. 
+      4: (apply red_inv in H1; inversion H1).
+      all: destruct H3 as (t'' & eq & _ & _ & red & _). all: eapply IHred in red. all: subst. all: eauto.
+    - apply red_inv in H3 as (_ & _ & eq & _). eauto.
+    - apply red_inv in H3. destruct n.
+      7,8 : (apply red_inv in H2; inversion H2).
+      all: destruct H3 as (n'' & eq & _ & _ & _ & red). all: eapply IHred in red. all: subst. all: eauto.
+    - apply red_inv in H2 as (eq & _). eauto.
+    - apply red_inv in H3 as (eq & _). eauto.
+    - eapply IHred. eapply red_conv; eauto using conv_sym.
+Qed.
 
 Lemma redd_whnf_det Γ l t u v A : 
     Γ ⊢< l > t -->>! u : A -> 
@@ -333,26 +369,3 @@ Proof.
           apply IHredd; eauto. split; eauto.
 Qed.
 
-
-
-
-
-(* 
-Lemma app_redd_conv Γ l i j A B A' B' t u v :
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ⊢< Ax j > B ≡ B' : Sort j ->
-    Γ ⊢< l > app i j A B t u -->> v : A -> 
-    Γ ⊢< l > app i j A' B' t u -->> v : A.
-Proof.
-    intros.
-    destruct H1.
-    split; auto.
-    apply validity_conv_left in H2 as app_Wt.
-    apply type_inv_app' in app_Wt as (_ & _ & _ & t_Wt & u_Wt & l_eq & T_conv).
-    eapply conv_trans; eauto using conv_sym.
-    rewrite l_eq in *.
-    eapply conv_conv; eauto using conv_sym.
-    eauto using conv_app, conv_trans, conv_sym, refl_ty.
-Qed.
-    
- *)
