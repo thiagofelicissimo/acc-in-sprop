@@ -65,6 +65,9 @@ Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕍 n × 𝕍 n).
 
 Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕍 n × 𝕍 n) σ A.
 
+Definition cwfTy_to_depSet (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
+  fun γ => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A γ).
+
 Lemma cwfTy_reindex_typing {n : nat} {Γ A Δ σ : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) :
   cwfTy_reindex n Γ A Δ σ ∈ cwfTy n Δ.
 Proof.
@@ -88,10 +91,23 @@ Proof.
   now apply (setCompArr_app Hσ HA).
 Qed.
 
+Lemma cwfTy_reindex_to_depSet {n : nat} {Γ A Δ σ δ} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
+  cwfTy_to_depSet n Δ (cwfTy_reindex n Γ A Δ σ) δ ≡ cwfTy_to_depSet n Γ A (setAppArr Δ Γ σ δ).
+Proof.
+  apply (fequal (setFstPair (𝕍 n) (𝕍 n))). now apply app_cwfTy_reindex.
+Qed.
+
+Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (γ : ZFSet) (Hγ : γ ∈ Γ) :
+  cwfTy_to_depSet n Γ A γ ∈ 𝕍 n.
+Proof.
+  unfold cwfTy_to_depSet. apply setFstPair_typing.
+  apply setAppArr_typing ; assumption.
+Qed.
+
 (* Dependent presheaf of terms *)
 
 Definition cwfInTy (n : nat) (Γ : ZFSet) (A : ZFSet) (t : ZFSet) :=
-  ∀ γ ∈ Γ, setAppArr Γ (𝕍 n) t γ ∈ setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A γ).
+  ∀ γ ∈ Γ, setAppArr Γ (𝕍 n) t γ ∈ cwfTy_to_depSet n Γ A γ.
 
 Definition cwfTm (n : nat) (Γ : ZFSet) (A : ZFSet) := { t ϵ Γ ⇒ (𝕍 n) ∣ cwfInTy n Γ A t }.
 
@@ -127,10 +143,28 @@ Proof.
   apply ZFincomp in Ht. destruct Ht as [ Ht _ ]. exact Ht.
 Qed.
 
-(* Context extension *)
+Lemma cwfTm_app {n : nat} {Γ A t γ} (HA : A ∈ cwfTy n Γ) (Ht : t ∈ cwfTm n Γ A) (Hγ : γ ∈ Γ)
+  : setAppArr Γ (𝕍 n) t γ ∈ cwfTy_to_depSet n Γ A γ.
+Proof.
+  apply ZFincomp in Ht. destruct Ht as [ Ht1 Ht2 ]. now apply Ht2.
+Qed.
 
-Definition cwfTy_to_depSet (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
-  fun γ => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A γ).
+Lemma app_cwfTm_reindex {n : nat} {Γ A t Δ σ δ} (HA : A ∈ cwfTy n Γ) (Ht : t ∈ cwfTm n Γ A) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
+  setAppArr Δ (𝕍 n) (cwfTm_reindex n Γ t Δ σ) δ ≡ setAppArr Γ (𝕍 n) t (setAppArr Δ Γ σ δ).
+Proof.
+  apply ZFincomp in Ht. destruct Ht as [ Ht1 Ht2 ].
+  now apply (setCompArr_app Hσ Ht1).
+Qed.
+
+Lemma cwfTm_funext {n : nat} {Γ A t u} (HA : A ∈ cwfTy n Γ) (Ht : t ∈ cwfTm n Γ A) (Hu : u ∈ cwfTm n Γ A) :
+  (∀ γ ∈ Γ, setAppArr Γ (𝕍 n) t γ ≡ setAppArr Γ (𝕍 n) u γ) -> t ≡ u.
+Proof.
+  apply ZFincomp in Ht. destruct Ht as [ Ht1 Ht2 ].
+  apply ZFincomp in Hu. destruct Hu as [ Hu1 Hu2 ].
+  intro H. now apply (setArr_funext Ht1 Hu1).
+Qed.  
+
+(* Context extension *)
 
 Definition ctxExt (n : nat) (Γ A : ZFSet) :=
   setSigma n Γ (cwfTy_to_depSet n Γ A).
@@ -142,13 +176,6 @@ Definition ctxWk_HO (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
 
 Definition ctxWk (n : nat) (Γ A : ZFSet) :=
   relToGraph (ctxExt n Γ A) Γ (HO_rel (ctxWk_HO n Γ A)).
-
-Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (γ : ZFSet) (Hγ : γ ∈ Γ) :
-  cwfTy_to_depSet n Γ A γ ∈ 𝕍 n.
-Proof.
-  unfold cwfTy_to_depSet. apply setFstPair_typing.
-  apply setAppArr_typing ; assumption.
-Qed.
 
 Lemma ctxWk_HO_typing {n : nat} {Γ A γa : ZFSet} (HA : A ∈ cwfTy n Γ) (Hγa : γa ∈ ctxExt n Γ A) :
   ctxWk_HO n Γ A γa ∈ Γ.
@@ -201,7 +228,7 @@ Proof.
     refine (transp2S (fun X Y => X ∈ Y) _ _ Ha).
     + symmetry. apply setAppArr_HO ; try assumption. now apply ctxVar0_HO_pretyping.
     + symmetry. refine (trans _ _).
-      * refine (fequal (setFstPair (𝕍 n) (𝕍 n)) _). exact (app_cwfTy_reindex HA (ctxWk_typing n Γ A HA) Hγa).
+      * refine (cwfTy_reindex_to_depSet HA _ Hγa). now apply ctxWk_typing.
       * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A X)) _).
         apply setAppArr_HO ; try assumption. intros x Hx. now apply ctxWk_HO_typing.
 Qed.
@@ -241,7 +268,58 @@ Lemma subExt_beta1 {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ
 Proof.
   unshelve eapply (setArr_funext _ Hσ).
   - apply cwfComp_typing. now apply ctxWk_typing. now apply subExt_typing.
-  - intros δ Hδ.
-    admit.
-Admitted.
+  - intros δ Hδ. refine (trans _ _). 
+    { apply setCompArr_app ; try assumption.
+      - now apply subExt_typing.
+      - now apply ctxWk_typing. }
+    refine (trans _ _).
+    { apply setAppArr_HO.
+      - intros γa Hγa. now apply ctxWk_HO_typing. 
+      - apply setAppArr_typing. now apply subExt_typing. assumption. }
+    refine (trans _ _).
+    { refine (fequal (ctxWk_HO n Γ A) _).
+      apply setAppArr_HO. intros x Hx. now apply subExt_HO_typing.
+      assumption. }
+    apply setSigmaβ1.
+    + now apply cwfTy_to_depSet_typing.
+    + now apply setAppArr_typing.
+    + refine (transpS (fun X => setAppArr Δ (𝕍 n) t δ ∈ X) _ (cwfTm_app (cwfTy_reindex_typing HA Hσ) Ht Hδ)).
+      now apply cwfTy_reindex_to_depSet.
+Qed.
+
+Lemma subExt_beta2 {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ)
+  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) (u := cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ (subExt n Γ A Δ σ t))
+  : u ≡ t.
+Proof.
+  set (A' := cwfTy_reindex n Γ A (ctxExt n Γ A) (ctxWk n Γ A)).
+  assert (A' ∈ cwfTy n (ctxExt n Γ A)) as HA'.
+  { apply cwfTy_reindex_typing. assumption. now apply ctxWk_typing. }
+
+  assert (u ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) as Hu.
+  { refine (transpS (fun X => u ∈ X) _ (cwfTm_reindex_typing HA' _ _)).
+    - refine (fequal (cwfTm n Δ) _). refine (trans _ _).
+      + symmetry. apply cwfTy_reindex_comp ; try assumption.
+        now apply ctxWk_typing. now apply subExt_typing. 
+      + refine (fequal (cwfTy_reindex n Γ A Δ) _).
+        now apply subExt_beta1.
+    - now apply ctxVar0_typing.
+    - now apply subExt_typing. }
+
+  apply (cwfTm_funext (cwfTy_reindex_typing HA Hσ) Hu Ht).
+  intros δ Hδ. refine (trans _ _).
+  { exact (app_cwfTm_reindex HA' (ctxVar0_typing n Γ A HA) (subExt_typing HA Hσ Ht) Hδ). }
+  refine (trans _ _).
+  { apply setAppArr_HO. intros γa Hγa. now apply ctxVar0_HO_pretyping.
+    apply setAppArr_typing. now apply subExt_typing. assumption. }
+  refine (trans _ _).
+  { refine (fequal (ctxVar0_HO n Γ A) _).
+    apply setAppArr_HO. intros δ' Hδ'. now apply subExt_HO_typing. assumption. }
+  apply setSigmaβ2.
+  + intros γ Hγ. now apply cwfTy_to_depSet_typing.
+  + now apply setAppArr_typing.
+  + refine (transpS (fun X => setAppArr Δ (𝕍 n) t δ ∈ X) _ _).
+    * now apply cwfTy_reindex_to_depSet.
+    * apply cwfTm_app. now apply cwfTy_reindex_typing. assumption. assumption.
+Qed.
+
 
