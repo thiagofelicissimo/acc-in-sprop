@@ -6,6 +6,7 @@ Require Import ZF_library.
 
 (* Underlying category *)
 
+Definition cwfCon := ZFSet.
 Definition cwfSub (Γ Δ : ZFSet) := Γ ⇒ Δ.
 Definition cwfId (Γ : ZFSet) := setIdArr Γ.
 Definition cwfComp (Γ Δ Θ σ τ : ZFSet) := setCompArr Θ Δ Γ τ σ.
@@ -59,9 +60,6 @@ Proof.
 Qed.
 
 (* Presheaf of types *)
-
-(* Remember: a type [A] at level i is a pair of two elements of [𝕍ᵢ] *)
-(* Then the relation [Γ ⊢ t : A] is defined to be [∀ ρ : {Γ}, {t}ρ ∈ fst {A}ρ ]*)
 
 Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕍 n × 𝕍 n).
 
@@ -208,4 +206,42 @@ Proof.
         apply setAppArr_HO ; try assumption. intros x Hx. now apply ctxWk_HO_typing.
 Qed.
 
+(* Substitution extensions *)
+
+Definition subExt_HO (n : nat) (Γ Δ σ t : ZFSet) :=
+  fun δ => ⟨ setAppArr Δ Γ σ δ ; setAppArr Δ (𝕍 n) t δ ⟩.
+
+Definition subExt (n : nat) (Γ A Δ σ t : ZFSet) :=
+  relToGraph Δ (ctxExt n Γ A) (HO_rel (subExt_HO n Γ Δ σ t)).
+
+Lemma subExt_HO_typing {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ)
+  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) (δ : ZFSet) (Hδ : δ ∈ Δ) :
+  subExt_HO n Γ Δ σ t δ ∈ ctxExt n Γ A.
+Proof.
+  apply setMkSigma_typing.
+  - now apply cwfTy_to_depSet_typing. 
+  - now apply setAppArr_typing.
+  - apply ZFincomp in Ht. destruct Ht as [ Ht1 Ht2 ].
+    refine (transpS (fun X => setAppArr Δ (𝕍 n) t δ ∈ setFstPair (𝕍 n) (𝕍 n) X) _ (Ht2 δ Hδ)).
+    now apply app_cwfTy_reindex.
+Qed.
+
+Lemma subExt_typing {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ)
+  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) :
+  subExt n Γ A Δ σ t ∈ cwfSub Δ (ctxExt n Γ A).
+Proof.
+  apply relToGraph_typing. apply HO_rel_typing. now apply subExt_HO_typing.
+Qed.
+
+(* Beta and eta equations for substitution extensions *)
+
+Lemma subExt_beta1 {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ)
+  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ))
+  : cwfComp Γ (ctxExt n Γ A) Δ (ctxWk n Γ A) (subExt n Γ A Δ σ t) ≡ σ.
+Proof.
+  unshelve eapply (setArr_funext _ Hσ).
+  - apply cwfComp_typing. now apply ctxWk_typing. now apply subExt_typing.
+  - intros δ Hδ.
+    admit.
+Admitted.
 
