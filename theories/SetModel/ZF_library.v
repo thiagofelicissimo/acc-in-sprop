@@ -399,6 +399,26 @@ Proof.
       apply (funRel_unique Hφ Ha (funRelApp_typing Hφ Ha) Hb). exact (funRelApp_inRel Hφ Ha). exact Hb2.
 Qed.
 
+Lemma setAppArr_rel {A B a : ZFSet} {f : setRel} (Hf : isFunRel A B f) (Ha : a ∈ A) :
+  f a (setAppArr A B (relToGraph A B f) a).
+Proof.
+  pose proof (setAppArr_inRel (relToGraph_typing Hf) Ha).
+  unshelve eapply (relToGraphToRel Hf Ha _).
+  apply setAppArr_typing. now apply relToGraph_typing. assumption.
+  exact H.
+Qed.
+
+Lemma setAppArr_HO {A B a : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ B) (Ha : a ∈ A) :
+  setAppArr A B (relToGraph A B (HO_rel f)) a ≡ f a.
+Proof.
+  pose proof (HO_rel_typing A B f Hf) as Hf'.
+  apply (funRel_unique Hf' Ha).
+  - apply setAppArr_typing. now apply relToGraph_typing. assumption.
+  - now apply Hf.
+  - apply (setAppArr_rel Hf' Ha).
+  - unfold HO_rel. reflexivity.
+Qed.
+
 Lemma relToGraphToRel_app {A B a : ZFSet} {f : setRel} (Hf : isFunRel A B f) (Ha : a ∈ A) :
   funRelApp A B (graphToRel (relToGraph A B f)) a ≡ funRelApp A B f a.
 Proof.

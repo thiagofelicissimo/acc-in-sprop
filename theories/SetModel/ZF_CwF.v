@@ -84,6 +84,12 @@ Proof.
   unfold cwfTy_reindex. apply sym. apply setCompAssoc ; assumption.
 Qed.
 
+Lemma app_cwfTy_reindex {n : nat} {Γ A Δ σ δ} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
+  setAppArr Δ (𝕍 n × 𝕍 n) (cwfTy_reindex n Γ A Δ σ) δ ≡ setAppArr Γ (𝕍 n × 𝕍 n) A (setAppArr Δ Γ σ δ).
+Proof.
+  now apply (setCompArr_app Hσ HA).
+Qed.
+
 (* Dependent presheaf of terms *)
 
 Definition cwfInTy (n : nat) (Γ : ZFSet) (A : ZFSet) (t : ZFSet) :=
@@ -139,7 +145,7 @@ Definition ctxWk_HO (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
 Definition ctxWk (n : nat) (Γ A : ZFSet) :=
   relToGraph (ctxExt n Γ A) Γ (HO_rel (ctxWk_HO n Γ A)).
 
-Lemma cwfTy_to_depSet_typing {n : nat} {Γ A γ : ZFSet} (HA : A ∈ cwfTy n Γ) (Hγ : γ ∈ Γ) :
+Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (γ : ZFSet) (Hγ : γ ∈ Γ) :
   cwfTy_to_depSet n Γ A γ ∈ 𝕍 n.
 Proof.
   unfold cwfTy_to_depSet. apply setFstPair_typing.
@@ -150,7 +156,7 @@ Lemma ctxWk_HO_typing {n : nat} {Γ A γa : ZFSet} (HA : A ∈ cwfTy n Γ) (Hγa
   ctxWk_HO n Γ A γa ∈ Γ.
 Proof.
   unfold ctxWk_HO. apply setFstSigma_typing. 
-  - intros γ Hγ. now apply cwfTy_to_depSet_typing.
+  - now apply cwfTy_to_depSet_typing.
   - assumption.
 Qed.
 
@@ -162,5 +168,44 @@ Qed.
 
 (* Second projection for context extensions *)
 
-Definition ctxWk_var0_typing (n : nat) (Γ A : ZFSet) : ctxWk_var0 n Γ A ∈ cwfTm n (ctxExt n Γ A) (cwfTy_reindex A).
-  
+Definition ctxVar0_HO (n : nat) (Γ A : ZFSet) :=
+  fun γa => setSndSigma n Γ (cwfTy_to_depSet n Γ A) γa.
+
+Definition ctxVar0 (n : nat) (Γ A : ZFSet) :=
+  relToGraph (ctxExt n Γ A) (𝕍 n) (HO_rel (ctxVar0_HO n Γ A)).
+
+Lemma ctxVar0_HO_pretyping {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) {γa : ZFSet} (Hγa : γa ∈ ctxExt n Γ A) :
+  ctxVar0_HO n Γ A γa ∈ 𝕍 n.
+Proof.
+  eapply ZFuniv_trans. exact (setSndSigma_typing (cwfTy_to_depSet_typing HA) Hγa).
+  eapply (cwfTy_to_depSet_typing HA).
+  exact (setFstSigma_typing (cwfTy_to_depSet_typing HA) Hγa). 
+Qed.
+
+Lemma ctxVar0_pretyping {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) :
+  ctxVar0 n Γ A ∈ ctxExt n Γ A ⇒ 𝕍 n.
+Proof.
+  apply relToGraph_typing. apply HO_rel_typing. now apply ctxVar0_HO_pretyping.
+Qed.
+
+Lemma ctxVar0_typing (n : nat) (Γ A : ZFSet) (HA : A ∈ cwfTy n Γ) :
+  ctxVar0 n Γ A ∈ cwfTm n (ctxExt n Γ A) (cwfTy_reindex n Γ A (ctxExt n Γ A) (ctxWk n Γ A)).
+Proof.
+  apply ZFincomp. split.
+  - now apply ctxVar0_pretyping. 
+  - intros γa Hγa.
+    (* destruct γa *)
+    set (γ := setFstSigma n Γ (cwfTy_to_depSet n Γ A) γa).
+    assert (γ ∈ Γ) as Hγ. exact (setFstSigma_typing (cwfTy_to_depSet_typing HA) Hγa).
+    set (a := setSndSigma n Γ (cwfTy_to_depSet n Γ A) γa).
+    assert (a ∈ cwfTy_to_depSet n Γ A γ) as Ha. exact (setSndSigma_typing (cwfTy_to_depSet_typing HA) Hγa).
+    (* show typing *)
+    refine (transp2S (fun X Y => X ∈ Y) _ _ Ha).
+    + symmetry. apply setAppArr_HO ; try assumption. now apply ctxVar0_HO_pretyping.
+    + symmetry. refine (trans _ _).
+      * refine (fequal (setFstPair (𝕍 n) (𝕍 n)) _). exact (app_cwfTy_reindex HA (ctxWk_typing n Γ A HA) Hγa).
+      * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A X)) _).
+        apply setAppArr_HO ; try assumption. intros x Hx. now apply ctxWk_HO_typing.
+Qed.
+
+

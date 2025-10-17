@@ -57,6 +57,14 @@ Proof.
   intros e p. exact (eqS_sind A a (fun b _ => P b) p b e).
 Qed.
 
+Lemma transp2S {A B : Set} (P : A -> B -> SProp) {a a' : A} {b b' : B} : a ≡ a' -> b ≡ b' -> P a b -> P a' b'.
+  intros ea eb t. destruct ea. destruct eb. exact t.
+Qed.
+
+Lemma fequal {A B : Set} (f : A -> B) {a a' : A} : a ≡ a' -> f a ≡ f a'.
+  intro e. destruct e. reflexivity.
+Qed.
+
 Lemma sym {A : Set} {a b : A} : a ≡ b -> b ≡ a.
 Proof.
   intro e. exact (eqS_sind A a (fun b _ => b ≡ a) (eqS_refl a) b e).
