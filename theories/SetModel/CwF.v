@@ -3,7 +3,7 @@ Require Import ZF_axioms.
 Require Import ZF_library.
 
 (* We define the CwF corresponding to the standard model, with a twist: types are labelled.
-   This means that a type in [Γ] is a function from [Γ] to [𝕍 n × 𝕍 n], the first component
+   This means that a type in [Γ] is a function from [Γ] to [𝕍 n × (ω × 𝕍 n)], the first component
    being the set of elements and the second component being the label.
    These labels are used for Pi and Sigma injectivity - otherwise, business as usual. *)
 
@@ -64,12 +64,12 @@ Qed.
 
 (* Presheaf of types *)
 
-Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕍 n × 𝕍 n).
+Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕍 n × (ω × 𝕍 n)).
 
-Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕍 n × 𝕍 n) σ A.
+Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕍 n × (ω × 𝕍 n)) σ A.
 
 Definition cwfTy_to_depSet (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
-  fun γ => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A γ).
+  fun γ => setFstPair (𝕍 n) (ω × 𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A γ).
 
 Lemma cwfTy_reindex_typing {n : nat} {Γ A Δ σ : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) :
   cwfTy_reindex n Γ A Δ σ ∈ cwfTy n Δ.
@@ -89,7 +89,7 @@ Proof.
 Qed.
 
 Lemma app_cwfTy_reindex {n : nat} {Γ A Δ σ δ} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
-  setAppArr Δ (𝕍 n × 𝕍 n) (cwfTy_reindex n Γ A Δ σ) δ ≡ setAppArr Γ (𝕍 n × 𝕍 n) A (setAppArr Δ Γ σ δ).
+  setAppArr Δ (𝕍 n × (ω × 𝕍 n)) (cwfTy_reindex n Γ A Δ σ) δ ≡ setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A (setAppArr Δ Γ σ δ).
 Proof.
   now apply (setCompArr_app Hσ HA).
 Qed.
@@ -97,7 +97,7 @@ Qed.
 Lemma cwfTy_reindex_to_depSet {n : nat} {Γ A Δ σ δ} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
   cwfTy_to_depSet n Δ (cwfTy_reindex n Γ A Δ σ) δ ≡ cwfTy_to_depSet n Γ A (setAppArr Δ Γ σ δ).
 Proof.
-  apply (fequal (setFstPair (𝕍 n) (𝕍 n))). now apply app_cwfTy_reindex.
+  apply (fequal (setFstPair (𝕍 n) (ω × 𝕍 n))). now apply app_cwfTy_reindex.
 Qed.
 
 Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (γ : ZFSet) (Hγ : γ ∈ Γ) :
@@ -128,7 +128,7 @@ Proof.
     specialize (Ht2 γ Hγ). unfold cwfTy_reindex.
     refine (transpS (fun x => setAppArr Δ (𝕍 n) (cwfTm_reindex n Γ t Δ σ) δ ∈ setFstPair (𝕍 n) (𝕍 n) x)
                     (sym (setCompArr_app Hσ HA Hδ)) _).
-    refine (transpS (fun x => x ∈ setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A (setAppArr Δ Γ σ δ)))
+    refine (transpS (fun x => x ∈ setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A (setAppArr Δ Γ σ δ)))
                     (sym (setCompArr_app Hσ Ht1 Hδ)) _).
     exact Ht2.
 Qed.
@@ -232,7 +232,7 @@ Proof.
     + symmetry. apply setAppArr_HO ; try assumption. now apply ctxVar0_HO_pretyping.
     + symmetry. refine (trans _ _).
       * refine (cwfTy_reindex_to_depSet HA _ Hγa). now apply ctxWk_typing.
-      * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × 𝕍 n) A X)) _).
+      * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A X)) _).
         apply setAppArr_HO ; try assumption. intros x Hx. now apply ctxWk_HO_typing.
 Qed.
 
