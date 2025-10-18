@@ -2,7 +2,10 @@ Require Import library.
 Require Import ZF_axioms.
 Require Import ZF_library.
 
-(* We define a CwF that supports all the type formers and operations of CICobs *)
+(* We define the CwF corresponding to the standard model, with a twist: types are labelled.
+   This means that a type in [Γ] is a function from [Γ] to [𝕍 n × 𝕍 n], the first component
+   being the set of elements and the second component being the label.
+   These labels are used for Pi and Sigma injectivity - otherwise, business as usual. *)
 
 (* Underlying category *)
 
@@ -288,9 +291,10 @@ Proof.
 Qed.
 
 Lemma subExt_beta2 {n : nat} {Γ A Δ σ t : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ)
-  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) (u := cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ (subExt n Γ A Δ σ t))
-  : u ≡ t.
+  (Ht : t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) 
+  : cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ (subExt n Γ A Δ σ t) ≡ t.
 Proof.
+  set (u := cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ (subExt n Γ A Δ σ t)). 
   set (A' := cwfTy_reindex n Γ A (ctxExt n Γ A) (ctxWk n Γ A)).
   assert (A' ∈ cwfTy n (ctxExt n Γ A)) as HA'.
   { apply cwfTy_reindex_typing. assumption. now apply ctxWk_typing. }
@@ -322,4 +326,40 @@ Proof.
     * apply cwfTm_app. now apply cwfTy_reindex_typing. assumption. assumption.
 Qed.
 
+Lemma fequal2 {A B C : Set} (f : A -> B -> C) {a a' : A} {b b' : B} : a ≡ a' -> b ≡ b' -> f a b ≡ f a' b'.
+  intros e1 e2. destruct e1. destruct e2. reflexivity.
+Qed.
 
+Lemma subExt_eta {n : nat} {Γ A Δ σt : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσt : σt ∈ cwfSub Δ (ctxExt n Γ A))
+  : σt ≡ subExt n Γ A Δ (cwfComp Γ (ctxExt n Γ A) Δ (ctxWk n Γ A) σt) (cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ σt).
+Proof.
+  set (σ := cwfComp Γ (ctxExt n Γ A) Δ (ctxWk n Γ A) σt).
+  assert (σ ∈ cwfSub Δ Γ) as Hσ.
+  { apply cwfComp_typing. now apply ctxWk_typing. assumption. }
+
+  set (t := cwfTm_reindex n (ctxExt n Γ A) (ctxVar0 n Γ A) Δ σt).
+  assert (t ∈ cwfTm n Δ (cwfTy_reindex n (ctxExt n Γ A) (cwfTy_reindex n Γ A (ctxExt n Γ A) (ctxWk n Γ A)) Δ σt)) as Ht0.
+  { apply cwfTm_reindex_typing. apply cwfTy_reindex_typing.
+    assumption. now apply ctxWk_typing. now apply ctxVar0_typing. assumption. }
+  assert (t ∈ cwfTm n Δ (cwfTy_reindex n Γ A Δ σ)) as Ht.
+  { refine (transpS (fun X => t ∈ cwfTm n Δ X) _ Ht0). symmetry.
+    apply cwfTy_reindex_comp ; try assumption. now apply ctxWk_typing. }
+
+  apply (setArr_funext Hσt).
+  { now apply subExt_typing. }
+  intros δ Hδ. refine (trans _ _).
+  { eapply setSigmaη. eapply cwfTy_to_depSet_typing. exact HA.
+    now apply setAppArr_typing. }
+  symmetry. refine (trans _ _).
+  { apply setAppArr_HO. now apply subExt_HO_typing. assumption. }
+  unfold subExt_HO. refine (fequal2 setMkPair _ _).
+  - refine (trans _ _).
+    { apply setCompArr_app. assumption. now apply ctxWk_typing. assumption. }
+    apply setAppArr_HO. intros. now apply ctxWk_HO_typing.
+    now apply setAppArr_typing.
+  - refine (trans _ _).
+    { unshelve eapply (app_cwfTm_reindex _ (ctxVar0_typing _ _ _ _)) ; try assumption.
+      apply cwfTy_reindex_typing. assumption. now apply ctxWk_typing. }
+    apply setAppArr_HO. now apply ctxVar0_HO_pretyping.
+    now apply setAppArr_typing.
+Qed.
