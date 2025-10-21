@@ -76,10 +76,11 @@ Parameter ZFpower : ZFSet -> ZFSet.
 Definition 𝒫 := ZFpower.
 Axiom ZFinpower : forall (A x : ZFSet), x ∈ 𝒫 A ↔ x ⊂ A.
 
-(* Hilbert's epsilon operator *)
-Parameter ZFchoice : ZFSet -> ZFSet.
-Definition ε := ZFchoice.
-Axiom ZFinchoice : forall (A : ZFSet), (exU ZFSet (fun a => a ∈ A)) -> ε A ∈ A.
+(* Russell's definite description operator
+   TODO: I think that it is conservative over IZF, but I am not 100% sure *)
+Parameter ZFdescr : ZFSet -> ZFSet.
+Definition ι := ZFdescr.
+Axiom ZFindescr : forall (A : ZFSet), (exU ZFSet (fun a => a ∈ A)) -> ι A ∈ A.
 
 (* countably many Grothendieck universes *)
 Parameter ZFuniv : nat -> ZFSet.

@@ -12,7 +12,7 @@ Definition isFunRel (A B : ZFSet) (φ : setRel) : SProp :=
   ∀ a ∈ A, ∃! b ∈ B, φ a b.
 
 Definition funRelApp (A B : ZFSet) (φ : setRel) (a : ZFSet) : ZFSet :=
-  ε { b ϵ B ∣ φ a b }.
+  ι { b ϵ B ∣ φ a b }.
 
 Definition HO_rel (φ : ZFSet -> ZFSet) : setRel :=
   fun a b => φ a ≡ b.
@@ -20,7 +20,7 @@ Definition HO_rel (φ : ZFSet -> ZFSet) : setRel :=
 Lemma funRelApp_pretyping {A B a : ZFSet} {φ : setRel} (Hφ : isFunRel A B φ) (Ha : a ∈ A) :
   funRelApp A B φ a ∈ { b ϵ B ∣ φ a b }.
 Proof.
-  apply ZFinchoice. specialize (Hφ a Ha). destruct Hφ as [ b [ [ Hb Hφb ] Hu ] ].
+  apply ZFindescr. specialize (Hφ a Ha). destruct Hφ as [ b [ [ Hb Hφb ] Hu ] ].
   exists b. split.
   - apply ZFincomp. now split.
   - intros b' Hb'. apply ZFincomp in Hb'. now revert b' Hb'. 
@@ -149,10 +149,10 @@ Definition setProd (A B : ZFSet) : ZFSet := { x ϵ 𝒫 (𝒫 (A ∪ B)) ∣ ∃
 Notation "A × B" := (setProd A B) (at level 25, right associativity).
 
 Definition isSetFst (a x : ZFSet) : SProp := ∀ y ∈ x, a ∈ y.
-Definition setFstPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ε { a ϵ A ∣ isSetFst a x }.
+Definition setFstPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ι { a ϵ A ∣ isSetFst a x }.
 
 Definition isSetSnd (a x : ZFSet) : SProp := exU ZFSet (fun y => y ∈ x ∧ a ∈ y).
-Definition setSndPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ε { b ϵ B ∣ isSetSnd b x }.
+Definition setSndPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ι { b ϵ B ∣ isSetSnd b x }.
 
 Lemma setMkPair_pretyping {A B a b : ZFSet} (Ha : a ∈ A) (Hb : b ∈ B) : ⟨ a ; b ⟩ ∈ 𝒫 (𝒫 (A ∪ B)).
 Proof.
@@ -175,7 +175,7 @@ Qed.
 
 Lemma setFstPair_pretyping {A B x : ZFSet} (Hx : x ∈ A × B) : setFstPair A B x ∈ { a ϵ A ∣ isSetFst a x }.
 Proof.
-  apply ZFinchoice. apply ZFincomp in Hx.
+  apply ZFindescr. apply ZFincomp in Hx.
   destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ]. exists a. split.
   - apply ZFincomp. split. exact Ha. apply (transpS (isSetFst a) (sym H)). clear x Hx1 H.
     intros x Hx. apply ZFinpairing in Hx. destruct Hx as [ Hx | Hx ].
@@ -228,7 +228,7 @@ Qed.
 
 Lemma setSndPair_pretyping {A B x : ZFSet} (Hx : x ∈ A × B) : setSndPair A B x ∈ { b ϵ B ∣ isSetSnd b x }.
 Proof.
-  apply ZFinchoice. apply ZFincomp in Hx.
+  apply ZFindescr. apply ZFincomp in Hx.
   destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ].
   assert (isSetSnd b ⟨ a ; b ⟩) as Hbsnd. 
   { clear x Hx1 H. exists { a ; b }. split.
