@@ -20,8 +20,10 @@ Definition HO_rel (φ : ZFSet -> ZFSet) : setRel :=
 Lemma funRelApp_pretyping {A B a : ZFSet} {φ : setRel} (Hφ : isFunRel A B φ) (Ha : a ∈ A) :
   funRelApp A B φ a ∈ { b ϵ B ∣ φ a b }.
 Proof.
-  apply ZFinchoice. specialize (Hφ a Ha). destruct Hφ as [ b [ [ Hb H ] _ ] ].
-  exists b. apply ZFincomp. now split.
+  apply ZFinchoice. specialize (Hφ a Ha). destruct Hφ as [ b [ [ Hb Hφb ] Hu ] ].
+  exists b. split.
+  - apply ZFincomp. now split.
+  - intros b' Hb'. apply ZFincomp in Hb'. now revert b' Hb'. 
 Qed.
 
 Lemma funRelApp_typing {A B a : ZFSet} {φ : setRel} (Hφ : isFunRel A B φ) (Ha : a ∈ A) :
@@ -174,11 +176,15 @@ Qed.
 Lemma setFstPair_pretyping {A B x : ZFSet} (Hx : x ∈ A × B) : setFstPair A B x ∈ { a ϵ A ∣ isSetFst a x }.
 Proof.
   apply ZFinchoice. apply ZFincomp in Hx.
-  destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ]. exists a.
-  apply ZFincomp. split. exact Ha. apply (transpS (isSetFst a) (sym H)). clear x Hx1 H.
-  intros x Hx. apply ZFinpairing in Hx. destruct Hx as [ Hx | Hx ].
-  - apply (transpS (fun x => a ∈ x) (sym Hx)). apply inSetSingl. reflexivity.
-  - apply (transpS (fun x => a ∈ x) (sym Hx)). apply ZFinpairing. left. reflexivity.
+  destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ]. exists a. split.
+  - apply ZFincomp. split. exact Ha. apply (transpS (isSetFst a) (sym H)). clear x Hx1 H.
+    intros x Hx. apply ZFinpairing in Hx. destruct Hx as [ Hx | Hx ].
+    + apply (transpS (fun x => a ∈ x) (sym Hx)). apply inSetSingl. reflexivity.
+    + apply (transpS (fun x => a ∈ x) (sym Hx)). apply ZFinpairing. left. reflexivity.
+  - intros a' Ha'. apply ZFincomp in Ha'. destruct Ha' as [ Ha' Habs ].
+    assert (setSingl a ∈ ⟨ a ; b ⟩) as Hsingla. { apply ZFinpairing. now left. }
+    apply (transpS (isSetFst a') H) in Habs. unfold isSetFst in Habs.
+    specialize (Habs (setSingl a) Hsingla). apply inSetSingl in Habs. now symmetry.
 Qed.
 
 Lemma setFstPair_typing {A B x : ZFSet} (Hx : x ∈ A × B) : setFstPair A B x ∈ A.
@@ -200,18 +206,42 @@ Proof.
   exact (setPairβ1' (setMkPair_typing Ha Hb)).
 Qed.
 
+Lemma isSetSnd_unique {a b b' : ZFSet} : isSetSnd b' ⟨ a ; b ⟩ -> b ≡ b'.
+Proof.
+  intros [ x [ [ Hx1 Hx2 ] Hx3 ] ]. 
+  apply ZFinpairing in Hx1. destruct Hx1 as [ Hx1 | Hx1 ] ; symmetry in Hx1 ; destruct Hx1.
+  - apply inSetSingl in Hx2. symmetry in Hx2. destruct Hx2.
+    assert (setSingl a ≡ {a ; b}). 
+    { apply Hx3. split ; apply ZFinpairing. now right. now left. }
+    assert (b ∈ setSingl a) as Hb.
+    { symmetry in H. destruct H. apply ZFinpairing. now right. }
+    now apply inSetSingl in Hb.
+  - apply ZFinpairing in Hx2. destruct Hx2 as [ Hb' | Hb' ].
+    + symmetry in Hb'. destruct Hb'.
+      assert ({a ; b} ≡ setSingl a). 
+      { apply Hx3. split ; apply ZFinpairing. now left. now right. }
+      assert (b ∈ setSingl a) as Hb.
+      { destruct H. apply ZFinpairing. now right. }
+      now apply inSetSingl in Hb.
+    + now symmetry.
+Qed.
+
 Lemma setSndPair_pretyping {A B x : ZFSet} (Hx : x ∈ A × B) : setSndPair A B x ∈ { b ϵ B ∣ isSetSnd b x }.
 Proof.
   apply ZFinchoice. apply ZFincomp in Hx.
-  destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ]. exists b.
-  apply ZFincomp. split. exact Hb. apply (transpS (isSetSnd b) (sym H)). clear x Hx1 H.
-  exists { a ; b }. split.
-  - split ; apply ZFinpairing ; right ; reflexivity.
-  - intros x [ Hx1 Hx2 ]. apply ZFinpairing in Hx1. destruct Hx1 as [ Hx1 | Hx1 ].
-    + apply (transpS (fun x => {a ; b} ≡ x) (sym Hx1)).
-      apply (transpS (fun x => b ∈ x) Hx1) in Hx2. apply inSetSingl in Hx2.
-      apply (transpS (fun b => {a ; b} ≡ setSingl a) (sym Hx2)). reflexivity.
-    + apply (transpS (fun x => {a ; b} ≡ x) (sym Hx1)). reflexivity.
+  destruct Hx as [ Hx1 [ a [ Ha [ b [ Hb H ] ] ] ] ].
+  assert (isSetSnd b ⟨ a ; b ⟩) as Hbsnd. 
+  { clear x Hx1 H. exists { a ; b }. split.
+    + split ; apply ZFinpairing ; right ; reflexivity.
+    + intros x [ Hx1 Hx2 ]. apply ZFinpairing in Hx1. destruct Hx1 as [ Hx1 | Hx1 ].
+      * apply (transpS (fun x => {a ; b} ≡ x) (sym Hx1)).
+        apply (transpS (fun x => b ∈ x) Hx1) in Hx2. apply inSetSingl in Hx2.
+        apply (transpS (fun b => {a ; b} ≡ setSingl a) (sym Hx2)). reflexivity.
+      * apply (transpS (fun x => {a ; b} ≡ x) (sym Hx1)). reflexivity. }
+  exists b. split.
+  - apply ZFincomp. split ; try assumption. now apply (transpS (isSetSnd b) (sym H)).
+  - intros b' Hb'. apply ZFincomp in Hb'. destruct Hb' as [ Hb' Habs ].
+    apply (transpS (isSetSnd b') H) in Habs. now apply isSetSnd_unique in Habs.
 Qed.
 
 Lemma setSndPair_typing {A B x : ZFSet} (Hx : x ∈ A × B) : setSndPair A B x ∈ B.

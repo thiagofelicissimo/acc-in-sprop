@@ -83,6 +83,4 @@ Definition uniqueS {A : Set} (P : A -> SProp) (x : A) :=
 
 Definition exU (A : Set) (B : A -> SProp) : SProp := exS A (uniqueS B).
 
-(* Classical logic *)
-Axiom LEM : forall (P : SProp), P ∨ (¬ P).
 

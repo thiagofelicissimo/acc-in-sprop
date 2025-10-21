@@ -79,7 +79,7 @@ Axiom ZFinpower : forall (A x : ZFSet), x ∈ 𝒫 A ↔ x ⊂ A.
 (* Hilbert's epsilon operator *)
 Parameter ZFchoice : ZFSet -> ZFSet.
 Definition ε := ZFchoice.
-Axiom ZFinchoice : forall (A : ZFSet), (exS ZFSet (fun a => a ∈ A)) -> ε A ∈ A.
+Axiom ZFinchoice : forall (A : ZFSet), (exU ZFSet (fun a => a ∈ A)) -> ε A ∈ A.
 
 (* countably many Grothendieck universes *)
 Parameter ZFuniv : nat -> ZFSet.
