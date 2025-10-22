@@ -584,6 +584,218 @@ Proof.
     intros. assert (ϵs = ϵs') by eauto using proof_irrel. subst. eauto.
 Qed.
 
+(* there are different ways to prove the basic properties of the LR  
+    TODO finish writing this
+   1) Prove all the properties together, using Angiuli's 'power move' as described in 
+        page 26 of the technical report for "Implementing a modal dependent type theory"
+        (...)
+
+   2) Jason Hu's Mctt : Changing the def of the logical relation, so that the fact that 
+        ϵS is a PER is built in
+   3) MLTT à la Coq & Jason Hu's MINT: 
+        Prove first weaker statements and prove the real statements after.
+        For instance, weakened symmetry then becomes 
+          LR l A B R -> exists R', LR l B A R' /\ forall t u, R t u -> R' u t  
+        However, when placing the logical relation in Prop, this seems
+        to require eliminating from Prop to Type. 
+        Indeed, in the case of Pi, the ih of the codomain T gives 
+          forall s1 s2 (ϵs : ϵS s1 s2), exists ϵT', ... 
+        But we would need some form of choice to extract 
+          ϵT' : forall s1 s2 (ϵs : ϵS s1 s2), TmRel
+        Thankfully, in McTT a way to sidestep the need of choice is given
+        (altough they do not use it specifically for deriving the basic properties,
+        as already mentioned). This is given by the following eT construction,
+        along with the lemma ϵT_iff_eT stating that eT corresponds to the right 
+        relation ϵT, whenever we have enough information to obtain ϵT.
+   *)
+
+Definition eT j ϵS T1 T2 := 
+    fun s1 s2 (ϵs : ϵS s1 s2) a1 a2 => forall R, LR j (T1 <[ s1..]) (T2 <[ s2..]) R -> R a1 a2.
+ 
+Lemma ϵT_iff_eT i j S1 S2 ϵS T1 T2 ϵT s1 s2 ϵs :
+    LR i S1 S2 ϵS ->
+    LR j (T1 <[ s1..]) (T2 <[ s2..]) ϵT-> 
+    ϵT <~> eT j ϵS T1 T2 s1 s2 ϵs.
+Proof.
+    intros; split; intros.
+    - unfold eT. intros. assert (R <~> ϵT) by eauto using LR_irrel.
+      rewrite H3. eauto.
+    - eapply H1 in H0. eauto.
+Qed.
+
+Lemma split_iff (R R': TmRel) : R <~> R' -> (forall t u, R t u -> R' t u) /\ (forall t u, R' t u -> R t u).
+Proof.
+    split; intros; rewrite H in *; eauto.
+Qed.
+
+Lemma LR_sym' l A B R : 
+    LR l A B R -> exists R', LR l B A R' /\ forall t u, R t u <-> R' u t.
+Proof.
+    generalize l A B R. clear l A B R.
+    refine (LR_ind _ _ _ _ _); intros.
+    - destruct p. exists R.
+      split. 
+      + rewrite LR_prop_eq. 
+        split; eauto using conv_sym.   
+        setoid_rewrite H0. split; eauto using conv_conv, conv_sym.
+      + setoid_rewrite H0. split; eauto using conv_sym.
+    - eexists. split.
+      + eapply LR_nat; eauto.
+      + setoid_rewrite H. intros. 
+        split; intros H0; destruct H0 as (k & redd_to_k1 & redd_to_k2);
+        eexists; split; eauto.
+    - exists (fun A B => exists R, LR l A B R).
+      split.
+      + eapply LR_U; eauto. split; eauto.
+      + intros B1 B2; split; intros LR_B; rewrite H0 in *.
+        all: destruct LR_B as (R' & LR_B); eapply H in LR_B as (R'' & LR_B' & _); eauto.
+    - destruct H0 as (ϵS' & LR_S' & ϵS_iff_ϵS').
+      eapply split_iff in ϵS_iff_ϵS' as (ϵS_to_ϵS' & ϵS'_to_ϵS).
+      exists (ϵPi i (ty k) S2 S1 ϵS' T2 T1 (eT (ty k) ϵS' T2 T1)).
+      split.
+      + eapply LR_pi; eauto using conv_sym, conv_ty_in_ctx_conv. 
+        intros. apply ϵS'_to_ϵS in ϵs as ϵs'.
+        destruct (H1 _ _ ϵs') as (ϵT' & LR_T' & ϵT_iff_ϵT'). 
+        eapply LR_iff_rel; eauto using ϵT_iff_eT.
+        split; eauto.
+      + intros; split; intros; rewrite H in *.
+        ++  destruct H0. split; eauto using conv_pi, conv_sym, conv_conv.
+            intros.  apply ϵS'_to_ϵS in ϵs as ϵs'.
+            destruct (H1 _ _ ϵs') as (ϵT' & LR_T' & ϵT_iff_ϵT').
+            rewrite <- ϵT_iff_eT; eauto. rewrite <- ϵT_iff_ϵT'. eauto.
+        ++  destruct H0. split; eauto using conv_pi, conv_sym, conv_conv.
+            intros.
+            destruct (H1 _ _ ϵs) as (ϵT' & LR_T' & ϵT_iff_ϵT'). 
+            eapply H2 in LR_T'; eauto. rewrite ϵT_iff_ϵT'. eauto.
+Qed.
+
+Lemma LR_trans' l A B C R R' :
+    LR l A B R -> LR l B C R' -> exists R'', LR l A C R'' /\ forall t v u, R t v -> R' v u -> R'' t u.
+Proof.
+    intro lr. generalize l A B R lr C R'. clear l A B R lr C R'.
+    refine (LR_ind _ _ _ _ _); intros.
+    - rewrite LR_prop_eq in H. destruct H. destruct p.
+      exists R. split.
+      + rewrite LR_prop_eq. split; eauto using conv_trans.
+      + intros. rewrite H2 in H3. rewrite H2. rewrite H0 in H4. 
+        eauto using conv_trans, conv_conv, conv_sym.
+    - unshelve eapply LR_inv in H0 as temp. 2:eauto.
+      destruct temp as (_ & _ & C_red & H').
+      eexists. split.
+      + eapply LR_nat; eauto.
+      + intros. rewrite H in *. rewrite H' in *.
+        destruct H1 as (k1 & t_red & v_red). 
+        destruct H2 as (k2 & v_red' & u_red).
+        eapply redd_whnf_det in v_red; eauto. 
+        rewrite v_red in u_red.
+        eexists. split; eauto.
+    - unshelve eapply LR_inv in H1 as temp. 2:eauto. 
+      destruct temp as (_ & _ & C_red & H').
+      exists (fun A B => exists R, LR l A B R).
+      split. 
+      + eapply LR_U; eauto. split; eauto.
+      + intros. rewrite H0 in H2. rewrite H' in H3.
+        destruct H2. destruct H3.
+        eapply H in H3; eauto. 
+        destruct H3 as (R'' & LR & _). 
+        eexists. eauto.
+    - unshelve eapply LR_inv in H2. 2: eauto.
+      destruct H2 as (S' & T' & ϵS' & ϵT' & _ & _ & C_red & S2_eq_S' & T2_eq_T' & LR_S' & LR_T' & R'_iff).
+      pose proof LR_S' as temp. eapply H0 in temp as (ϵS'' & LR_S'' & ϵS_to).
+      
+      (* we first show that the ϵS, ϵS', ϵS'' are all equivalent *)
+      assert (ϵS <~> ϵS'') as _temp by eauto using LR_irrel.
+      eapply split_iff in _temp as (ϵS_to_ϵS'' & ϵS''_to_ϵS).      
+
+      eapply LR_sym' in LR_S'' as temp. destruct temp as (ϵSc & LR_Sc & ϵSc_to).
+      eapply LR_sym' in LR_S' as temp. destruct temp as (ϵSc' & LR_Sc' & ϵSc_to').
+      assert (ϵSc <~> ϵSc') as _temp by eauto using LR_irrel. 
+      setoid_rewrite _temp in ϵSc_to. setoid_rewrite <- ϵSc_to in ϵSc_to'. 
+      eapply split_iff in ϵSc_to' as (ϵS'_to_ϵS'' & ϵS''_to_ϵS').   
+      clear ϵSc ϵSc' LR_Sc LR_Sc' _temp ϵSc_to.
+
+      (* finally, we show that ϵS is symmetric *)
+      eapply LR_sym' in LR_S as temp. destruct temp as (ϵSc & LR_Sc & ϵSc_to).
+      assert (ϵSc <~> ϵS') by eauto using LR_irrel. setoid_rewrite H2 in ϵSc_to.
+      eapply split_iff in ϵSc_to as (temp1 & temp2).
+      assert (forall t u, ϵS t u -> ϵS u t) as ϵS_sym by eauto.
+      clear ϵSc LR_Sc H2 temp1 temp2.
+
+      exists (ϵPi i (ty k) S1 S' ϵS'' T1 T' (eT (ty k) ϵS'' T1 T')).
+      split.
+      + eapply LR_pi; eauto using conv_trans, conv_ty_in_ctx_conv, conv_sym.
+        intros. assert (ϵS s1 s2) as ϵs' by eauto. pose (LR_T_1 := LR_T _ _ ϵs').
+        assert (ϵS' s2 s2) as ϵs'' by eauto. pose (LR_T_2 := LR_T' _ _ ϵs'').
+        unshelve eapply H1 in LR_T_2. 2: eauto. 
+        destruct LR_T_2 as (ϵT'' & LR_T'' & ϵT_to).
+        eapply LR_iff_rel. 2:eauto. 
+        eapply ϵT_iff_eT; eauto.
+        split; eauto.
+      + intros. rewrite H, R'_iff in *.
+        destruct H2, H3.
+        split; eauto using conv_trans, conv_conv, conv_sym, conv_pi, conv_ty_in_ctx_conv.
+        intros.
+        assert (ϵS s1 s2) as ϵs' by eauto. pose (LR_T_1 := LR_T _ _ ϵs').
+        assert (ϵS' s2 s2) as ϵs'' by eauto. pose (LR_T_2 := LR_T' _ _ ϵs'').
+        unshelve eapply H1 in LR_T_2. 2: eauto. 
+        destruct LR_T_2 as (ϵT'' & LR_T'' & ϵT_to).        
+        rewrite <- ϵT_iff_eT; eauto. eauto.
+Qed.
+
+Lemma LR_refl_r l A B R : LR l A B R -> LR l B B R.
+Proof.
+    intros. eapply LR_sym' in H as temp.
+    destruct temp as (R' & H' & X).
+    eapply LR_trans' in H as (R'' & H'' & _); eauto.
+    assert (R' <~> R'') by eauto using LR_irrel.
+    eapply LR_sym' in H'' as (R''' & H''' & Y).
+    eapply LR_iff_rel; eauto.
+    setoid_rewrite X. setoid_rewrite <- Y. 
+    symmetry. eauto.
+Qed.
+
+
+Lemma LR_sym l A B R : 
+    LR l A B R -> LR l B A R.
+Proof.
+    intros.
+    eapply LR_refl_r in H as ϵB_B.
+    eapply LR_sym' in H as (R' & ϵB_A & equiv1).
+    eapply LR_iff_rel; eauto using LR_irrel.
+Qed.
+
+Lemma LR_trans l A B C R R' : 
+    LR l A B R -> LR l B C R' -> LR l A C R.
+Proof.
+    intros.
+    eapply LR_trans' in H0; eauto.
+    destruct H0 as (R'' & lr & _).
+    eapply LR_iff_rel; eauto using LR_irrel.
+Qed.
+
+Lemma LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
+Proof.
+    intros. eapply LR_sym' in H as temp. 
+    destruct temp as (R' & lr & equiv).
+    eapply LR_refl_r in H. 
+    assert (R <~> R') by eauto using LR_irrel.
+    rewrite H1. eapply equiv in H0. eauto.
+Qed.
+
+Lemma LR_trans_tm l A B R t u v : 
+    LR l A B R -> 
+    R t v -> R v u -> R t u.
+Proof.
+    intros. eapply LR_refl_r in H as H'.
+    eapply LR_trans' in H' as temp; eauto.
+    destruct temp as (R' & lr & imp).
+    assert (R <~> R') by eauto using LR_irrel. 
+    setoid_rewrite <- H2 in imp.
+    eauto.
+Qed.
+
+
+(* old proof, much bigger *)
 Lemma LR_basic_props l A B R :
     LR l A B R ->
     PER R /\
@@ -746,23 +958,23 @@ Proof.
 Qed.
 
 
-Corollary LR_sym l A B R : LR l A B R -> LR l B A R.
+Corollary old_LR_sym l A B R : LR l A B R -> LR l B A R.
 Proof.
     intros. eapply LR_basic_props in H as (_ & H & _). eauto.
 Qed.
 
-Corollary LR_trans l A B C R R0 : LR l A B R -> LR l B C R0 -> LR l A C R.
+Corollary old_LR_trans l A B C R R0 : LR l A B R -> LR l B C R0 -> LR l A C R.
 Proof.
     intros. eapply LR_basic_props in H as (_ & _ & H). eapply H in H0 as (H1 & H2).
     eapply LR_iff_rel; eauto. symmetry. eauto.
 Qed.
 
-Corollary LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
+Corollary old_LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
 Proof.
     intros. eapply LR_basic_props in H as ((sym & trans) & _). eauto.
 Qed.
 
-Corollary LR_trans_tm l A B R t u v : LR l A B R -> R t u -> R u v -> R t v.
+Corollary old_LR_trans_tm l A B R t u v : LR l A B R -> R t u -> R u v -> R t v.
 Proof.
     intros. eapply LR_basic_props in H as ((sym & trans) & _). eauto.
 Qed.
@@ -890,6 +1102,30 @@ Proof.
     eapply helper_LR.
     simpl.
     eapply LRv_A12 in ϵσ12 as LR_A. rewrite <- helper_LR in LR_A. destruct LR_A as (ϵA & LR_A).
+    eexists (ϵPi i j (A1 <[ σ1 ]) (A2 <[ σ2 ]) ϵA (B1 <[ ↑ >> σ1]) (B2 <[ ↑ >> σ2]) (eT j ϵA (B1 <[ ↑ >> σ1]) (B2 <[ ↑ >> σ2]))).
+    destruct j. 2:admit. 
+    eapply LR_pi. 
+    (* Unshelve. 
+    13:  intros s1 s2 ϵs; unfold TmRel; intros a1 a2; exact (forall R, LR (ty n) (B1 <[ s1.: σ1]) (B2 <[ s2 .: σ2]) R -> R a1 a2). *)
+    1,2,3,4:admit. eapply LR_A.
+    intros. assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A1))).
+    econstructor. ssimpl. eauto. Unshelve. 8: exact ϵA. ssimpl. 
+    2:ssimpl. 2:eauto. admit.
+    eapply  LRv_B12 in H. rewrite <- helper_LR in H. destruct H as (ϵB & LR_B). 3:exact (B1 <[ ↑ >> σ1]). 3:exact(B2<[ ↑ >> σ2]). 
+    eapply (LR_iff_rel _ _ _ ϵB). 
+    eapply ϵT_iff_eT; eauto.
+    (* 2:ssimpl. 
+    intros a1 a2. split.
+    intros. 
+    (* assert (⊩s (a1 .: σ1) ≡ (a2 .: σ2) : (Γ ,, (i, A1))) by admit.  *)
+    (* eapply LRv_B12 in H1. rewrite <- helper_LR in H1. destruct H1. *)
+    assert (ϵB <~> R) by eauto using LR_irrel.
+    rewrite <- H1. eauto.
+    intros. apply H in LR_B. eauto.
+    2:split;intro;eauto.
+    
+    3:intros; exact ϵB.
+    admit. simpl. *)
 Admitted.
     
 
