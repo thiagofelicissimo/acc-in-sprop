@@ -751,9 +751,10 @@ Proof.
     intros. eapply LR_basic_props in H as (_ & H & _). eauto.
 Qed.
 
-Corollary LR_trans l A B C R : LR l A B R -> LR l B C R -> LR l A C R.
+Corollary LR_trans l A B C R R0 : LR l A B R -> LR l B C R0 -> LR l A C R.
 Proof.
-    intros. eapply LR_basic_props in H as (_ & _ & H). eapply H in H0 as (H1 & H2). eauto.
+    intros. eapply LR_basic_props in H as (_ & _ & H). eapply H in H0 as (H1 & H2).
+    eapply LR_iff_rel; eauto. symmetry. eauto.
 Qed.
 
 Corollary LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
@@ -781,3 +782,125 @@ Proof.
     exists A. exists R. split; auto. eauto using LR_sym.
 Qed.
 
+Reserved Notation "⊩s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).
+
+Inductive LR_subst : ctx -> (nat -> term) -> (nat -> term) -> Prop :=
+| conv_sempty (σ τ : nat -> term) : ⊩s σ ≡ τ : ∙
+| conv_scons (σ τ : nat -> term) (Δ : ctx) l A R :
+  ⊩s (↑ >> σ) ≡ (↑ >> τ) : Δ -> 
+  LR l (A <[ (↑ >> σ) ]) (A <[ (↑ >> τ)] ) R ->
+  R (σ var_zero) (τ var_zero) ->
+  ⊩s σ ≡ τ : Δ ,, (l , A)
+where "⊩s σ ≡ τ : Δ" := (LR_subst Δ σ τ).
+
+Lemma LR_subst_escape σ τ Δ : LR_subst Δ σ τ -> ∙ ⊢s σ ≡ τ : Δ.
+Proof.
+    intro. induction H. eauto using ConvSubst.
+    eapply LR_escape_tm in H1; eauto. eauto using ConvSubst.
+Qed.
+
+Lemma LR_subst_sym σ τ Δ : LR_subst Δ σ τ -> LR_subst Δ τ σ.
+Proof.
+    intros. induction H. eauto using LR_subst.
+    eapply LR_sym_tm in H1; eauto. eapply LR_sym in H0. eauto using LR_subst.
+Qed.
+
+Lemma LR_subst_trans σ τ θ Δ : LR_subst Δ σ τ -> LR_subst Δ τ θ -> LR_subst Δ σ θ.
+Proof.
+    intros. generalize θ H0. clear θ H0. induction H. eauto using LR_subst.
+    intros. dependent destruction H2. 
+    assert (R <~> R0) by eauto using LR_irrel, LR_sym.
+    rewrite <- H5 in H4.
+    eapply LR_trans_tm in H4; eauto. 
+    eapply LR_trans in H3; eauto.
+    eauto using LR_subst.
+Qed.
+
+(* Lemma LR_subst_refl σ τ Δ : LR_subst Δ σ τ -> LR_subst Δ σ σ.
+Proof.
+    intros. eapply PER_refl; eauto. split; eauto using LR_subst_sym, LR_subst_trans.
+Qed. *)
+
+Definition LRv Γ l t u A := 
+    forall σ1 σ2, 
+        LR_subst Γ σ1 σ2 -> 
+        exists R, LR l (A <[ σ1 ]) (A <[ σ2 ]) R /\ 
+        R (t <[ σ1 ]) (u <[ σ2 ]).
+
+Lemma LRv_sym Γ l t u A : LRv Γ l t u A -> LRv Γ l u t A.
+Proof.
+    intros ϵtu. unfold LRv. intros σ1 σ2 ϵσ12. 
+    destruct (ϵtu _ _ ϵσ12) as (R & ϵA & ϵt). exists R. split; auto.
+    eapply LR_subst_sym in ϵσ12 as ϵσ21. destruct (ϵtu _ _ ϵσ21) as (R' & ϵA' & ϵt').
+    eapply LR_sym_tm in ϵt'; eauto. eapply LR_sym in ϵA'. 
+    eapply LR_irrel in ϵA; eauto. eapply ϵA. auto.
+Qed.
+
+Lemma LRv_trans Γ l t u v A : LRv Γ l t v A -> LRv Γ l v u A -> LRv Γ l t u A.
+Proof.
+    intros ϵtv ϵvu. unfold LRv. intros σ1 σ2 ϵσ12.  
+    destruct (ϵtv _ _ ϵσ12) as (R & ϵA & ϵt).
+    assert (⊩s σ2 ≡ σ2 : Γ) as ϵσ22 by eauto using LR_subst_trans, LR_subst_sym.
+    destruct (ϵvu _ _ ϵσ22) as (R' & ϵA' & ϵt'). 
+    assert (R <~> R') as R_iff_R' by eauto using LR_irrel, LR_sym.
+    exists R. split; eauto. rewrite <- R_iff_R' in ϵt'.
+    eapply LR_trans_tm; eauto.
+Qed.
+
+Notation "Γ ⊨< l > t ≡ u : A" := (LRv Γ l t u A) (at level 50, l, t, u, A at next level).
+    
+Hint Unfold val.
+
+Lemma prefundamental_sort l : LR (Ax l) (Sort l) (Sort l) (fun A B => exists R, LR l A B R).
+Proof.
+    intros. eapply LR_U.
+    1,2: eauto using val_redd_to_whnf, typing, ctx_nil.
+    intros; split; eauto.
+Qed.
+
+Lemma fundamental_sort Γ l : ⊢ Γ -> Γ ⊨< Ax (Ax l) > Sort l ≡ Sort l : Sort (Ax l).
+Proof.
+    intros Γ_Wt. unfold LRv. intros σ1 σ2 ϵσ12.
+    eexists. split; eauto using prefundamental_sort. simpl. eexists. eauto using prefundamental_sort.
+Qed.
+
+Lemma helper_LR i A B :
+    (exists R, LR i A B R) <->
+    (exists R, LR (Ax i) (Sort i) (Sort i) R ∧ R A B).
+Proof.
+    split.
+    - intros ϵAB.
+      exists (fun A B => exists R, LR i A B R).
+      split; eauto using prefundamental_sort.
+    - intros ϵsort. destruct ϵsort as (R & ϵsort & ϵAB).
+      unshelve eapply LR_inv in ϵsort. shelve. eauto using  val_redd_to_whnf, typing, ctx_nil.
+      destruct ϵsort as (_ & _ & _ & equiv). rewrite <- equiv. eauto.
+Qed. 
+
+
+Lemma fundamental_pi Γ i j A1 B1 A2 B2 : 
+    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    Γ,, (i, A1) ⊢< Ax j > B1 ≡ B2 : Sort j ->
+    Γ,, (i, A1) ⊨< Ax j > B1 ≡ B2 : Sort j ->
+    Γ ⊨< Ax (Ru i j) > Pi i j A1 B1 ≡ Pi i j A2 B2 : Sort (Ru i j).
+Proof.
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12.
+    unfold LRv. intros σ1 σ2 ϵσ12.
+    eapply helper_LR.
+    simpl.
+    eapply LRv_A12 in ϵσ12 as LR_A. rewrite <- helper_LR in LR_A. destruct LR_A as (ϵA & LR_A).
+Admitted.
+    
+
+
+Theorem fundamental : 
+    (forall Γ l t A, Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A) /\ 
+    (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
+Proof.
+    apply typing_conversion_mutind; intros.
+    1-10:admit.
+    - admit.
+    - eauto using fundamental_sort.
+
+Admitted.

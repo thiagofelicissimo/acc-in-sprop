@@ -235,6 +235,11 @@ and   "⊢ Γ" := (ctx_typing Γ)
 and   "Γ ⊢< l > t ≡ u : A" := (conversion Γ l t u A).
 
 
+Scheme typing_mut := Induction for typing Sort Prop
+with conversion_mut := Induction for conversion Sort Prop.
+Combined Scheme typing_conversion_mutind from typing_mut, conversion_mut.
+
+
 Reserved Notation "Γ ⊢s σ : Δ" (at level 50, σ, Δ at next level).
 
 Reserved Notation "Γ ⊢s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).

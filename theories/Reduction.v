@@ -369,3 +369,19 @@ Proof.
           apply IHredd; eauto. split; eauto.
 Qed.
 
+Definition val t := 
+    match t with 
+    | app i j A B t u => False
+    | rec i P pzero psucc n => False 
+    | _ => True 
+    end.
+
+Lemma val_redd_to_whnf Γ l t A : Γ ⊢< l > t : A -> val t -> Γ ⊢< l > t -->>! t : A.
+Proof.
+    intros.
+    split; eauto using redd_refl.
+    unfold whnf. intros.
+    destruct t.
+    1-4,6-8, 10: eapply red_inv in H1; inversion H1. 
+    1, 2: inversion H0.
+Qed.
