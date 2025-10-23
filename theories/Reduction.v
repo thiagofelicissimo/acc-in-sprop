@@ -385,3 +385,16 @@ Proof.
     1-4,6-8, 10: eapply red_inv in H1; inversion H1. 
     1, 2: inversion H0.
 Qed.
+
+Lemma sim_left_redd_whnf_val Γ l t t' u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t -->>! t' : A ->
+    val t' ->
+    Γ ⊢< l > u -->>! t' : A.
+Proof.
+    intros.
+    eapply sim_left_redd_whnf in H0 as (u' & u_redd_u' & t'_sim_u'); eauto.
+    destruct t'.
+    5,9: inversion H1.
+    all: eapply aconv_inv in t'_sim_u'; simpl in t'_sim_u'; subst; eauto.
+Qed.

@@ -93,8 +93,66 @@ Definition LogRel := term -> term -> TmRel -> Prop.
 
 Definition LRΩ : LogRel := fun A B R => ∙ ⊢< Ax prop > A ≡ B : Sort prop /\ forall t u : term, R t u <-> ∙ ⊢< prop > t ≡ u : A.
 
-Definition ϵNat : TmRel := 
-    fun t1 t2 => exists k, ∙ ⊢< ty 0 > t1 -->>! (mk_Nat k) : Nat /\ ∙ ⊢< ty 0 > t2 -->>! (mk_Nat k) : Nat.
+Inductive ϵNat : TmRel := 
+| ϵzero t1 t2 : 
+    ∙ ⊢< ty 0 > t1 -->>! zero : Nat ->
+    ∙ ⊢< ty 0 > t2 -->>! zero : Nat -> 
+    ϵNat t1 t2 
+| ϵsucc t1 t2 t1' t2' :
+    ∙ ⊢< ty 0 > t1 -->>! succ t1' : Nat ->
+    ∙ ⊢< ty 0 > t2 -->>! succ t2' : Nat -> 
+    ϵNat t1' t2' -> 
+    ϵNat t1 t2.
+
+Lemma ϵNat_escape t1 t2 : ϵNat t1 t2 -> ∙ ⊢< ty 0 > t1 ≡ t2 : Nat.
+Proof.
+    intros. induction H; eauto 7 using redd_whnf_to_conv, conv_sym, conv_trans, conv_succ.
+Qed.
+
+Lemma ϵNat_erasure t1 t2 t1' t2' : 
+    ∙ ⊢< ty 0 > t1 ~ t1' : Nat -> 
+    ∙ ⊢< ty 0 > t2 ~ t2' : Nat ->
+    ϵNat t1 t2 ->
+    ϵNat t1' t2'.
+Proof.
+    intros. generalize t1' t2' H H0. clear t1' t2' H H0.
+    induction H1; intros u1 u2 t1_sim_u1 t2_sim_u2.
+    - eapply sim_left_redd_whnf_val in H; simpl; eauto.
+      eapply sim_left_redd_whnf_val in H0; simpl; eauto.
+      eapply ϵzero; eauto.
+    - eapply sim_left_redd_whnf_val in H; simpl; eauto.
+      eapply sim_left_redd_whnf_val in H0; simpl; eauto.
+      eapply ϵsucc; eauto.
+Qed.
+
+Lemma ϵNat_sym t1 t2 : 
+    ϵNat t1 t2 -> 
+    ϵNat t2 t1.
+Proof.
+    intros.
+    induction H.
+    - eapply ϵzero; eauto.
+    - eapply ϵsucc; eauto.
+Qed.
+
+Lemma ϵNat_trans t1 t2 t3 :
+    ϵNat t1 t2 ->
+    ϵNat t2 t3 -> 
+    ϵNat t1 t3.
+Proof.
+    intro. generalize t3. clear t3. induction H; intros.
+    - dependent destruction H1.
+        + eapply ϵzero; eauto.
+        + eapply redd_whnf_det in H0; eauto. inversion H0.
+    - dependent destruction H2. 
+        + eapply redd_whnf_det in H0; eauto. inversion H0.
+        + eapply redd_whnf_det in H0; eauto. 
+          dependent destruction H0.
+          eapply ϵsucc; eauto.
+Qed.  
+
+(*     
+    fun t1 t2 => exists k, ∙ ⊢< ty 0 > t1 -->>! (mk_Nat k) : Nat /\ ∙ ⊢< ty 0 > t2 -->>! (mk_Nat k) : Nat. *)
 
 Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : forall s1 s2, ϵS s1 s2 -> TmRel) : TmRel 
     := fun f1 f2 => 
@@ -333,7 +391,8 @@ Proof.
       + destruct p. intros. eapply H0. eauto.
     - intros. split.
       + eauto using redd_whnf_to_conv, conv_trans, conv_sym.
-      + intros. unfold ϵNat in H. apply H in H0 as (k & H1 & H2). eauto 8 using redd_whnf_to_conv, conv_trans, conv_sym, conv_conv.
+      + intros. rewrite H in H0. 
+        eauto using ϵNat_escape, redd_whnf_to_conv, conv_conv, conv_sym.
     - intros. split.
       + eauto using redd_whnf_to_conv, conv_trans, conv_sym.
       + intros. apply H0 in H1 as (R' & lr). apply H in lr as (t_eq_u & _). eauto 8 using redd_whnf_to_conv, conv_trans, conv_sym, conv_conv.
@@ -366,6 +425,7 @@ Proof.
     ssimpl. eauto. eauto.
 Qed.
 
+
 Lemma LR_erasure l A B R : 
     LR l A B R -> 
     (forall A' B', 
@@ -392,8 +452,7 @@ Proof.
           eapply sim_left_redd_whnf in A2_red_nat as (_Nat & B'_redd_nat & nat_sim); eauto.
           eapply aconv_inv in nat_sim. simpl in nat_sim. subst.
           apply LR_nat; eauto.
-        + rewrite H in *. destruct H2 as (k & t_redd_k & u_redd_k).
-          unfold ϵNat. exists k. eauto 8 using sim_left_redd_whnf_mknat, sim_sym, aconv_conv, redd_whnf_to_conv.
+        + rewrite H in *. eauto 7 using ϵNat_erasure, redd_whnf_to_conv, conv_sym, aconv_conv. 
     - intros. split; intros.
         + apply LR_U; eauto using sim_left_redd, sim_sym, sim_left_redd_whnf_sort.
         + rewrite H0 in *. destruct H3 as (R' & lr). destruct (H t u R' lr).
@@ -571,9 +630,7 @@ Proof.
       + setoid_rewrite H0. split; eauto using conv_sym.
     - eexists. split.
       + eapply LR_nat; eauto.
-      + setoid_rewrite H. intros. 
-        split; intros H0; destruct H0 as (k & redd_to_k1 & redd_to_k2);
-        eexists; split; eauto.
+      + setoid_rewrite H. intros. split; eauto using ϵNat_sym.
     - exists (fun A B => exists R, LR l A B R).
       split.
       + eapply LR_U; eauto. split; eauto.
@@ -613,12 +670,7 @@ Proof.
       destruct temp as (_ & _ & C_red & H').
       eexists. split.
       + eapply LR_nat; eauto.
-      + intros. rewrite H in *. rewrite H' in *.
-        destruct H1 as (k1 & t_red & v_red). 
-        destruct H2 as (k2 & v_red' & u_red).
-        eapply redd_whnf_det in v_red; eauto. 
-        rewrite v_red in u_red.
-        eexists. split; eauto.
+      + intros. rewrite H in *. rewrite H' in *. eauto using ϵNat_trans.
     - unshelve eapply LR_inv in H1 as temp. 2:eauto. 
       destruct temp as (_ & _ & C_red & H').
       exists (fun A B => exists R, LR l A B R).
@@ -723,216 +775,6 @@ Proof.
     setoid_rewrite <- H2 in imp.
     eauto.
 Qed.
-
-Section old_basics_props_proof.
-(* old proof, much bigger *)
-
-Lemma helper_ϵT_irrel {ϵS : TmRel} 
-    (ϵT : forall s1 s2, ϵS s1 s2 -> TmRel) {s1 s2} {ϵs ϵs'} {t u}: 
-    ϵT s1 s2 ϵs t u -> ϵT s1 s2 ϵs' t u.
-Proof.
-    intros. assert (ϵs = ϵs') by eauto using proof_irrel. subst. eauto.
-Qed.
-Lemma LR_basic_props l A B R :
-    LR l A B R ->
-    PER R /\
-    LR l B A R /\ 
-    (forall R' C, LR l B C R' -> LR l A C R' /\ R <~> R').
-Proof.
-    generalize l A B R. clear l A B R.
-    refine (LR_ind _ _ _ _ _).
-    - intros. split. 2:split.
-      + destruct p. split; intros; rewrite H0 in *; eauto using conv_sym, conv_trans.
-      + rewrite LR_prop_eq. destruct p. split; eauto using conv_sym. intros. 
-        rewrite (H0 t u). split; intros; eauto using conv_conv, conv_sym.
-      + intros. rewrite LR_prop_eq in *. destruct H, p. split. split; eauto using conv_trans.
-        intros. rewrite (H0 t u). split; intros; eauto using conv_conv, conv_sym.
-        intros. rewrite (H2 t u). rewrite (H0 t u).  split; intros; eauto using conv_conv, conv_sym.
-    - intros. split. 2:split.
-      + split; intros; rewrite H in *. 
-        destruct H0 as (k & H1 & H2). eexists. split; eauto.
-        destruct H0 as (k & t_red & v_red). destruct H1 as (k' & v_red' & u_red).
-        exists k. split. eauto. 
-        eapply redd_whnf_det in v_red'. 2:eapply v_red. rewrite v_red'. eauto.
-      + eapply LR_nat; eauto.
-      + intros. unshelve eapply LR_inv in H0. shelve. eapply A2_red_nat. 
-        destruct H0 as (_ & _ & C_red & R'_iff_nat). 
-        split. eauto using LR_nat. intros. rewrite H. rewrite R'_iff_nat. split; auto.
-    - intros. split. 2:split.
-      + split; intros; rewrite H0 in *. destruct H1. destruct (H _ _ _ H1) as (_ & H' & _). eexists. eauto.
-        destruct H1. destruct H2. destruct (H _ _ _ H1) as (_ & _  & H').
-        destruct (H' _ _ H2). eexists. eauto.
-      + eapply LR_U; eauto. 
-      + intros. pose proof H1 as H1'. unshelve eapply LR_inv in H1. shelve. eauto. destruct H1 as (_ & _ & C_red & H').
-        split. eapply LR_U; eauto.
-        intros; split; rewrite H'; rewrite H0; intros; eauto.
-    - intros. 
-      destruct H0 as (PER_ϵS & LR_S_sym & LR_S_trans).
-      pose proof PER_ϵS as PER_ϵS'.
-      destruct PER_ϵS as (ϵS_sym & ϵS_trans). rename PER_ϵS' into PER_ϵS.
-      assert (forall s1 s2 ϵs, 
-        ϵT s1 s2 ϵs <~> ϵT s2 s1 (ϵS_sym _ _ ϵs) /\ ϵT s1 s2 ϵs <~> ϵT s2 s2 (PER_refl PER_ϵS (ϵS_sym _ _ ϵs))).
-      { intros. pose (ϵs' := ϵS_sym _ _ ϵs). pose (ϵs'' := PER_refl PER_ϵS ϵs').
-        destruct (H1 _ _ ϵs) as (_ & LR_T_s1_s2 & _).
-        destruct (H1 _ _ ϵs'') as (_ & LR_T_s2_s2 & _).
-        pose (HA' := LR_T _ _ ϵs''). pose (HB' := LR_T _ _ ϵs').
-        assert (ϵT s2 s1 ϵs' <~> ϵT s2 s2 ϵs'') as ϵT_21_22 
-            by eauto using LR_irrel.
-        assert (ϵT s1 s2 ϵs <~> ϵT s2 s2 ϵs'') as ϵT_12_22
-            by eauto using LR_irrel.
-        unfold ϵs' in ϵT_21_22.
-        split. 
-        + split; rewrite ϵT_21_22; rewrite ϵT_12_22; eauto.
-        + unfold ϵs'', ϵs' in ϵT_12_22. eauto. }
-      split. 2:split.
-      + split; intros; rewrite H in *. 
-        ++ destruct H2. split; eauto using conv_sym.
-           intros. destruct (H1 _ _ ϵs) as ((ϵT_sym & ϵT_trans) & _). eapply ϵT_sym.
-           eapply (proj1 (H0 _ _ _)). 
-           eapply LR_erasure; eauto. 
-           +++ eapply aconv_app; eauto using aconv_refl, validity_conv_left, LR_escape_tm, validity_conv_right.
-           +++ eapply aconv_conv; eauto using conv_aux, conv_sym, LR_escape_tm.
-               eapply aconv_app; eauto using LR_escape_tm, validity_conv_right, conv_sym, conv_ty_in_ctx_conv.
-               eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi.
-        ++ destruct H2, H3. split; eauto using conv_trans.
-           intros. destruct (H1 _ _ ϵs) as ((ϵT_sym & ϵT_trans) & _). eapply ϵT_trans.
-           eapply H4. clear H4. eapply (proj2 (H0 _ _ _)). 
-           eapply LR_erasure; eauto. 
-           +++ eapply aconv_app; eauto using aconv_refl, validity_conv_left, LR_escape_tm, validity_conv_right.
-           +++ eapply aconv_conv.
-               eapply aconv_app; eauto using LR_escape_tm, validity_conv_left, refl_ty, conv_sym, conv_ty_in_ctx_conv.
-               eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi.
-               eauto 6 using conv_aux, conv_sym, LR_escape_tm, validity_conv_right, refl_ty.
-      + eapply LR_pi; eauto using conv_sym, conv_ty_in_ctx_conv. 
-        ++ intros.
-            destruct (H1 _ _ (ϵS_sym _ _ ϵs)) as (_ & H3' & _).
-            eapply LR_iff_rel.  eapply (proj1 (H0 _ _ _)). eapply H3'.
-        ++ split; intros; rewrite H in *. 
-            +++ destruct H2. split. 
-                eauto using conv_conv, conv_pi. 
-                intros. eapply LR_erasure; eauto. 
-                ++++ eapply aconv_app; eauto using aconv_refl, validity_conv_left, LR_escape_tm, validity_conv_right.
-                ++++ eapply aconv_conv. 
-                     eapply aconv_app; eauto using aconv_refl, validity_conv_left, LR_escape_tm, validity_conv_right, conv_ty_in_ctx_conv, conv_sym.
-                     eapply aconv_conv; eauto using validity_conv_right, aconv_refl, conv_pi. 
-                     eauto using conv_sym, LR_escape_tm, conv_aux.
-            +++ destruct H2. split. 
-                eauto using conv_conv, conv_pi, conv_sym.
-                intros. 
-                eapply (helper_ϵT_irrel ϵT).
-                eapply LR_erasure; eauto.
-                ++++ eapply aconv_conv.
-                     eapply aconv_app; eauto using conv_sym, conv_ty_in_ctx_conv, validity_conv_left, aconv_refl, LR_escape_tm, type_conv.
-                     eauto 6 using conv_sym, conv_aux, LR_escape_tm, validity_conv_left, type_conv. Unshelve. eauto.
-                ++++ eapply aconv_conv.
-                     eapply aconv_app; eauto using validity_conv_right, type_conv, conv_sym, LR_escape_tm. 
-                     eapply aconv_conv; eauto using validity_conv_right, aconv_refl, conv_pi, conv_sym, conv_ty_in_ctx_conv.
-                     eauto 7 using conv_aux, LR_escape_tm, conv_sym, validity_conv_left, refl_ty.
-      + intros. 
-      
-        pose proof H2 as H2'. unshelve eapply LR_inv in H2. shelve. eauto. 
-        destruct H2 as (S' & T' & ϵS' & ϵT' & _ & _ & C_red & S2_eq_S' & T2_eq_T' & LR_S' & LR_T' & R'_iff).
-
-        assert (ϵS <~> ϵS') as ϵS_iff_ϵS' by eauto using LR_irrel.
-
-        assert (forall s1 s2 ϵs, ϵT s1 s2 ϵs <~> ϵT' s1 s2 (proj1 (ϵS_iff_ϵS' _ _) ϵs)) as ϵT_iff_ϵT'.
-        { intros. destruct (H1 _ _ (ϵS_sym _ _ ϵs)) as (_ & K & _).
-          pose (ϵs' := proj1 (ϵS_iff_ϵS' _ _) ϵs).
-          pose (K' := LR_T' _ _ ϵs'). pose proof (L := LR_irrel _ _ _ _ _ _ K K').
-          destruct (H0 _ _ ϵs) as (L' & _). rewrite L'. rewrite L. unfold ϵs'. 
-          split; eauto. } 
-
-        split.
-        ++ eapply (LR_pi _ _ _ _ _ _ ϵS' _ _ ϵT'); eauto using conv_trans, conv_sym, conv_ty_in_ctx_conv.
-            +++ eapply LR_S_trans in LR_S' as (S1_eq_S' & _). eauto.
-            +++ intros. pose proof (ϵs' := proj2 (ϵS_iff_ϵS' s1 s2) ϵs).
-                eapply ϵS_sym in ϵs' as ϵs''. 
-                eapply PER_refl in ϵs''; eauto.
-                rewrite ϵS_iff_ϵS' in ϵs''.
-                pose (LR_T'' := LR_T' _ _ ϵs'').
-                destruct (H1 _ _ ϵs') as (K & K1 & K2).
-                unshelve eapply (proj1 (K2 _ _ _)).
-                eapply LR_iff_rel. 2: apply LR_T''. 
-                split; intros ϵT'_t_u;
-                eapply (helper_ϵT_irrel ϵT'); eapply (helper_ϵT_irrel ϵT') in ϵT'_t_u;rewrite <- ϵT_iff_ϵT'; rewrite <- ϵT_iff_ϵT' in ϵT'_t_u.
-                ++++ rewrite (proj2 (H0 _ _ _)). eauto.
-                ++++ rewrite (proj2 (H0 _ _ _)) in ϵT'_t_u. eauto. 
-            +++ intros; split; intros; rewrite R'_iff in *.
-                * destruct H2. split. eauto using conv_conv, conv_pi, conv_sym. 
-                  intros. eapply LR_erasure; eauto. 
-                  ** eapply aconv_app; eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, type_conv, validity_conv_left, aconv_refl.
-                  ** eapply aconv_conv. 
-                     eapply aconv_app; eauto using validity_conv_right, refl_ty, conv_ty_in_ctx_conv, LR_escape_tm, conv_sym, type_conv.
-                     eapply aconv_conv; eauto using validity_conv_right, aconv_refl, conv_pi.
-                     eauto using conv_aux, LR_escape_tm, conv_sym. Unshelve. eauto. eauto.
-                * destruct H2. split. eauto using conv_conv, conv_pi.
-                intros. eapply LR_erasure; eauto. 
-                ** eapply aconv_conv. 
-                   eapply aconv_app; eauto using LR_escape_tm, validity_conv_left, type_conv, conv_sym, aconv_refl.
-                   eauto 7 using conv_aux, LR_escape_tm, validity_conv_left, type_conv, conv_sym, refl_ty.
-                ** eapply aconv_conv.
-                   eapply aconv_app; eauto using validity_conv_right, refl_ty, conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, type_conv.
-                   eapply aconv_conv; eauto using validity_conv_right, aconv_refl, conv_sym, conv_trans, conv_pi, conv_ty_in_ctx_conv.
-                   eauto using conv_aux, LR_escape_tm, conv_sym, conv_conv.
-        ++ intros; split; intro; rewrite H in *; rewrite R'_iff in *.
-            +++ destruct H2. split. eauto using conv_conv, conv_pi. 
-                intros. eapply (helper_ϵT_irrel ϵT'). rewrite <- ϵT_iff_ϵT'. 
-                eapply LR_erasure; eauto.
-                * eapply aconv_app; eauto using LR_escape_tm, validity_conv_left, type_conv, conv_sym, aconv_refl.
-                * eapply aconv_conv.
-                  eapply aconv_app; eauto using LR_escape_tm, validity_conv_right.
-                  eapply aconv_conv; eauto using validity_conv_right, aconv_refl, conv_pi.
-                  eauto 6 using LR_escape_tm, conv_aux, conv_sym, conv_conv. 
-                  Unshelve. apply ϵS_iff_ϵS'. eauto.
-            +++ destruct H2. split. eauto using conv_conv, conv_pi, conv_sym.
-                intros. rewrite ϵT_iff_ϵT'.
-                eapply LR_erasure; eauto.
-                * eapply aconv_app; eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, validity_conv_left, validity_conv_left, aconv_refl.
-                * eapply aconv_conv.
-                  eapply aconv_app; eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, validity_conv_right, type_conv.
-                  eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi.
-                  eauto using conv_aux, conv_sym, LR_escape_tm.
-Qed.
-
-
-Corollary old_LR_sym l A B R : LR l A B R -> LR l B A R.
-Proof.
-    intros. eapply LR_basic_props in H as (_ & H & _). eauto.
-Qed.
-
-Corollary old_LR_trans l A B C R R0 : LR l A B R -> LR l B C R0 -> LR l A C R.
-Proof.
-    intros. eapply LR_basic_props in H as (_ & _ & H). eapply H in H0 as (H1 & H2).
-    eapply LR_iff_rel; eauto. symmetry. eauto.
-Qed.
-
-Corollary old_LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
-Proof.
-    intros. eapply LR_basic_props in H as ((sym & trans) & _). eauto.
-Qed.
-
-Corollary old_LR_trans_tm l A B R t u v : LR l A B R -> R t u -> R u v -> R t v.
-Proof.
-    intros. eapply LR_basic_props in H as ((sym & trans) & _). eauto.
-Qed.
-
-
-Definition TmLR l t u A := exists B R, LR l A B R /\ R t u.
-
-Notation "⊩< l > t ≡ u : A" := (TmLR l t u A) (at level 50, t, u, A at next level).
-
-
-Lemma LR_conv l A B t u R : 
-    LR l A B R -> TmLR l t u A -> TmLR l t u B.
-Proof.
-    intros. destruct H0 as (B' & R' & LR & R'_t_u).
-    eapply LR_irrel in R'_t_u as R_t_u. 2: apply H. 2:eauto.
-    exists A. exists R. split; auto. eauto using LR_sym.
-Qed.
-
-End old_basics_props_proof.
-
-
 
 Reserved Notation "⊩s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).
 
@@ -1196,7 +1038,7 @@ Lemma fundamental_zero Γ :
 Proof.
     unfold LRv. intros. simpl.
     eexists. split. eauto using prefundamental_nat. 
-    exists O. split; simpl; eauto using val_redd_to_whnf, typing, ctx_typing.
+    eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
 Qed.
 
 Lemma fundamental_succ Γ t1 t2 : 
@@ -1208,25 +1050,162 @@ Proof.
     eexists. split. eauto using prefundamental_nat. 
     destruct (H0 _ _ H1) as (R & LR_nat & lr).
     assert (R <~> ϵNat) by eauto using LR_irrel, prefundamental_nat. 
-    rewrite H2 in lr. destruct lr as (k & redd_to_k1 & redd_to_k2).
-    exists (S k).
-Admitted.
+    rewrite H2 in lr. 
+    eapply ϵsucc; 
+    eauto 6 using val_redd_to_whnf, typing, ctx_typing, 
+        ϵNat_escape, validity_conv_left, validity_conv_right.
+Qed.
 
-Theorem fundamental : 
-    (forall Γ l t A, Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A) /\ 
-    (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
+Lemma fundamental_conv Γ l A B t1 t2 :
+    Γ ⊢< l > t1 ≡ t2 : A ->
+    Γ ⊨< l > t1 ≡ t2 : A ->
+    Γ ⊢< Ax l > A ≡ B : Sort l ->
+    Γ ⊨< Ax l > A ≡ B : Sort l ->
+    Γ ⊨< l > t1 ≡ t2 : B.
+Proof.
+    intros t1_conv_t2 LRv_t12 A_conv_B LRv_AB. unfold LRv. intros σ1 σ2 ϵσ12.
+    eapply LRv_t12 in ϵσ12 as temp.
+    destruct temp as (ϵAA & LR_AA & lr).
+    exists ϵAA. split; eauto.
+    assert (Γ ⊨< Ax l > B ≡ B : Sort l) as LRv_BB by eauto using LRv_sym, LRv_trans.
+    eapply LRv_BB in ϵσ12 as temp.
+    rewrite <- helper_LR in temp.
+    destruct temp as (ϵBB & LR_BB). 
+    eapply LR_iff_rel; eauto.
+    assert (⊩s σ2 ≡ σ2 : Γ) as ϵσ22 by eauto using LR_subst_sym, LR_subst_trans.
+    eapply LRv_AB in ϵσ22 as temp.
+    rewrite <- helper_LR in temp.
+    destruct temp as (ϵAB & LR_AB).
+    assert (ϵAA <~> ϵAB) by eauto using LR_sym, LR_irrel.
+    assert (ϵBB <~> ϵAB) by eauto using LR_sym, LR_irrel.
+    setoid_rewrite H0. symmetry. eauto.
+Qed.
+
+Lemma fundamental_prop_ty Γ A B : 
+    Γ ⊢< Ax prop > A ≡ B : Sort prop -> 
+    Γ ⊨< Ax prop > A ≡ B : Sort prop.
+Proof.
+    intros. unfold LRv. intros.
+    rewrite <- helper_LR. 
+    eexists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]). eapply LR_prop.
+    2: reflexivity.
+    eapply LR_subst_escape in H0. eapply subst in H; eauto. 
+Qed.
+
+Lemma fundamental_prop Γ t u A : 
+    Γ ⊢< prop > t ≡ u : A -> 
+    Γ ⊨< prop > t ≡ u : A.
+Proof.
+    intros. unfold LRv. intros σ1 σ2 ϵσ12.
+    exists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]).
+    split.
+    2:eauto using subst, LR_subst_escape.
+    eapply LR_prop. 
+    2:reflexivity. 
+    eauto 6 using subst_ty, validity_conv_left, validity_ty_ty, 
+        refl_ty, subst_ty'', LR_subst_escape.    
+Qed.
+
+
+(* used to eliminate the condition l = ty k in the IHs in the proof of fundamental_ty *)
+Lemma helper_fund' Γ l t u A :
+    Γ ⊢< l > t ≡ u : A -> 
+    (forall k, l = ty k -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
+Proof.
+    intros. split. intros.
+    destruct l; eauto using fundamental_prop.
+    eauto.
+Qed.
+
+(* used to eliminate the condition 
+        forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> ...
+    from the IHs in the proof of fundamental_ty *)
+Lemma helper_fund Γ l t u A :
+    Γ ⊢< l > t ≡ u : A -> 
+    (forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
+Proof.
+    intros. split. intros.
+    destruct l; eauto using fundamental_prop.
+    eauto.
+Qed.
+
+
+
+Theorem fundamental_ty : 
+    (forall Γ l t A, Γ ⊢< l > t : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\ 
+    (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
 Proof.
     apply typing_conversion_mutind; intros.
-    1-10:admit.
+    all: dependent destruction _temp.
+    all: try erewrite helper_fund in *; eauto using refl_ty.
     - admit.
     - eauto using fundamental_sort.
-    - destruct j. 
-        + eauto using fundamental_pi.
-        + unfold LRv. intros. rewrite <- helper_LR. eapply prefundamental_prop.
-          eauto using (conv_pi _ _ prop). admit.
+    - destruct j. eauto using fundamental_pi, refl_ty. eauto using fundamental_prop_ty.
     - admit.
     - admit.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
-    - 
+    - eauto using fundamental_succ, refl_ty.
+    - admit.
+    - eauto using fundamental_conv, refl_ty.
+    - admit.
+    - eauto using fundamental_sort.
+    - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty. 
+    - admit.
+    - admit.
+    - eauto using fundamental_nat.
+    - eauto using fundamental_zero.
+    - eauto using fundamental_succ.
+    - admit.
+    - eauto using fundamental_conv.
+    - admit.
+    - admit.
+    - admit.
+    - unfold LRv. intros. eapply LR_subst_sym in H1. eapply H in H1 as (ϵA & LR_A & lr).
+      eapply LR_sym in LR_A. eapply LR_sym_tm in lr; eauto.
+    - unfold LRv. intros. assert (⊩s σ2 ≡ σ2 : Γ) by eauto using LR_subst_sym, LR_subst_trans.
+      eapply H in H2 as (ϵA & LR_A & ϵtu). eapply H0 in H3 as (ϵA' & LR_A' & ϵuv).
+      assert (ϵA <~> ϵA') by eauto using LR_sym, LR_irrel. rewrite <- H2 in ϵuv.
+      eapply LR_trans_tm in ϵuv; eauto.
 Admitted.
+
+Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
+Proof.
+    intros. destruct l.
+    eapply (proj1 fundamental_ty) in H; eauto using refl_ty. 
+    eapply refl_ty in H. eapply fundamental_prop in H. eauto.
+Qed. 
+
+Lemma mk_nat_typed k : ∙ ⊢< ty 0 > (mk_Nat k) : Nat.
+Proof.
+    intros. induction k; eauto using typing, ctx_typing.
+Qed.
+
+Lemma canonicity_helper t u : ϵNat t u -> exists k, ϵNat t (mk_Nat k).
+Proof.
+    intros. induction H.
+    - exists O. eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
+    - destruct IHϵNat as (k & ih). exists (S k).
+      eapply ϵsucc; eauto using val_redd_to_whnf, mk_nat_typed, typing.
+Qed.
+
+
+(* we use the predicate ϵNat t (mk_Nat k) to encode the fact that 
+    t reduces in mutiple iterations to mk_Nat k *)
+Corollary canonicity_red t : 
+    ∙ ⊢< ty 0 > t : Nat -> exists k, ϵNat t (mk_Nat k).
+Proof.
+    intros. eapply fundamental in H; eauto. unfold LRv in H.
+    destruct (H var var (LR_sempty _ _)) as (ϵnat' & LR_nat & ϵt).
+    simpl in LR_nat. 
+    assert (ϵnat' <~> ϵNat) by eauto using LR_irrel, prefundamental_nat.
+    rewrite H0 in ϵt. assert (t<[ var ]= t) by (ssimpl; eauto).
+    rewrite H1 in ϵt. eauto using canonicity_helper.
+Qed.
+
+Corollary canonicity_conv t : 
+    ∙ ⊢< ty 0 > t : Nat -> exists k, ∙ ⊢< ty 0 > t ≡ (mk_Nat k) : Nat.
+Proof.
+    intros. eapply canonicity_red in H as (k & lr). 
+    eauto using ϵNat_escape.
+Qed.
