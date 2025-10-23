@@ -130,6 +130,9 @@ Admitted.
 Corollary subst_ty' : forall Γ l t l' Δ σ, Δ ⊢s σ : Γ -> Γ ⊢< l > t : Sort l' -> Δ ⊢< l > t <[ σ ] : Sort l'.
 Admitted.
 
+Corollary subst_ty'' : forall Γ l t u l' Δ σ τ, Δ ⊢s σ ≡ τ : Γ -> Γ ⊢< l > t ≡ u : Sort l' -> Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : Sort l'.
+Admitted.
+
 
 Theorem conv_in_ctx_ty : forall Γ Δ l t A, ⊢ Γ ≡ Δ -> Γ ⊢< l > t : A -> Δ ⊢< l > t : A.
 Admitted.
@@ -163,6 +166,14 @@ Theorem sort_unicity : forall Γ l l' t A B, Γ ⊢< l > t : A ->  Γ ⊢< l' > 
 Admitted. 
 
 Lemma validity_ctx_left Γ Δ : ⊢ Γ ≡ Δ -> ⊢ Γ.
+Admitted.
+
+
+Theorem validity_subst_conv_left : forall Γ σ τ Δ, Γ ⊢s σ ≡ τ : Δ -> Γ ⊢s σ : Δ.
+Admitted.
+
+
+Theorem validity_subst_conv_right : forall Γ σ τ Δ, Γ ⊢s σ ≡ τ : Δ -> Γ ⊢s τ : Δ.
 Admitted.
 
 
