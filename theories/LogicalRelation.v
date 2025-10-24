@@ -426,6 +426,39 @@ Proof.
 Qed.
 
 
+Lemma LR_irred l A B R : 
+    LR l A B R -> 
+    (forall A' B', 
+        ∙ ⊢< Ax l > A' -->> A : Sort l ->
+        ∙ ⊢< Ax l > B' -->> B : Sort l ->
+        LR l A' B' R) 
+    /\
+    (forall t u t' u', 
+        ∙ ⊢< l > t' -->> t : A -> 
+        ∙ ⊢< l > u' -->> u : A -> 
+        R t u -> 
+        R t' u').
+Proof.
+    generalize l A B R. clear l A B R.
+    refine (LR_ind _ _ _ _ _); intros.
+    - split; intros. admit. admit.
+Admitted.
+
+Lemma LR_irred_ty l A B A' B' R : 
+    ∙ ⊢< Ax l > A' -->> A : Sort l ->
+    ∙ ⊢< Ax l > B' -->> B : Sort l ->
+    LR l A B R -> 
+    LR l A' B' R.
+Admitted.
+Lemma LR_irred_tm l A B t u t' u' R : 
+    LR l A B R -> 
+    ∙ ⊢< Ax l > t' -->> t : Sort l ->
+    ∙ ⊢< Ax l > u' -->> u : Sort l ->
+    R t u ->
+    R t' u'.
+Admitted.
+
+
 Lemma LR_erasure l A B R : 
     LR l A B R -> 
     (forall A' B', 
@@ -866,17 +899,17 @@ Proof.
       destruct ϵsort as (_ & _ & _ & equiv). rewrite <- equiv. eauto.
 Qed. 
 
-
-Lemma LRv_apply_subst Γ σ1 σ2 i A1 A2 j B1 B2 : 
+(* Lemma LR_prefundamental_pi Γ σ1 σ2 i A1 A2 j B1 B2 : 
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->        
     Γ ,, (i, A1) ⊨< Ax j > B1 ≡ B2 : Sort j -> 
     ⊩s σ1 ≡ σ2 : Γ -> 
     exists ϵA ϵB, 
         LR i (A1 <[ σ1]) (A2 <[ σ2]) ϵA /\
-        forall a1 a2 (ϵa : ϵA a1 a2), 
+        (forall a1 a2 (ϵa : ϵA a1 a2), 
         LR j ((B1 <[ var 0 .: (σ1 >> ren_term S)]) <[a1 ..]) 
              ((B2 <[ var 0 .: (σ2 >> ren_term S)]) <[a2 ..]) 
-             (ϵB a1 a2 ϵa).
+             (ϵB a1 a2 ϵa)) /\ 
+        LR 
 Proof.
     intros LRv_A12 LRv_B12 ϵσ12. 
 
@@ -898,7 +931,7 @@ Proof.
     eapply ϵT_iff_eT; eauto.
     Unshelve. 3: eapply ϵB. 
     1,2:ssimpl; eauto.
-Qed.
+Qed. *)
 
 
 Lemma lift_subst σ1 σ2 i A Γ: 
@@ -915,6 +948,76 @@ Proof.
     eauto using ctx_typing.
 Admitted.
 
+Lemma LRv_apply_subst Γ σ1 σ2 i A1 A2 k B1 B2 : 
+    (* Γ ⊢< Ax i > A1 ≡ A2 : Sort i -> *)
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    (* Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) -> *)
+    Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    ⊩s σ1 ≡ σ2 : Γ -> 
+    exists ϵA ϵB, 
+        LR i (A1 <[ σ1]) (A2 <[ σ2]) ϵA /\
+        (forall a1 a2 (ϵa : ϵA a1 a2), 
+            LR (ty k) ((B1 <[ var 0 .: (σ1 >> ren_term S)]) <[a1 ..]) 
+                ((B2 <[ var 0 .: (σ2 >> ren_term S)]) <[a2 ..]) 
+                (ϵB a1 a2 ϵa)).
+Admitted.
+
+
+
+Lemma prefundamental_pi Γ σ1 σ2 i A1 A2 k B1 B2 : 
+    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    ⊩s σ1 ≡ σ2 : Γ -> 
+    exists ϵA ϵB, 
+        let ϵpi := ϵPi i (ty k) (A1 <[ σ1]) (A2 <[ σ2]) ϵA
+                (B1 <[ var 0 .: (σ1 >> ren_term S)]) (B2 <[ var 0 .: (σ2 >> ren_term S)]) ϵB in
+        LR i (A1 <[ σ1]) (A2 <[ σ2]) ϵA /\
+        (forall a1 a2 (ϵa : ϵA a1 a2), 
+            LR (ty k) ((B1 <[ var 0 .: (σ1 >> ren_term S)]) <[a1 ..]) 
+                ((B2 <[ var 0 .: (σ2 >> ren_term S)]) <[a2 ..]) 
+                (ϵB a1 a2 ϵa)) /\
+        LR (Ru i (ty k)) ((Pi i (ty k) A1 B1) <[ σ1]) ((Pi i (ty k) A2 B2) <[ σ2]) ϵpi.
+Proof.
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵσ12. 
+
+    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 by eauto using LRv_sym, LRv_trans.
+    
+    unfold LRv in LRv_A12. simpl in LRv_A12. setoid_rewrite <- helper_LR in LRv_A12.
+    eapply LRv_A12 in ϵσ12 as LR_A12. destruct LR_A12 as (ϵA12 & LR_A12).
+
+    unfold LRv in LRv_A11. simpl in LRv_A11. setoid_rewrite <- helper_LR in LRv_A11.
+    eapply LRv_A11 in ϵσ12 as LR_A11. destruct LR_A11 as (ϵA11 & LR_A11).
+    
+    assert (ϵA11 <~> ϵA12) by eauto using LR_irrel.
+
+    eapply LR_subst_escape in ϵσ12 as Wt_σ12. 
+    eapply subst_ty'' in A1_conv_A2 as A1_conv_A2'; eauto.
+
+    eapply lift_subst in Wt_σ12 as Wt_σ_lifted; eauto using validity_conv_left, validity_ty_ctx.
+    eapply subst_ty'' in B1_conv_B2 as B1_conv_B2'; eauto.    
+    
+
+    pose (ϵB12 := eT (ty k) ϵA12 (B1 <[ (var 0) .: σ1 >> ren_term S]) (B2 <[ (var 0) .: σ2 >> ren_term S])).
+    eassert (forall a1 a2 ϵa, LR (ty k) (B1 <[ a1 .: σ1 ]) (B2 <[ a2 .: σ2]) (ϵB12 a1 a2 ϵa)) as LR_B.
+    {   intros.
+        assert (⊩s (a1 .: σ1) ≡ (a2 .: σ2) : (Γ ,, (i, A1))) as ϵaσ by eauto using LR_subst, LR_iff_rel.
+        unfold LRv in LRv_B12. simpl in LRv_B12. setoid_rewrite <- helper_LR in LRv_B12.
+        eapply LRv_B12 in ϵaσ as (ϵB' & LR_B).
+        eapply LR_iff_rel; eauto. 
+        eapply ϵT_iff_eT; eauto. 
+        ssimpl. eauto. }
+
+    eexists ϵA12. eexists ϵB12.
+    split; eauto. split; intros; ssimpl; eauto.
+
+    eapply LR_pi; eauto.
+    1,2: ssimpl; eauto using val_redd_to_whnf, conv_pi, validity_conv_left,
+            validity_conv_right, conv_ty_in_ctx_conv.
+    Unshelve. 3:exact ϵB12.
+    intros; ssimpl; eauto. reflexivity.
+Qed.
 
 Lemma prefundamental_prop A B : 
     ∙ ⊢< Ax prop > A ≡ B : Sort prop -> 
@@ -926,6 +1029,23 @@ Proof.
 Qed.
 
 Lemma fundamental_pi {Γ i k A1 B1 A2 B2} : 
+    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ ⊨< Ax (Ru i (ty k)) > Pi i (ty k) A1 B1 ≡ Pi i (ty k) A2 B2 : Sort (Ru i (ty k)).
+Proof.
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12.
+    unfold LRv. intros σ1 σ2 ϵσ12.
+    eapply helper_LR.
+    
+    eapply prefundamental_pi in ϵσ12 as temp; eauto.
+    destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
+    eexists. eauto.
+Qed.
+    
+
+Lemma old_fundamental_pi {Γ i k A1 B1 A2 B2} : 
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
     Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
@@ -952,33 +1072,41 @@ Proof.
 Qed.
     
 
-Lemma old_fundamental_pi {Γ i j A1 B1 A2 B2} : 
+Lemma fundamental_lam Γ i k A1 B1 t1 A2 B2 t2 :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax j > B1 ≡ B2 : Sort j ->
-    Γ,, (i, A1) ⊨< Ax j > B1 ≡ B2 : Sort j ->
-    Γ ⊨< Ax (Ru i j) > Pi i j A1 B1 ≡ Pi i j A2 B2 : Sort (Ru i j).
+    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊢< (ty k) > t1 ≡ t2 : B1 ->
+    Γ,, (i, A1) ⊨< (ty k) > t1 ≡ t2 : B1 ->
+    Γ ⊨< Ru i (ty k) > lam i (ty k) A1 B1 t1 ≡ lam i (ty k) A2 B2 t2 : Pi i (ty k) A1 B1.
 Proof.
-    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12.
-    unfold LRv. intros σ1 σ2 ϵσ12.
-    eapply helper_LR.
-    
-    eapply LRv_apply_subst in ϵσ12 as temp; eauto.
-    destruct temp as (ϵA & ϵB & LR_A & LR_B).
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 t1_conv_t2 LRv_t12.
+    intros σ1 σ2 ϵσ12.
 
-    eapply LR_subst_escape in ϵσ12 as Wt_σ12. 
-    eapply subst_ty'' in A1_conv_A2 as A1_conv_A2'; eauto.
+    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 
+        by eauto using LRv_sym, LRv_trans.
+    assert (Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B1 : Sort (ty k)) as LRv_B11
+        by eauto using LRv_sym, LRv_trans.
 
-    eapply lift_subst in Wt_σ12 as Wt_σ_lifted; eauto using validity_conv_left, validity_ty_ctx.
-    eapply subst_ty'' in B1_conv_B2 as B1_conv_B2'; eauto.
+    eapply prefundamental_pi in ϵσ12 as temp. 
+    3:exact LRv_A11.  4:exact LRv_B11.
+    2,3:eauto using validity_conv_left, refl_ty.
+    destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
+    eexists. split. eapply LR_pi. split; eauto.
+    admit.
+    intros.
+    assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A1))) as ϵsσ by eauto using LR_subst, LR_iff_rel.
+    eapply LRv_t12 in ϵsσ as temp. destruct temp as (ϵB' & LR_B' & ϵt12).
+    pose (LR_B'' := LR_B _ _ ϵs).
+    assert (forall B s σ, B <[ (var 0) .: σ >> ren_term S] <[ s..] = B <[ s .: σ]). intros. ssimpl. eauto.
+    rewrite 2 H in LR_B''. 
+    assert (ϵB s1 s2 ϵs <~> ϵB') by eauto using LR_irrel.
+    rewrite <- H0 in ϵt12.
+    eapply LR_irred_tm; eauto.
+Admitted.
 
-    destruct j.
-    -  eexists. eapply LR_pi; eauto.
-        1,2: ssimpl; eauto using val_redd_to_whnf, conv_pi, validity_conv_left,
-            validity_conv_right, conv_ty_in_ctx_conv.
-        reflexivity.
-    - eapply prefundamental_prop. eauto using (conv_pi _ _ prop).
-Qed.
+
 
 Lemma fundamental_lam Γ i k A1 B1 t1 A2 B2 t2 :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
@@ -1016,6 +1144,72 @@ Proof.
     rewrite R'_iff. split. admit.
     intros. 
 Admitted.
+
+
+
+
+Lemma fundamental_app Γ i k A1 B1 t1 u1 A2 B2 t2 u2 :
+    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ ⊢< Ru i (ty k) > t1 ≡ t2 : Pi i (ty k) A1 B1 ->
+    Γ ⊨< Ru i (ty k) > t1 ≡ t2 : Pi i (ty k) A1 B1 ->
+    Γ ⊢< i > u1 ≡ u2 : A1 ->
+    Γ ⊨< i > u1 ≡ u2 : A1 ->
+    Γ ⊨< ty k > app i (ty k) A1 B1 t1 u1 ≡ app i (ty k) A2 B2 t2 u2 : B1 <[ u1..].
+Proof.
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12
+        t1_conv_t2 LRv_t12 u1_conv_u2 LRv_u12 σ1 σ2 ϵσ.
+    
+    assert (Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B1 : Sort (ty k)) as LRv_B11 by eauto using LRv_sym, LRv_trans.
+    eapply prefundamental_pi in LRv_B11 as temp; eauto using validity_conv_left, refl_ty.
+    destruct temp as (ϵA & ϵB & LR_A12 & LR_B11 & LR_pi).
+    
+    assert (Γ ⊨< i > u1 ≡ u1 : A1) as LRv_u11 by eauto using LRv_sym, LRv_trans.
+    eapply LRv_u11 in ϵσ as temp. destruct temp as (ϵA' & LR_A11 & ϵu11).
+    assert (ϵA <~> ϵA') as ϵA_iff_ϵA' by eauto using LR_irrel. rewrite <- ϵA_iff_ϵA' in ϵu11.
+
+
+    eapply LRv_u12 in ϵσ as temp. destruct temp as (ϵA'' & LR_A12' & ϵu12).  
+    assert (ϵA <~> ϵA'') by eauto using LR_irrel. rewrite <- H in ϵu12.
+    clear ϵA'' LR_A12' H.
+
+    assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) ϵu11 <~> ϵB (u1 <[ σ1]) (u2 <[ σ2]) ϵu12) 
+        as ϵB11_iff_ϵB12 by eauto using LR_irrel.
+
+    pose (LR_Bu12 := LR_B11 _ _ ϵu11). 
+    
+    eexists (ϵB (u1 <[ σ1 ]) (u1 <[ σ2]) ϵu11). split. 
+        - ssimpl.
+          assert (forall B σ u, (B <[ (var 0) .: σ >> ren_term S]) <[ u <[ σ] .: var] = B <[ u <[ σ] .: σ]). 
+          intros. ssimpl. eauto.
+          rewrite 2 H in LR_Bu12. eapply LR_Bu12.
+        - eapply LRv_t12 in ϵσ as temp. destruct temp as (ϵpi' & LR_pi' & ϵt).
+          eassert (ϵpi' <~> ϵPi _ _ _ _ _ _ _ _) by eauto using LR_irrel. 
+          rewrite H in ϵt. destruct ϵt. ssimpl.
+          rewrite ϵB11_iff_ϵB12.
+          eapply LR_erasure. 4:eapply H1. eauto.
+          + eapply aconv_refl. eapply type_app; 
+            eauto 8 using subst_ty', LR_subst_escape, validity_conv_left, 
+                validity_subst_conv_left, subst2, lift_subst, validity_ty_ctx.
+          + ssimpl. eapply aconv_conv.
+
+            eapply aconv_app; eauto 10 using refl_ty, subst_ty'', LR_subst_escape, validity_conv_right, 
+                subst2, validity_subst_conv_right, type_conv, lift_subst, conv_ty_in_ctx_conv.
+
+            eapply subst_ty. eapply validity_subst_conv_right. 
+            eapply lift_subst; eauto using validity_conv_right, validity_ty_ctx, ctx_typing, LR_subst_escape, 
+                validity_subst_conv_right, refl_subst. 
+            eauto using conv_ty_in_ctx_conv.
+
+            eapply aconv_refl. eapply type_conv; eauto using LR_subst_escape, validity_conv_right, validity_subst_conv_right, subst2.
+            eapply conv_pi; eauto 9 using LR_subst_escape, subst_ty'', lift_subst, validity_conv_left, validity_ty_ctx, refl_ty.
+
+            ssimpl. eapply subst_ty''; eauto using validity_conv_left, refl_ty. 
+            econstructor; ssimpl. eauto using subst_conv_sym, LR_subst_escape. 
+            eauto using subst, subst_conv_sym, LR_subst_escape, LR_escape, conv_sym.
+Qed.
 
 Lemma prefundamental_nat : 
     LR (ty 0) Nat Nat ϵNat.
@@ -1142,7 +1336,7 @@ Proof.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi, refl_ty. eauto using fundamental_prop_ty.
     - admit.
-    - admit.
+    - eauto 6 using fundamental_app, refl_ty.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ, refl_ty.
@@ -1152,7 +1346,7 @@ Proof.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty. 
     - admit.
-    - admit.
+    - eauto using fundamental_app.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ.

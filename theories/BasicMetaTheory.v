@@ -176,6 +176,9 @@ Admitted.
 Theorem validity_subst_conv_right : forall Γ σ τ Δ, Γ ⊢s σ ≡ τ : Δ -> Γ ⊢s τ : Δ.
 Admitted.
 
+Theorem subst_conv_sym Γ Δ σ τ : Γ ⊢s σ ≡ τ : Δ -> Γ ⊢s τ ≡ σ : Δ.
+Admitted.
+
 
 Lemma conv_ctx_var Γ x l A Δ :
     nth_error Γ x = Some (l, A) -> 
