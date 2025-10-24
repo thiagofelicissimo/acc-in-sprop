@@ -244,6 +244,74 @@ Proof.
     intros. destruct H.  eauto using redd_to_conv. 
 Qed.
 
+Lemma redd_trans Γ l t u v A :
+    Γ ⊢< l > t -->> v : A -> 
+    Γ ⊢< l > v -->> u : A ->
+    Γ ⊢< l > t -->> u : A.
+Proof.
+    intros. induction H; eauto.
+    eapply redd_step; eauto.
+Qed.
+
+Lemma redd_comp_redd_whnf Γ l t u v A :
+    Γ ⊢< l > t -->> v : A -> 
+    Γ ⊢< l > v -->>! u : A ->
+    Γ ⊢< l > t -->>! u : A.
+Proof.
+    intros. destruct H0. 
+    split; eauto using redd_trans.
+Qed.
+
+Lemma redd_app Γ i j A B t t' u :
+    Γ ⊢< Ru i j > t -->> t' : Pi i j A B -> 
+    Γ ⊢< i > u : A ->
+    Γ ⊢< j > app i j A B t u -->> app i j A B t' u : B <[ u.. ].
+Proof.
+    intros. eapply redd_to_conv in H as H'. 
+    eapply validity_conv_left in H'. eapply validity_ty_ty in H'.
+    eapply type_inv_pi in H' as (AWt & BWt).
+    dependent induction H.
+    - eapply redd_refl. eauto using type_app.
+    - eapply redd_step; eauto using red_app.
+Qed.
+
+Lemma red_to_redd Γ l t u A :
+    Γ ⊢< l > t --> u : A -> 
+    Γ ⊢< l > t -->> u : A.
+Proof.
+    intros. eapply red_to_conv in H as temp.
+    eapply validity_conv_right in temp.
+    eapply redd_step; eauto.
+    eapply redd_refl. eauto.
+Qed.
+
+Lemma redd_conv Γ l t u B A :
+    Γ ⊢< l > t -->> u : A -> 
+    Γ ⊢< Ax l > A ≡ B : Sort l -> 
+    Γ ⊢< l > t -->> u : B.
+Proof.
+    intros. induction H.
+    - eapply redd_refl; eauto using type_conv.
+    - eapply redd_step; eauto. eauto using red_conv.
+Qed.
+
+Lemma redd_rec Γ l P p_zero p_succ n n' :
+    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
+    Γ ⊢< l > p_zero : P <[ zero .. ] -> 
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->    
+    Γ ⊢< ty 0 > n -->> n' : Nat -> 
+    Γ ⊢< l > rec l P p_zero p_succ n -->> rec l P p_zero p_succ n' : P <[ n.. ].
+Proof.
+    intros. dependent induction H2.
+    - eapply redd_refl. eauto using type_rec.
+    - eapply redd_step; eauto using red_rec. 
+      eapply redd_conv. eapply IHredd; eauto.
+      eauto using subst_ty'', refl_ty, red_to_conv.
+      eapply subst_ty''; eauto using refl_ty. 
+      eapply conv_scons; ssimpl; 
+      eauto using refl_subst, subst_id, validity_ty_ctx, red_to_conv, conv_sym.
+Qed.
+
 
 Lemma sim_left_redd_whnf Γ l t t' u A :
     Γ ⊢< l > t ~ u : A -> 

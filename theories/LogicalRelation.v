@@ -441,23 +441,44 @@ Lemma LR_irred l A B R :
 Proof.
     generalize l A B R. clear l A B R.
     refine (LR_ind _ _ _ _ _); intros.
-    - split; intros. admit. admit.
-Admitted.
+    - destruct p. split; intros.
+      eapply LR_prop. 2:split;intros. all:try rewrite H0 in *.
+      all: eauto 6 using redd_to_conv, conv_sym, conv_trans, conv_conv.
+    - split; intros. eapply LR_nat; eauto using redd_comp_redd_whnf.
+      rewrite H in *. destruct H2; 
+      eauto 8 using ϵzero, ϵsucc, redd_comp_redd_whnf, redd_conv, redd_whnf_to_conv, conv_sym.
+    - split; intros. eapply LR_U; eauto using redd_comp_redd_whnf.
+      setoid_rewrite H0 in H3. setoid_rewrite H0. destruct H3 as (R' & lr). exists R'.
+      eapply H in lr as (K1 & K2). eapply K1; eauto using redd_whnf_to_conv, redd_conv.
+    - split; intros. eapply LR_pi; eauto using redd_comp_redd_whnf.
+      rewrite H in *. destruct H4. split.
+      eapply redd_to_conv in H2, H3. eapply redd_whnf_to_conv in A1_red_pi.
+      eapply conv_conv in H2, H3; eauto. eauto using conv_sym, conv_trans.
+      intros. eapply (proj2 (H1 _ _ ϵs)); eauto. 
+      eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left. 
+      eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv.
+      eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv.
+      eauto using LR_escape_tm, conv_aux, conv_sym.
+Qed.
 
 Lemma LR_irred_ty l A B A' B' R : 
     ∙ ⊢< Ax l > A' -->> A : Sort l ->
     ∙ ⊢< Ax l > B' -->> B : Sort l ->
     LR l A B R -> 
     LR l A' B' R.
-Admitted.
+Proof.
+    intros. eapply LR_irred in H1 as (H1 & H2). eauto.
+Qed.
+
 Lemma LR_irred_tm l A B t u t' u' R : 
     LR l A B R -> 
-    ∙ ⊢< Ax l > t' -->> t : Sort l ->
-    ∙ ⊢< Ax l > u' -->> u : Sort l ->
+    ∙ ⊢< l > t' -->> t : A ->
+    ∙ ⊢< l > u' -->> u : A ->
     R t u ->
     R t' u'.
-Admitted.
-
+Proof.
+    intros. eapply LR_irred in H as (H3 & H4). eauto.
+Qed.
 
 Lemma LR_erasure l A B R : 
     LR l A B R -> 
@@ -1094,7 +1115,7 @@ Proof.
     2,3:eauto using validity_conv_left, refl_ty.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split. eapply LR_pi. split; eauto.
-    admit.
+    ssimpl. eapply conv_lam; eauto 7 using subst_ty'', subst, LR_subst_escape, lift_subst, validity_conv_left, validity_ty_ctx.
     intros.
     assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A1))) as ϵsσ by eauto using LR_subst, LR_iff_rel.
     eapply LRv_t12 in ϵsσ as temp. destruct temp as (ϵB' & LR_B' & ϵt12).
@@ -1104,11 +1125,26 @@ Proof.
     assert (ϵB s1 s2 ϵs <~> ϵB') by eauto using LR_irrel.
     rewrite <- H0 in ϵt12.
     eapply LR_irred_tm; eauto.
-Admitted.
+
+    (* from this point on, it's just technical manipulations to show that the beta redex reduces *)
+    eapply redd_step; eauto using redd_refl.
+    eapply red_conv. eapply red_beta; fold subst_term; ssimpl.
+    all:eauto 9 using refl_ty, subst2, subst_ty, LR_subst_escape, 
+        validity_subst_conv_left, validity_conv_left, lift_subst, validity_ty_ctx, LR_escape_tm.
+    ssimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst_ty'.
+    ssimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst2.
+    
+    eapply redd_step; eauto using redd_refl.
+    eapply red_conv. eapply red_beta; fold subst_term; ssimpl. 
+    all:eauto 10 using refl_ty, subst2, subst_ty'', subst_ty, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
+        validity_subst_conv_right, validity_conv_right, validity_subst_conv_left, validity_conv_left, LR_escape_tm, refl_subst.
+    
+    ssimpl. eauto 6 using subst_ty'', refl_ty, validity_conv_left, subst_conv_sym, LR_subst_escape.
+    ssimpl. eapply redd_refl. eauto using validity_conv_right, subst, LR_subst_escape.
+Qed.
 
 
-
-Lemma fundamental_lam Γ i k A1 B1 t1 A2 B2 t2 :
+(* Lemma fundamental_lam Γ i k A1 B1 t1 A2 B2 t2 :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
     Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
@@ -1144,7 +1180,7 @@ Proof.
     rewrite R'_iff. split. admit.
     intros. 
 Admitted.
-
+ *)
 
 
 
@@ -1193,6 +1229,8 @@ Proof.
           + eapply aconv_refl. eapply type_app; 
             eauto 8 using subst_ty', LR_subst_escape, validity_conv_left, 
                 validity_subst_conv_left, subst2, lift_subst, validity_ty_ctx.
+
+        (* from this point on, it's just technical manipulations to show that the terms are equal up to annotation conversion *)
           + ssimpl. eapply aconv_conv.
 
             eapply aconv_app; eauto 10 using refl_ty, subst_ty'', LR_subst_escape, validity_conv_right, 
@@ -1275,6 +1313,130 @@ Proof.
     setoid_rewrite H0. symmetry. eauto.
 Qed.
 
+Lemma nth_error_succ {X: Type} (x:X) l n a :
+    nth_error (cons x l) (S n) = Some a -> 
+    nth_error l n = Some a.
+Proof.
+    intros. unfold nth_error in H. simpl in H. eauto.
+Qed.
+
+Lemma ϵzero' : ϵNat zero zero.
+Proof.
+    eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
+Qed.
+
+Lemma ϵsucc' {t u} : ϵNat t u -> ϵNat (succ t) (succ u).
+Proof.
+    intros. eapply ϵsucc; eauto 7 using val_redd_to_whnf, typing, ctx_typing, ϵNat_escape, validity_conv_left, validity_conv_right.
+Qed.
+    
+Scheme ϵNat_dep_ind := Induction for ϵNat Sort Prop.
+
+Lemma prefundamental_rec k P1 p_zero1 p_succ1 P2 p_zero2 p_succ2 ϵP:
+    ∙ ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    ∙  ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
+    (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (forall n1 n2 (ϵn : ϵNat n1 n2), 
+        LR (ty k) (P1 <[ n1..]) (P2 <[ n2..]) (ϵP n1 n2 ϵn)) -> 
+    ϵP zero zero ϵzero' p_zero1 p_zero2 -> 
+    (forall n1 n2 (ϵn : ϵNat n1 n2) t1 t2,
+        ϵP n1 n2 ϵn t1 t2 -> 
+        ϵP (succ n1) (succ n2) (ϵsucc' ϵn) (p_succ1 <[t1 .: n1 ..]) (p_succ2 <[t2 .: n2 ..])) -> 
+    forall n1 n2 (ϵn : ϵNat n1 n2), ϵP n1 n2 ϵn (rec (ty k) P1 p_zero1 p_succ1 n1) (rec (ty k) P2 p_zero2 p_succ2 n2).
+Proof.
+    intros. generalize n1 n2 ϵn. clear n1 n2 ϵn. 
+    apply ϵNat_dep_ind; intros.
+    - pose (LR' := H4 _ _ ϵzero'). 
+      pose (LR'' := H4 _ _ (ϵzero _ _ r r0)).
+      assert (ϵNat t1 zero) as ϵt1zero. eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
+      pose (LR''' := H4 _ _ ϵt1zero).
+      assert (ϵP zero zero ϵzero' <~> ϵP t1 zero ϵt1zero) by eauto using LR_sym, LR_irrel.
+      assert (ϵP t1 t2 (ϵzero t1 t2 r r0) <~> ϵP t1 zero ϵt1zero) by eauto using LR_sym, LR_irrel.
+      rewrite H6. rewrite <- H5. 
+      destruct r, r0.
+      eapply LR_irred_tm; eauto.
+
+      eapply redd_trans. 
+      eapply redd_conv. eapply redd_rec; eauto using validity_conv_left.
+      eapply subst_ty''. 2:eauto using validity_conv_left, refl_ty. eauto using ConvSubst, redd_to_conv.
+      eapply red_to_redd; eauto using red_rec_zero, validity_conv_left.
+
+      eapply redd_conv; eauto using subst_ty, conv_sym, aux_subst_1, type_zero, ctx_typing.
+      eapply redd_trans. 
+      eapply redd_conv. eapply redd_rec; eauto using validity_conv_right. 
+      shelve. shelve. shelve.
+      eapply red_to_redd. eapply red_rec_zero. Unshelve.
+      admit. admit. admit. admit. admit. admit.
+      
+    - rename ϵ into ϵn. 
+      pose (LR' := H2 _ _ (ϵsucc' ϵn)).
+      pose (LR'' := H2 _ _ (ϵsucc _ _ _ _ r r0 ϵn)).
+      assert (ϵNat t1 (succ t2')) as ϵt1succt2'. eapply ϵsucc; eauto using val_redd_to_whnf, typing, redd_whnf_to_conv, validity_conv_right.
+      pose (LR''' := H2 _ _ ϵt1succt2').
+      assert (ϵP (succ t1') (succ t2') (ϵsucc' ϵn) <~> ϵP t1 (succ t2') ϵt1succt2') by eauto using LR_sym, LR_irrel.
+      assert (ϵP t1 t2 (ϵsucc t1 t2 t1' t2' r r0 ϵn) <~> ϵP t1 (succ t2') ϵt1succt2') by eauto using LR_sym, LR_irrel.
+      rewrite H7. rewrite <- H6.
+      eapply LR_irred_tm; eauto.
+Admitted.
+
+
+Lemma fundamental_rec Γ k P1 p_zero1 p_succ1 t1 P2 p_zero2 p_succ2 t2 : 
+    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    Γ ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
+    Γ ⊨< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P1) ⊨< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    Γ ⊢< ty 0 > t1 ≡ t2 : Nat ->
+    Γ ⊨< ty 0 > t1 ≡ t2 : Nat ->
+    Γ ⊨< ty k > rec (ty k) P1 p_zero1 p_succ1 t1 ≡ rec (ty k) P2 p_zero2 p_succ2 t2 : P1 <[ t1..].
+Proof.
+    intros P1_conv_P2 LRv_P12 pzero1_conv_pzero2 LRv_pzero12
+        psucc1_conv_psucc2 LRv_psucc12 t1_conv_t2 LRv_t12.
+    unfold LRv. intros σ1 σ2 ϵσ12.
+
+    eapply LRv_t12 in ϵσ12 as temp. 
+    simpl in temp. destruct temp as (ϵnat' & LR_nat & ϵt12).
+    assert (ϵNat <~> ϵnat') by eauto using LR_irrel, prefundamental_nat. rewrite <- H in ϵt12.
+    clear H ϵnat' LR_nat.
+
+    assert (Γ ⊨< ty 0 > t1 ≡ t1 : Nat) as LRv_t11 by eauto using LRv_sym, LRv_trans.
+    eapply LRv_t11 in ϵσ12 as temp. 
+    simpl in temp. destruct temp as (ϵnat' & LR_nat & ϵt11).
+    assert (ϵNat <~> ϵnat') by eauto using LR_irrel, prefundamental_nat. rewrite <- H in ϵt11.
+    clear H ϵnat' LR_nat.
+
+    assert (⊩s (t1 <[σ1] .: σ1) ≡ (t1<[σ2] .: σ2) : (Γ ,, (ty 0, Nat))) as ϵtσ by eauto using LR_subst, prefundamental_nat.
+
+    assert (Γ ,, (ty 0, Nat) ⊨< Ax (ty k) > P1 ≡ P1 : Sort (ty k)) as LRv_P11 by eauto using LRv_sym, LRv_trans.
+    eapply LRv_P11 in ϵtσ as temp. rewrite <- helper_LR in temp. destruct temp as (ϵP & LR_P).
+    exists ϵP. split; ssimpl; eauto. 
+
+    eapply LRv_pzero12 in ϵσ12 as temp.
+    destruct temp as (ϵP' & LR_P' & ϵpzero).
+    asimpl in LR_P'.
+
+
+    eapply (prefundamental_rec _ (P1 <[ var 0 .: σ1 >> ren_term S]) _ _ (P2 <[ var 0 .: σ2 >> ren_term S]) _ _ (eT (ty 0) ϵNat (P1 <[ var 0 .: σ1 >> ren_term S]) (P2 <[ var 0 .: σ2 >> ren_term S]))).
+Admitted.
+
+
+Lemma fundamental_var Γ x k A :
+    nth_error Γ x = Some (ty k, A) ->
+    ⊢ Γ ->
+    Γ ⊨< ty k > var x ≡ var x : Init.Nat.add (S x) ⋅ A.
+Proof.
+    generalize Γ k A. clear Γ k A. induction x; unfold LRv; intros.
+    - destruct Γ; dependent destruction H. dependent destruction H1.
+      ssimpl. eauto.
+    - destruct Γ; dependent destruction H. dependent destruction H1.
+      eapply nth_error_succ in x. dependent destruction H0.
+      eapply IHx in x; eauto. eapply x in H1 as (R' & LR & lr).
+      exists R'. split. ssimpl.
+      assert (forall σ, (Init.Nat.add (S x0) ⋅ A) <[ ↑ >> σ] = A <[ Init.Nat.add (S (S x0)) >> σ]). intros. ssimpl. eauto.
+      rewrite 2 H1 in LR. eauto. ssimpl. eapply lr. 
+Qed.
+
 Lemma fundamental_prop_ty Γ A B : 
     Γ ⊢< Ax prop > A ≡ B : Sort prop -> 
     Γ ⊨< Ax prop > A ≡ B : Sort prop.
@@ -1332,20 +1494,20 @@ Proof.
     apply typing_conversion_mutind; intros.
     all: dependent destruction _temp.
     all: try erewrite helper_fund in *; eauto using refl_ty.
-    - admit.
+    - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi, refl_ty. eauto using fundamental_prop_ty.
-    - admit.
+    - destruct j; dependent destruction x. eauto using fundamental_lam, refl_ty.
     - eauto 6 using fundamental_app, refl_ty.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ, refl_ty.
     - admit.
     - eauto using fundamental_conv, refl_ty.
-    - admit.
+    - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty. 
-    - admit.
+    - destruct j; dependent destruction x. eauto using fundamental_lam.
     - eauto using fundamental_app.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
