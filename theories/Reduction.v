@@ -295,6 +295,8 @@ Proof.
     - eapply redd_step; eauto. eauto using red_conv.
 Qed.
 
+
+
 Lemma redd_rec Γ l P p_zero p_succ n n' :
     Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
     Γ ⊢< l > p_zero : P <[ zero .. ] -> 
@@ -312,6 +314,38 @@ Proof.
       eauto using refl_subst, subst_id, validity_ty_ctx, red_to_conv, conv_sym.
 Qed.
 
+
+Lemma redd_rec_zero  Γ l P p_zero p_succ t : 
+    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
+    Γ ⊢< l > p_zero : P <[ zero .. ] -> 
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢< ty 0 > t -->> zero : Nat ->
+    Γ ⊢< l > rec l P p_zero p_succ t -->> p_zero : P <[ zero .. ].
+Proof.
+    intros.
+    dependent induction H2.
+    - eapply red_to_redd. eapply red_rec_zero; eauto.
+    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. eapply subst_ty''. 2:eauto using refl_ty. 
+      eapply conv_scons. ssimpl. eauto using refl_subst, subst_id, validity_ty_ctx. ssimpl. 
+      eauto using red_to_conv, redd_to_conv, conv_sym, conv_trans.
+      eapply IHredd; eauto.
+Qed.
+
+Lemma redd_rec_succ  Γ l P p_zero p_succ t n : 
+    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
+    Γ ⊢< l > p_zero : P <[ zero .. ] -> 
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢< ty 0 > t -->> succ n : Nat ->
+    Γ ⊢< l > rec l P p_zero p_succ t -->> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ].
+Proof.
+    intros.
+    dependent induction H2.
+    - eapply red_to_redd. eapply type_inv_succ' in H2 as (_ & nWt & _). eapply red_rec_succ; eauto.
+    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. eapply subst_ty''. 2:eauto using refl_ty. 
+      eapply conv_scons. ssimpl. eauto using refl_subst, subst_id, validity_ty_ctx. ssimpl. 
+      eauto using red_to_conv, redd_to_conv, conv_sym, conv_trans.
+      eapply IHredd; eauto.
+Qed.
 
 Lemma sim_left_redd_whnf Γ l t t' u A :
     Γ ⊢< l > t ~ u : A -> 
