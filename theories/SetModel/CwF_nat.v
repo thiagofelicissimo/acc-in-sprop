@@ -2,32 +2,20 @@ Require Import library.
 Require Import ZF_axioms.
 Require Import ZF_library.
 Require Import CwF.
-
-Lemma zero_typing : ∅ ∈ ω.
-Proof.
-  now apply ZFininfinity. 
-Qed.
-
-Lemma empty_in_univ (n : nat) : ∅ ∈ 𝕍 n.
-Proof.
-  eapply ZFuniv_trans. apply zero_typing. apply ZFuniv_uncountable.
-Qed.
-
-Definition HO_Ty (n : nat) (Γ : ZFSet) (f : ZFSet -> ZFSet) := relToGraph Γ (𝕍 n × (ω × 𝕍 n)) (HO_rel f).
-Definition HO_Tm (n : nat) (Γ : ZFSet) (f : ZFSet -> ZFSet) := relToGraph Γ (𝕍 n) (HO_rel f).
-
-Lemma cwfTy_to_depSet_HO {n : nat} {Γ γ : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ γ ∈ Γ, f γ ∈ 𝕍 n × (ω × 𝕍 n)) (Hγ : γ ∈ Γ) :
-  cwfTy_to_depSet n Γ (HO_Ty n Γ f) γ ≡ setFstPair (𝕍 n) (ω × 𝕍 n) (f γ).
-Proof.
-  refine (fequal (setFstPair _ _) _).
-  now apply setAppArr_HO.
-Qed. 
+Require Import CwF_library.
 
 (* Type of natural numbers *)
 
 Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.
 
 Definition natTy (n : nat) (Γ : ZFSet) := HO_Ty n Γ natTy_HO. 
+
+Lemma setFstPair_natTy {n : nat} {γ : ZFSet} : setFstPair (𝕍 n) (ω × 𝕍 n) (natTy_HO γ) ≡ ω.
+Proof.
+  apply setPairβ1.
+  + apply ZFuniv_uncountable.
+  + apply setMkPair_typing. apply zero_typing. apply empty_in_univ.
+Qed.
 
 Lemma natTy_HO_typing (n : nat) {γ : ZFSet} : natTy_HO γ ∈ 𝕍 n × (ω × 𝕍 n).
 Proof.
@@ -50,20 +38,45 @@ Definition zeroTm_HO : ZFSet -> ZFSet := fun _ => ∅.
 
 Definition zeroTm (n : nat) (Γ : ZFSet) := HO_Tm n Γ zeroTm_HO.
 
-Lemma zeroTm_HO_pretyping (n : nat) {γ : ZFSet} : zeroTm_HO γ ∈ 𝕍 n.
+Lemma zeroTm_HO_typing (n : nat) {γ : ZFSet} : zeroTm_HO γ ∈ setFstPair (𝕍 n) (ω × 𝕍 n) (natTy_HO γ).
 Proof.
-  apply empty_in_univ.
+  refine (transpS (fun x => _ ∈ x) _ _).
+  - symmetry. apply setFstPair_natTy. 
+  - apply zero_typing.
 Qed.
 
 Lemma cwfZero {n : nat} (Γ : ZFSet) : zeroTm n Γ ∈ cwfTm n Γ (natTy n Γ).
 Proof.
-  apply ZFincomp. split.
-  - apply relToGraph_typing. apply HO_rel_typing. intros. now apply zeroTm_HO_pretyping.
-  - intros γ Hγ. refine (transp2S (fun X Y => X ∈ Y) _ _ _).
-    + symmetry. apply setAppArr_HO. intros ; now apply zeroTm_HO_pretyping. assumption.
-    + symmetry. refine (trans _ _).
-      { apply cwfTy_to_depSet_HO. intros ; now apply natTy_HO_typing. assumption. }
-      apply setPairβ1. apply ZFuniv_uncountable.
-      apply setMkPair_typing. apply zero_typing. apply empty_in_univ.
-    + apply zero_typing.
+  apply HO_Tm_typing.
+  - intros. apply natTy_HO_typing.
+  - intros γ Hγ. apply zeroTm_HO_typing.
 Qed.
+
+(* Successor *)
+
+Definition sucTm_HO (n : nat) (Γ : ZFSet) (t : ZFSet) : ZFSet -> ZFSet :=
+  fun γ => ZFsuc (setAppArr Γ (𝕍 n) t γ).
+
+Definition sucTm (n : nat) (Γ : ZFSet) (t : ZFSet) :=
+  HO_Tm n Γ (sucTm_HO n Γ t).
+
+Lemma sucTm_HO_typing {n : nat} {Γ t γ : ZFSet} (Ht : t ∈ cwfTm n Γ (natTy n Γ)) (Hγ : γ ∈ Γ) :
+  sucTm_HO n Γ t γ ∈ setFstPair (𝕍 n) (ω × 𝕍 n) (natTy_HO γ).
+Proof.
+  refine (transpS (fun x => _ ∈ x) _ _).
+  { symmetry. apply setFstPair_natTy. }
+  apply suc_typing.
+  refine (transpS (fun x => _ ∈ x) _ _).
+  { apply (@setFstPair_natTy n γ). }
+  apply setAppArr_Tm_detyping ; try assumption.
+  intros ; apply natTy_HO_typing.
+Qed.
+
+Lemma cwfSuc {n : nat} {Γ t : ZFSet} (Ht : t ∈ cwfTm n Γ (natTy n Γ)) :
+  sucTm n Γ t ∈ cwfTm n Γ (natTy n Γ).
+Proof.
+  apply HO_Tm_typing.
+  - intros. apply natTy_HO_typing.
+  - intros γ Hγ. now apply sucTm_HO_typing.
+Qed.
+

@@ -4,6 +4,15 @@ Require Import ZF_axioms.
 (* In this file, we replicate the basic set theoretic constructions (cartesian products, function
    types, dependent sums, dependent products, etc). *)
 
+(* Empty set *)
+
+Lemma empty_in_univ (n : nat) : ∅ ∈ 𝕍 n.
+Proof.
+  assert (∅ ∈ ω).
+  { now apply ZFininfinity. }
+  apply (ZFuniv_trans _ _ _ H). apply ZFuniv_uncountable.
+Qed.
+
 (* Functional relations *)
 
 Definition setRel := ZFSet -> ZFSet -> SProp.
@@ -542,3 +551,15 @@ Proof.
   reflexivity.
 Qed.
 
+(* Natural numbers *)
+
+Lemma zero_typing : ∅ ∈ ω.
+Proof.
+  now apply ZFininfinity. 
+Qed.
+
+Lemma suc_typing {n : ZFSet} (Hn : n ∈ ω) : ZFsuc n ∈ ω.
+Proof.
+  apply ZFininfinity. intros P Pz Ps.
+  apply Ps. now eapply ZFininfinity.
+Qed.
