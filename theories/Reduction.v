@@ -500,3 +500,19 @@ Proof.
     5,9: inversion H1.
     all: eapply aconv_inv in t'_sim_u'; simpl in t'_sim_u'; subst; eauto.
 Qed.
+
+Lemma iredd_comp_redd_whnf Γ l t u v A :
+    Γ ⊢< l > v -->> t : A -> 
+    Γ ⊢< l > v -->>! u : A ->
+    Γ ⊢< l > t -->>! u : A.
+Proof.
+    intros. destruct H0.
+    split; eauto.
+    generalize u H0 H1. clear u H0 H1.
+    dependent induction H.
+    - intros. eauto.
+    - intros. dependent destruction H1.
+      + eapply H2 in H. inversion H.
+      + eapply red_det in H; eauto. subst. 
+        eapply IHredd; eauto.
+Qed.

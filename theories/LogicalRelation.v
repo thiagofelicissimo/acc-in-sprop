@@ -480,6 +480,62 @@ Proof.
     intros. eapply LR_irred in H as (H3 & H4). eauto.
 Qed.
 
+
+Lemma LR_redd l A B R : 
+    LR l A B R -> 
+    (forall A' B', 
+        ∙ ⊢< Ax l > A -->> A' : Sort l ->
+        ∙ ⊢< Ax l > B -->> B' : Sort l ->
+        LR l A' B' R) 
+    /\
+    (forall t u t' u', 
+        ∙ ⊢< l > t -->> t' : A -> 
+        ∙ ⊢< l > u -->> u' : A -> 
+        R t u -> 
+        R t' u').
+Proof.
+    generalize l A B R. clear l A B R.
+    refine (LR_ind _ _ _ _ _); intros.
+    - destruct p. split; intros.
+      eapply LR_prop. 2:split;intros. all:try rewrite H0 in *.
+      all: eauto 6 using redd_to_conv, conv_sym, conv_trans, conv_conv.
+    - split; intros. eapply LR_nat; eauto using iredd_comp_redd_whnf.
+      rewrite H in *. destruct H2; 
+      eauto 8 using ϵzero, ϵsucc, iredd_comp_redd_whnf, redd_conv, redd_whnf_to_conv, conv_sym.
+    - split; intros. eapply LR_U; eauto using iredd_comp_redd_whnf.
+      setoid_rewrite H0 in H3. setoid_rewrite H0. destruct H3 as (R' & lr). exists R'.
+      eapply H in lr as (K1 & K2). eapply K1; eauto using redd_whnf_to_conv, redd_conv.
+    - split; intros. eapply LR_pi; eauto using iredd_comp_redd_whnf.
+      rewrite H in *. destruct H4. split.
+      eapply redd_to_conv in H2, H3. eapply redd_whnf_to_conv in A1_red_pi.
+      eapply conv_conv in H2, H3; eauto. eauto using conv_sym, conv_trans.
+      intros. eapply (proj2 (H1 _ _ ϵs)); eauto. 
+      eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left. 
+      eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv.
+      eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv.
+      eauto using LR_escape_tm, conv_aux, conv_sym.
+Qed.
+
+Lemma LR_redd_ty l A B A' B' R : 
+    ∙ ⊢< Ax l > A -->> A' : Sort l ->
+    ∙ ⊢< Ax l > B -->> B' : Sort l ->
+    LR l A B R -> 
+    LR l A' B' R.
+Proof.
+    intros. eapply LR_redd in H1 as (H1 & H2). eauto.
+Qed.
+
+Lemma LR_redd_tm l A B t u t' u' R : 
+    LR l A B R -> 
+    ∙ ⊢< l > t -->> t' : A ->
+    ∙ ⊢< l > u -->> u' : A ->
+    R t u ->
+    R t' u'.
+Proof.
+    intros. eapply LR_redd in H as (H3 & H4). eauto.
+Qed.
+
+
 Lemma LR_erasure l A B R : 
     LR l A B R -> 
     (forall A' B', 
@@ -1397,6 +1453,65 @@ Proof.
 Qed.
 
 
+Lemma fundamental_beta Γ i k A B t u :
+    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊨< Ax i > A ≡ A : Sort i ->
+    Γ,, (i, A) ⊢< Ax (ty k) > B : Sort (ty k) ->
+    Γ,, (i, A) ⊨< Ax (ty k) > B ≡ B : Sort (ty k) ->
+    Γ,, (i, A) ⊢< ty k > t : B ->
+    Γ,, (i, A) ⊨< ty k > t ≡ t : B ->
+    Γ ⊢< i > u : A ->
+    Γ ⊨< i > u ≡ u : A ->
+    Γ ⊨< ty k > app i (ty k) A B (lam i (ty k) A B t) u ≡ t <[ u..] : B <[ u..].
+Proof.
+    intros WtA LR_A WtB LR_B Wtt LR_t Wtu LR_u.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    eapply fundamental_lam in LR_t; eauto using refl_ty.
+    eapply fundamental_app in LR_u; eauto using refl_ty, conv_lam.
+    eapply LR_u in ϵσ as (ϵBu & LR_Bu & ϵbeta).
+    exists ϵBu. split; eauto.
+    eapply LR_redd_tm; eauto.
+Admitted.
+
+Lemma fundamental_rec_zero Γ k P p_zero p_succ :
+    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P ≡ P : Sort (ty k) ->
+    Γ ⊢< ty k > p_zero : P <[ zero..] ->
+    Γ ⊨< ty k > p_zero ≡ p_zero : P <[ zero..] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊨< ty k > p_succ ≡ p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    Γ ⊨< ty k > rec (ty k) P p_zero p_succ zero ≡ p_zero : P <[ zero..].
+Proof.
+    intros WtP LR_P Wtpzero LR_pzero Wtpsucc LR_psucc.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    eapply fundamental_rec in ϵσ as temp; eauto using refl_ty, fundamental_zero, conv_zero, validity_ty_ctx.
+    destruct temp as (ϵPzero & LR_Pzero & ϵpzero). exists ϵPzero. split; eauto.
+    eapply LR_redd_tm; eauto.
+Admitted.
+
+
+Lemma fundamental_rec_succ Γ k P p_zero p_succ t :
+    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P ≡ P : Sort (ty k) ->
+    Γ ⊢< ty k > p_zero : P <[ zero..] ->
+    Γ ⊨< ty k > p_zero ≡ p_zero : P <[ zero..] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊨< ty k > p_succ ≡ p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    Γ ⊢< ty 0 > t : Nat ->
+    Γ ⊨< ty 0 > t ≡ t : Nat ->
+    Γ ⊨< ty k > rec (ty k) P p_zero p_succ (succ t) ≡ p_succ <[ rec (ty k) P p_zero p_succ t .: t..] : P <[ (succ t)..].
+Proof.
+    intros WtP LR_P Wtpzero LR_pzero Wtpsucc LR_psucc Wtt LR_t.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    assert (Γ ⊨< ty 0 > succ t ≡ succ t : Nat) as LR_succt by eauto using fundamental_succ, refl_ty.
+    eapply fundamental_rec in LR_succt as temp; eauto using refl_ty, conv_succ.
+    eapply temp in ϵσ as temp2. clear temp.
+    destruct temp2 as (ϵPSt & LR_PSt & ϵst).
+    eexists. split; eauto.
+    eapply LR_redd_tm; eauto.
+Admitted.
+
+
 Lemma choice A B R :
     (forall x : A, exists P : B x -> Prop, R x P) -> 
     (forall x P Q, R x P -> R x Q -> forall b, P b -> Q b) ->
@@ -1480,6 +1595,7 @@ Qed.
 
 
 
+
 Theorem fundamental_ty : 
     (forall Γ l t A, Γ ⊢< l > t : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\ 
     (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
@@ -1507,16 +1623,16 @@ Proof.
     - eauto using fundamental_succ.
     - eauto 6 using fundamental_rec, refl_ty.
     - eauto using fundamental_conv.
-    - admit.
-    - admit.
-    - admit.
+    - eauto using fundamental_beta. 
+    - eauto using fundamental_rec_zero.
+    - eauto using fundamental_rec_succ.
     - unfold LRv. intros. eapply LR_subst_sym in H1. eapply H in H1 as (ϵA & LR_A & lr).
       eapply LR_sym in LR_A. eapply LR_sym_tm in lr; eauto.
     - unfold LRv. intros. assert (⊩s σ2 ≡ σ2 : Γ) by eauto using LR_subst_sym, LR_subst_trans.
       eapply H in H2 as (ϵA & LR_A & ϵtu). eapply H0 in H3 as (ϵA' & LR_A' & ϵuv).
       assert (ϵA <~> ϵA') by eauto using LR_sym, LR_irrel. rewrite <- H2 in ϵuv.
       eapply LR_trans_tm in ϵuv; eauto.
-Admitted.
+Qed.
 
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
