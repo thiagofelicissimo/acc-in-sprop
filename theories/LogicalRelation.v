@@ -1017,7 +1017,7 @@ Lemma lift_subst σ1 σ2 i A Γ:
     ∙ ,, (i, A <[ σ1]) ⊢s ((var 0) .: (σ1 >> ren_term S)) ≡ ((var 0) .: (σ2 >> ren_term S)) : (Γ ,, (i, A)).
 Proof.
     intros. eapply conv_scons.
-    ssimpl.  admit.
+    ssimpl.  admit. (* consequence of weakening *)
     ssimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). simpl. ssimpl. eauto. 
     rewrite H1. 
     eapply conv_var. eauto. inversion H. 
@@ -1031,7 +1031,7 @@ Lemma lift_subst2 σ1 σ2 i j B A Γ:
     ∙ ⊢s σ1 ≡ σ2 : Γ -> 
     ∙ ,, (i, A <[ σ1]) ,, (j, B<[var 0 .: σ1 >> ren_term S]) ⊢s ((var 0) .: (var 1 .: (σ1 >> ren_term (S >> S)))) ≡ ((var 0) .: (var 1 .: (σ2 >> ren_term (S >> S)))) : (Γ ,, (i, A)) ,,(j, B).
 Proof.
-    intros. eapply conv_scons. eapply conv_scons. ssimpl. admit.
+    intros. eapply conv_scons. eapply conv_scons. ssimpl. admit. (* consequence of weakening *)
     ssimpl. assert (A <[ σ1 >> ren_term (S >> S)] = (plus (S 1)) ⋅ A <[σ1]). ssimpl. reflexivity.
     rewrite H1. eapply conv_var. eauto. shelve.
     ssimpl. assert (B <[ var 1 .: σ1 >> ren_term (S >> S)] = (plus (S 0)) ⋅ B<[ var 0 .: σ1 >> ren_term S]). ssimpl. reflexivity.
@@ -1471,7 +1471,16 @@ Proof.
     eapply LR_u in ϵσ as (ϵBu & LR_Bu & ϵbeta).
     exists ϵBu. split; eauto.
     eapply LR_redd_tm; eauto.
-Admitted.
+    eauto using LR_escape_tm, validity_conv_left, redd_refl.
+    eapply LR_escape_tm in ϵbeta; eauto.
+    eapply validity_conv_right in ϵbeta.
+    eapply type_inv_app' in ϵbeta as (_ & A_Wt & B_Wt & lam_Wt & u_Wt & _ & typeconv). fold subst_term in *.
+    eapply type_inv_lam' in lam_Wt as (_ & _ & _ & t_Wt & _).
+    eapply red_to_redd. ssimpl. asimpl in typeconv. eapply red_conv.
+    2:eapply conv_sym;eauto.
+    assert (forall v, v  <[ u <[ σ2] .: σ2] = v <[ var 0 .: σ2 >> ren_term ↑] <[u<[σ2]..]). intros. ssimpl. reflexivity.
+    rewrite 2 H. eapply red_beta; eauto using refl_ty.
+Qed.
 
 Lemma fundamental_rec_zero Γ k P p_zero p_succ :
     Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
@@ -1487,8 +1496,13 @@ Proof.
     eapply fundamental_rec in ϵσ as temp; eauto using refl_ty, fundamental_zero, conv_zero, validity_ty_ctx.
     destruct temp as (ϵPzero & LR_Pzero & ϵpzero). exists ϵPzero. split; eauto.
     eapply LR_redd_tm; eauto.
-Admitted.
-
+    eauto using LR_escape_tm, validity_conv_left, redd_refl.
+    eapply LR_escape_tm in ϵpzero; eauto. eapply validity_conv_right in ϵpzero.
+    asimpl in ϵpzero. eapply type_inv_rec' in ϵpzero as (_ & PWt & pzeroWt & psuccWt & _ & _ & typeconv).
+    eapply red_to_redd.
+    eapply red_conv. 2:eapply conv_sym; eauto.
+    eapply red_rec_zero; eauto using refl_ty.
+Qed.
 
 Lemma fundamental_rec_succ Γ k P p_zero p_succ t :
     Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
@@ -1509,8 +1523,18 @@ Proof.
     destruct temp2 as (ϵPSt & LR_PSt & ϵst).
     eexists. split; eauto.
     eapply LR_redd_tm; eauto.
-Admitted.
-
+    eauto using LR_escape_tm, validity_conv_left, redd_refl.
+    eapply LR_escape_tm in ϵst;eauto.
+    eapply validity_conv_right in ϵst. asimpl in ϵst.
+    eapply type_inv_rec' in ϵst as (_ & PWt & pzeroWt & psuccWt & tWt & _ & typeconv).
+    eapply red_to_redd. eapply red_conv. 2:eapply conv_sym;eauto.
+    eapply type_inv_succ in tWt.
+    assert (p_succ <[rec (ty k) (P <[ var 0 .: σ2 >> ren_term ↑]) (p_zero <[ σ2])(p_succ <[ var 0 .: ((↑ 0)__term .: σ2 >> ren_term (↑ >> ↑))]) (t <[ σ2])
+.: (t <[ σ2] .: σ2)] = p_succ <[ var 0 .: ((↑ 0)__term .: σ2 >> ren_term (↑ >> ↑))] <[(rec (ty k) (P <[ var 0 .: σ2 >> ren_term ↑]) (p_zero <[ σ2])
+(p_succ <[ var 0 .: ((↑ 0)__term .: σ2 >> ren_term (↑ >> ↑))])
+(t <[ σ2])).: t<[σ2]..]). ssimpl. reflexivity.
+rewrite H. eapply red_rec_succ; eauto using refl_ty.
+Qed.
 
 Lemma choice A B R :
     (forall x : A, exists P : B x -> Prop, R x P) -> 
