@@ -55,6 +55,22 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< ty 0 > n : Nat ->
     Γ ⊢< l > rec l P p_zero p_succ (succ n) --> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ]
 
+| red_accel Γ i l A R a q P p : 
+    Γ ⊢< Ax i > A : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
+    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
+    Γ ⊢< i > a : A -> 
+    Γ ⊢< prop > q : acc i A R a -> 
+    let t0 := accinv i ((plus 2) ⋅ A) ((up_ren (up_ren (plus 2))) ⋅ R) ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i l A R P p (var 1) t0 in 
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
+    let t3 := lam prop l t2 (S ⋅ P) t1 in
+    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t5 := lam i l A t4 t3 in
+    Γ ⊢< l > accel i l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
+
 | red_conv Γ l t u A B :
     Γ ⊢< l > t --> u : A ->
     Γ ⊢< Ax l > A ≡ B : Sort l -> 
@@ -143,7 +159,7 @@ Lemma aconv_inv Γ l t v T :
 Proof.
     intro H.
     destruct t.
-    1,2,3,4,6,7,8,9,10 : (dependent induction H; unfold aconv_inv_type in *; eauto).
+    1,2,3,4,6,7,8,9,10,11,12,13 : (dependent induction H; unfold aconv_inv_type in *; eauto).
     unfold aconv_inv_type.
     dependent induction H; eauto.
     - exists t1. exists t2. exists t3. apply type_inv_app' in H as (_ & AWt & BWt & tWT & _). repeat split; eauto using refl_ty, ann_conv.
@@ -184,6 +200,7 @@ Proof.
     - eapply aconv_inv in H3. simpl in H3. subst. exists (p_succ <[ rec l P p_zero p_succ n .: n..]).
       split. eauto using red. eapply aconv_refl. eapply validity_conv_right.
       eapply conv_rec_succ; eauto.
+    - eapply aconv_inv in H5. simpl in H5. subst. eexists. split; eauto using red. eauto using conversion, validity_conv_right, aconv_refl.
     - eapply aconv_conv in H1; eauto using conv_sym. eapply IHred in H1 as (u' & H' & H'').
       exists u'. split; eauto using red, ann_conv, conv_sym.
 Qed.
@@ -398,6 +415,21 @@ Definition red_inv_type Γ t v :=
             Γ ⊢< l > p_zero : P <[ zero .. ] /\
             Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
             Γ ⊢< ty 0 > n --> n' : Nat
+    | accel i l A R P p a q =>  
+        let t0 := accinv i ((plus 2) ⋅ A) ((up_ren (up_ren (plus 2))) ⋅ R) ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+        let t1 := accel i l A R P p (var 1) t0 in 
+        let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
+        let t3 := lam prop l t2 (S ⋅ P) t1 in
+        let t4 := Pi prop prop t2 (S ⋅ P) in
+        let t5 := lam i l A t4 t3 in
+        v = p <[ t5 .: a ..] /\ 
+        Γ ⊢< Ax i > A : Sort i /\
+        Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop /\ 
+        Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
+        let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+        Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P /\
+        Γ ⊢< i > a : A /\ 
+        Γ ⊢< prop > q : acc i A R a
     | _ => False
     end.
 
@@ -412,6 +444,9 @@ Fixpoint size (t : term) : nat :=
   | zero => 0
   | succ t => 1 + size t
   | rec _ P p0 ps t => 1 + size P + size p0 + size ps + size t
+  | accel _ _ A R a q P p => 1 + size A + size R + size a + size q + size P + size p 
+  | acc _ A R a => 1 + size A + size R + size a 
+  | accin _ A R a p => 1 + size A + size R + size a + size p
   | box => 0
 end.
 
@@ -433,6 +468,7 @@ Proof.
       all: eexists; eauto.
     - simpl. split; eauto. 
     - simpl. split; eauto.
+    - simpl. split; eauto. split; eauto.
     - eapply IHred. eauto.
 Qed.
 
@@ -453,6 +489,7 @@ Proof.
       all: destruct H3 as (n'' & eq & _ & _ & _ & red). all: eapply IHred in red. all: subst. all: eauto.
     - apply red_inv in H2 as (eq & _). eauto.
     - apply red_inv in H3 as (eq & _). eauto.
+    - apply red_inv in H5 as (eq & _). eauto.
     - eapply IHred. eapply red_conv; eauto using conv_sym.
 Qed.
 
@@ -475,6 +512,7 @@ Definition val t :=
     match t with 
     | app i j A B t u => False
     | rec i P pzero psucc n => False 
+    | accel _ _ A R a q P p => False
     | _ => True 
     end.
 
@@ -484,8 +522,8 @@ Proof.
     split; eauto using redd_refl.
     unfold whnf. intros.
     destruct t.
-    1-4,6-8, 10: eapply red_inv in H1; inversion H1. 
-    1, 2: inversion H0.
+    1-4,6-8, 10, 11, 13: eapply red_inv in H1; inversion H1. 
+    1, 2, 3: inversion H0.
 Qed.
 
 Lemma sim_left_redd_whnf_val Γ l t t' u A :

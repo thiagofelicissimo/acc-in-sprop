@@ -1536,6 +1536,60 @@ Proof.
 rewrite H. eapply red_rec_succ; eauto using refl_ty.
 Qed.
 
+Definition meta R t u := ∃ p, ∙ ⊢< prop > p : R <[t .: u ..].
+
+Axiom ob_to_meta : forall t i A R a, ∙ ⊢< prop > t : acc i A R a -> Acc (fun x y => meta R y x) a.
+
+Lemma prefundamental_accel i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1 p2 :
+    ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    LR i A1 A2 ϵA ->
+    (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R2 : Sort prop ->
+    ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (P1<[a1..]) (P2<[a2..]) (ϵP a1 a2 ϵa)) ->
+    let ϵB a1 a2 ϵa f1 f2 := forall b1 b2 (ϵb : ϵA b1 b2) r (r_Wt : ∙ ⊢< prop > r : R1 <[a1 .:b1 ..]), 
+        let t1 := app prop (ty k) (R1<[a1 .: b1 ..]) (S ⋅ (P1 <[a1..])) (app i (ty k) A1 (Pi prop (ty k) (R1<[a1 .: (var 0) ..]) (P1 <[a1..])) f1 b1) r in 
+        let t2 := app prop (ty k) (R2<[a2 .: b2 ..]) (S ⋅ (P2 <[a2..])) (app i (ty k) A2 (Pi prop (ty k) (R2<[a2 .: (var 0) ..]) (P2 <[a2..])) f2 b2) r in
+            ϵP a1 a2 ϵa t1 t2 in
+    let B := Pi i (ty k) (S ⋅ A1) (Pi prop (ty k) R1 (S ⋅ up_ren S ⋅ P1)) in
+    (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 ϵa f1 f2), ϵP a1 a2 ϵa (p1 <[a1.: f1 ..]) (p2<[a2 .: f2 ..])) ->
+    (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : S ⋅ P1 ->
+    ∙ ⊢< i > a1 ≡ a2 : A1 ->
+    forall (ϵa : ϵA a1 a2),
+    ∙ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 -> 
+    ϵP a1 a2 ϵa (accel i (ty k) A1 R1 P1 p1 a1 q1) (accel i (ty k) A2 R2 P2 p2 a2 q2).
+Proof.
+    intros. 
+    assert (Acc (fun x y => meta R1 y x) a1) by eauto using validity_conv_left, ob_to_meta.
+
+    generalize q1 q2 a2 ϵa H6 H7. clear q1 q2 a2 ϵa H6 H7. 
+    induction H8. rename x into a1. intros.
+    pose (ϵPa12 := H3 _ _ ϵa). 
+    eapply LR_irred_tm; eauto. 1,2:shelve.
+    eapply H4.
+Admitted. 
+
+
+
+Lemma fundamental_accel Γ i k A1 A2 R1 R2 a1 a2 q1 q2 P1 P2 p1 p2 :
+    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
+    (Γ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R2 : Sort prop ->
+    (Γ,, (i, A1)),, (i, S ⋅ A1) ⊨< Ax prop > R1 ≡ R2 : Sort prop ->
+    Γ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    let B := Pi i (ty k) (S ⋅ A1) (Pi prop (ty k) R1 (S ⋅ up_ren S ⋅ P1)) in
+    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : S ⋅ P1 ->
+    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊨< ty k > p1 ≡ p2 : S ⋅ P1 ->
+    Γ ⊢< i > a1 ≡ a2 : A1 ->
+    Γ ⊨< i > a1 ≡ a2 : A1 ->
+    Γ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 ->
+    Γ ⊨< prop > q1 ≡ q2 : acc i A1 R1 a1 ->
+    Γ ⊨< ty k > accel i (ty k) A1 R1 P1 p1 a1 q1 ≡ accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..].
+Proof.
+    intros A1_conv_A1 LRv_A12 R1_conv_R2 LRv_R12 P1_conv_P2 LRv_P12 B p1_conv_p2 LRv_p12 a1_conv_a2 LRv_a12 q1_conv_q2 LRv_q12.
+    unfold LRv. intros σ1 σ2 ϵσ12.
+Admitted.
+
 Lemma choice A B R :
     (forall x : A, exists P : B x -> Prop, R x P) -> 
     (forall x P Q, R x P -> R x Q -> forall b, P b -> Q b) ->
@@ -1636,6 +1690,7 @@ Proof.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ, refl_ty.
     - eauto 6 using fundamental_rec, refl_ty.
+    - admit.
     - eauto using fundamental_conv, refl_ty.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
@@ -1646,17 +1701,19 @@ Proof.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ.
     - eauto 6 using fundamental_rec, refl_ty.
+    - admit.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta. 
     - eauto using fundamental_rec_zero.
     - eauto using fundamental_rec_succ.
+    - admit.
     - unfold LRv. intros. eapply LR_subst_sym in H1. eapply H in H1 as (ϵA & LR_A & lr).
       eapply LR_sym in LR_A. eapply LR_sym_tm in lr; eauto.
     - unfold LRv. intros. assert (⊩s σ2 ≡ σ2 : Γ) by eauto using LR_subst_sym, LR_subst_trans.
       eapply H in H2 as (ϵA & LR_A & ϵtu). eapply H0 in H3 as (ϵA' & LR_A' & ϵuv).
       assert (ϵA <~> ϵA') by eauto using LR_sym, LR_irrel. rewrite <- H2 in ϵuv.
       eapply LR_trans_tm in ϵuv; eauto.
-Qed.
+Admitted.
 
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
