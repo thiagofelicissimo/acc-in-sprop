@@ -59,12 +59,18 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
-    let t0 := accinv i ((plus 2) ⋅ A) ((up_ren (up_ren (plus 2))) ⋅ R) ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l A R P p (var 1) t0 in 
+    let Awk := (plus 2) ⋅ A in 
+    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
+    let Pwk := (up_ren (plus 2)) ⋅ P in 
+    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
     let t4 := Pi prop prop t2 (S ⋅ P) in
@@ -79,6 +85,34 @@ where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 
 
 Reserved Notation "Γ ⊢< l > t ~ u : T" (at level 50, l, t, u, T at next level).
+
+Lemma red_accel' Γ i l A R a q P p X Y : 
+    Γ ⊢< Ax i > A : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
+    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
+    Γ ⊢< i > a : A -> 
+    Γ ⊢< prop > q : acc i A R a -> 
+    let Awk := (plus 2) ⋅ A in 
+    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
+    let Pwk := (up_ren (plus 2)) ⋅ P in 
+    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
+    let t3 := lam prop l t2 (S ⋅ P) t1 in
+    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t5 := lam i l A t4 t3 in
+    X = p <[ t5 .: a ..] ->
+    Y = P <[a ..] ->
+    Γ ⊢< l > accel i l A R P p a q --> X : Y.
+Proof.
+    intros. subst. eauto using red_accel.
+Qed.
+
 
 Lemma red_to_conv Γ l t u A :
     Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
@@ -416,17 +450,23 @@ Definition red_inv_type Γ t v :=
             Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
             Γ ⊢< ty 0 > n --> n' : Nat
     | accel i l A R P p a q =>  
-        let t0 := accinv i ((plus 2) ⋅ A) ((up_ren (up_ren (plus 2))) ⋅ R) ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
-        let t1 := accel i l A R P p (var 1) t0 in 
-        let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
-        let t3 := lam prop l t2 (S ⋅ P) t1 in
-        let t4 := Pi prop prop t2 (S ⋅ P) in
-        let t5 := lam i l A t4 t3 in
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let Awk := (plus 2) ⋅ A in 
+    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
+    let Pwk := (up_ren (plus 2)) ⋅ P in 
+    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
+    let t3 := lam prop l t2 (S ⋅ P) t1 in
+    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t5 := lam i l A t4 t3 in
         v = p <[ t5 .: a ..] /\ 
         Γ ⊢< Ax i > A : Sort i /\
         Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop /\ 
         Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
-        let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
         Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P /\
         Γ ⊢< i > a : A /\ 
         Γ ⊢< prop > q : acc i A R a

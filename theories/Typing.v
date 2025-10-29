@@ -118,7 +118,7 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     let A_wk := (plus 2) ⋅ A in
     let R_wk := (up_ren (up_ren (plus 2))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
-    let R' := R <[(S ⋅ a) ..] in
+    let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
     Γ ⊢< prop > p : Pi i prop A (Pi prop prop R' acc_wk) ->
     Γ ⊢< prop > accin i A R a p : acc i A R a
   
@@ -127,7 +127,9 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
@@ -223,7 +225,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let A_wk := (plus 2) ⋅ A in
     let R_wk := (up_ren (up_ren (plus 2))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
-    let R' := R <[(S ⋅ a) ..] in
+    let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
     Γ ⊢< prop > p ≡ p' : Pi i prop A (Pi prop prop R' acc_wk) ->
     Γ ⊢< prop > accin i A R a p ≡ accin i A' R' a' p' : acc i A R a
   
@@ -232,7 +234,9 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop -> 
     Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
-    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+    let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P_ := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : S ⋅ P ->
     Γ ⊢< i > a ≡ a': A -> 
     Γ ⊢< prop > q ≡ q' : acc i A R a -> 
@@ -289,12 +293,18 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
-    let t0 := accinv i ((plus 2) ⋅ A) ((up_ren (up_ren (plus 2))) ⋅ R) ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l A R P p (var 1) t0 in 
+    let Awk := (plus 2) ⋅ A in 
+    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
+    let Pwk := (up_ren (plus 2)) ⋅ P in 
+    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
     let t4 := Pi prop prop t2 (S ⋅ P) in
@@ -358,6 +368,9 @@ Axiom type_accinv :
     Γ ⊢< i > b : A -> 
     Γ ⊢< prop > r : R <[a.:b..] -> 
     Γ ⊢< prop > accinv i A R a p b r : acc i A R b.
+
+Axiom accinv_subst : forall i A R a p b r σ,
+  (accinv i A R a p b r) <[ σ ] = accinv i (A <[σ]) (R<[var 0 .: (var 1 .: σ >> (ren_term (S >> S)))]) (a<[σ]) (p<[σ]) (b<[σ]) (r<[σ]).
 
 Reserved Notation "Γ ⊢s σ : Δ" (at level 50, σ, Δ at next level).
 
