@@ -1581,12 +1581,16 @@ Definition meta R t u := ∃ p, ∙ ⊢< prop > p : R <[u .: t ..].
 
 Axiom ob_to_meta : forall t i A R a, ∙ ⊢< prop > t : acc i A R a -> Acc (meta R) a.
 
-Lemma aaux Γ i k A R a q P p r b X Y l: 
+Lemma aaux A' R' P' Γ i k A R a q P p r b X Y l: 
+    Γ ⊢< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop -> 
+    Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
     Γ ,, (i, A) ⊢< Ax (ty k) > P : Sort (ty k) ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
-    let B := Pi i (ty k) (S ⋅ A) (Pi prop (ty k) R' P') in
-    Γ ,, (i, A) ,, (Ru i (ty k), B) ⊢< (ty k) > p : S ⋅ P ->
+    let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P_ := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< prop > q : acc i A R a -> 
     Γ ⊢< prop > r : R <[a .: b ..] ->
     let Awk := (plus 2) ⋅ A in 
@@ -1596,11 +1600,13 @@ Lemma aaux Γ i k A R a q P p r b X Y l:
     let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
     let t1 := accel i (ty k) Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
-    let t3 := lam prop (ty k) t2 (S ⋅ P) t1 in
-    let t4 := Pi prop l t2 (S ⋅ P) in
+    let t3 := lam prop (ty k) t2 P'' t1 in
+    let t4 := Pi prop l t2 P'' in
     let t5 := lam i (ty k) A t4 t3 in
-    let t6 := app i (ty k) A t4 t5 b in 
-    let t7 := app prop (ty k) (R<[a .: b ..]) (S ⋅ (P <[ b ..])) t6 r in 
+    let t2' := R'<[S ⋅ a .: (var 0 .: S >> var)] in 
+    let t4' := Pi prop l t2' (P' <[var 1.: (S >> (S >> var))]) in
+    let t6 := app i (ty k) A' t4' t5 b in 
+    let t7 := app prop (ty k) (R'<[a .: b ..]) (S ⋅ (P' <[ b ..])) t6 r in 
     X = t7 ->
     Y = P <[b..] ->
     l = ty k ->
@@ -1634,7 +1640,7 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 ϵa f1 f2), 
         ∙ ⊢< Ru i (ty k)> f1 ≡ f2 : B <[a1..] ->
         ϵP a1 a2 ϵa (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
-    (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : S ⋅ P1 ->
+    (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : P1 <[var 1.: (S >> (S >> var))] ->
     ∙ ⊢< i > a1 ≡ a2 : A1 ->
     forall (ϵa : ϵA a1 a2),
     ∙ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 -> 
@@ -1656,7 +1662,7 @@ Proof.
     (* eapply aaux. *)
     1,2:shelve.
     unshelve eapply H10.
-    eapply (accinv _ _ _ a1 q1 b1 r1). eapply (accinv _ _ _ a2 q2 b2 r2).
+    eapply (accinv i A1 R1 a1 q1 b1 r1). eapply (accinv i A2 R2 a2 q2 b2 r2).
     unfold meta. eexists. eauto using validity_conv_right.
     eauto using LR_escape_tm.
     eapply conv_irrel.
@@ -1665,7 +1671,11 @@ Proof.
     Unshelve.
     
     Focus 2.
-    ssimpl. eapply aaux. Focus 5. ssimpl. assert ((P1 <[ var 1 .: S >> (S >> var)]) = S ⋅ P1). substify. ssimpl. 
+    ssimpl. eapply (aaux A1 R1 P1). Focus 8. ssimpl. substify. ssimpl. reflexivity.
+    1-9:admit.
+    Focus 2.
+    ssimpl. eapply redd_conv.
+    eapply (aaux A3 R3 P3). Focus 8. ssimpl. substify. ssimpl. reflexivity.
     (* reflexivity. *)
 
 Admitted. 
@@ -1683,15 +1693,16 @@ Lemma fundamental_accel Γ i k A1 A2 R1 R2 a1 a2 q1 q2 P1 P2 p1 p2 :
     let P' := P1 <[var 1 .: (S >> S >> S >> var)] in
     let C := Pi prop (ty k) R' P' in
     let B := Pi i (ty k) (S ⋅ A1) C in
-    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : S ⋅ P1 ->
-    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊨< ty k > p1 ≡ p2 : S ⋅ P1 ->
+    let P'' := P1 <[var 1.: (S >> (S >> var))] in
+    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : P'' ->
+    (Γ,, (i, A1)),, (Ru i (ty k), B) ⊨< ty k > p1 ≡ p2 : P'' ->
     Γ ⊢< i > a1 ≡ a2 : A1 ->
     Γ ⊨< i > a1 ≡ a2 : A1 ->
     Γ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 ->
     Γ ⊨< prop > q1 ≡ q2 : acc i A1 R1 a1 ->
     Γ ⊨< ty k > accel i (ty k) A1 R1 P1 p1 a1 q1 ≡ accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..].
 Proof.
-    intros A1_conv_A1 LRv_A12 R1_conv_R2 LRv_R12 P1_conv_P2 LRv_P12 R' P' C B p1_conv_p2 LRv_p12 a1_conv_a2 LRv_a12 q1_conv_q2 LRv_q12.
+    intros A1_conv_A1 LRv_A12 R1_conv_R2 LRv_R12 P1_conv_P2 LRv_P12 R' P' C B P'' p1_conv_p2 LRv_p12 a1_conv_a2 LRv_a12 q1_conv_q2 LRv_q12.
     unfold LRv. intros σ1 σ2 ϵσ12.
 
     assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 by eauto using LRv_sym, LRv_trans.
@@ -1725,9 +1736,9 @@ Proof.
     eapply ϵT_iff_eT; eauto. ssimpl. eauto.
 
     Focus 2. ssimpl.
-    assert ((S ⋅ P1) <[ var 0 .: ((↑ 0)__term .: σ1 >> ren_term (↑ >> ↑))] = P1 <[ var 1 .: σ1 >> ren_term (↑ >> S)]).
-    ssimpl. reflexivity.
-    rewrite <- H.
+    assert (P1 <[ var 1 .: σ1 >> subst_term (S >> (S >> var))] = P'' <[ var 0 .: ((↑ 0)__term .: σ1 >> ren_term (↑ >> ↑))]).
+    unfold P''. substify. ssimpl. reflexivity.
+    rewrite H.
     eapply subst. 2:eauto.
     eapply lift_subst2'.
     eauto using validity_conv_left, validity_ty_ctx.
@@ -1735,9 +1746,7 @@ Proof.
     eauto. unfold B. simpl. f_equal.
     ssimpl. eauto.
     unfold R', P'.
-    simpl. f_equal. 
-    ssimpl. setoid_rewrite rinstInst'_term_pointwise. eauto.
-    ssimpl. setoid_rewrite rinstInst'_term_pointwise. ssimpl. eauto.
+    substify. ssimpl. substify. reflexivity.
 
     intros.
 
@@ -1817,8 +1826,9 @@ Lemma fundamental_accel_accin Γ i k A R a q P p :
     let R' := R <[ var 1 .: (var 0 .: (S >> S) >> var)] in
     let P' := P <[ var 1 .: ((S >> S) >> S) >> var] in
     let B := Pi i (ty k) (S ⋅ A) (Pi prop (ty k) R' P') in
-    (Γ,, (i, A)),, (Ru i (ty k), B) ⊢< ty k > p : S ⋅ P ->
-    (Γ,, (i, A)),, (Ru i (ty k), B) ⊨< ty k > p ≡ p : S ⋅ P ->
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    (Γ,, (i, A)),, (Ru i (ty k), B) ⊢< ty k > p : P'' ->
+    (Γ,, (i, A)),, (Ru i (ty k), B) ⊨< ty k > p ≡ p : P'' ->
     Γ ⊢< i > a : A ->
     Γ ⊨< i > a ≡ a : A ->
     Γ ⊢< prop > q : acc i A R a ->
@@ -1830,8 +1840,8 @@ Lemma fundamental_accel_accin Γ i k A R a q P p :
     let t5 := accinv i Awk Rwk (Init.Nat.add 2 ⋅ a) (Init.Nat.add 2 ⋅ q) (var 1) (var 0) in
     let t6 := accel i (ty k) Awk Rwk Pwk pwk (var 1) t5 in
     let t7 := R <[ S ⋅ a .: (var 0 .: S >> var)] in
-    let t8 := lam prop (ty k) t7 (S ⋅ P) t6 in
-    let t9 := Pi prop (ty k) t7 (S ⋅ P) in
+    let t8 := lam prop (ty k) t7 P'' t6 in
+    let t9 := Pi prop (ty k) t7 P'' in
     let t10 := lam i (ty k) A t9 t8 in
     Γ ⊨< ty k > accel i (ty k) A R P p a q ≡ p <[ t10 .: a..] : P <[ a..].
 Proof.
@@ -1861,7 +1871,7 @@ Proof.
     
     eapply red_to_redd. cbn. eapply red_conv.
     eapply red_accel'.
-    Focus 4. ssimpl. f_equal. ssimpl. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk. ssimpl. f_equal. f_equal.
+    Focus 4. ssimpl. f_equal. ssimpl. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. ssimpl. f_equal. f_equal.
     substify. ssimpl. reflexivity. substify. ssimpl.
     f_equal. f_equal. ssimpl. rewrite accinv_subst. f_equal; ssimpl; eauto.
 Admitted.

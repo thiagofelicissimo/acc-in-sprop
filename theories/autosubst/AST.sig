@@ -14,4 +14,7 @@ Nat : term
 zero : term 
 succ : term -> term 
 rec : level -> (bind term in term) -> term -> (bind term , term in term) -> term -> term
+acc : level -> term -> (bind term , term in term) -> term -> term 
+accin : level -> term -> (bind term , term in term) -> term -> term -> term
+accel : level -> level -> term -> (bind term , term in term) -> (bind term in term) -> (bind term, term in term) -> term -> term -> term
 box : term

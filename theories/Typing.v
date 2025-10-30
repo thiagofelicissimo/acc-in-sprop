@@ -130,7 +130,8 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P' := P <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
     Γ ⊢< l > accel i l A R P p a q : P <[a ..]
@@ -237,7 +238,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P_ := P <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : S ⋅ P ->
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
     Γ ⊢< i > a ≡ a': A -> 
     Γ ⊢< prop > q ≡ q' : acc i A R a -> 
     Γ ⊢< l > accel i l A R P p a q ≡ accel i l A' R' P' p' a' q' : P <[a ..]
@@ -296,7 +298,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P' := P <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
     let Awk := (plus 2) ⋅ A in 
@@ -306,8 +309,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
-    let t3 := lam prop l t2 (S ⋅ P) t1 in
-    let t4 := Pi prop l t2 (S ⋅ P) in
+    let t3 := lam prop l t2 P'' t1 in
+    let t4 := Pi prop l t2 P'' in
     let t5 := lam i l A t4 t3 in
     Γ ⊢< l > accel i l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..]
 
