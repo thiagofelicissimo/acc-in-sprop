@@ -422,3 +422,17 @@ Proof.
   eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
   eapply type_accinv; eauto.
 Qed.
+
+Lemma type_app' Γ i j A B t u T :
+      Γ ⊢< Ru i j > t : Pi i j A B →
+      Γ ⊢< i > u : A →
+      (Γ ⊢< Ax j > B <[ u .. ] : Sort j -> Γ ⊢< Ax j > T ≡ B <[ u .. ] : Sort j) ->
+      Γ ⊢< j > app i j A B  t u : T.
+Proof.
+  intros.
+  eapply validity_ty_ty in H as temp.
+  eapply type_inv_pi' in temp as (_ & AWt & BWt & _).
+  assert (Γ ⊢< j > app i j A B t u : B<[u..]) as H2 by eauto using type_app.
+  eapply type_conv.
+  eauto. eapply conv_sym. eapply validity_ty_ty in H2. eauto.
+Qed.
