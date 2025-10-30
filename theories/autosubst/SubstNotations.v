@@ -37,3 +37,10 @@ Ltac ssimpl :=
   resubst ;
   asimpl ;
   repeat unfold_funcomp.
+
+Ltac asimpl_unsafe := (* check_no_evars; *)
+                repeat
+                 unfold VarInstance_term, Var, ids, Ren_term, Ren1, ren1,
+                  Up_term_term, Up_term, up_term, Subst_term, Subst1, subst1
+                  in *;
+                asimpl'; minimize.
