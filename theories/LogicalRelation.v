@@ -708,6 +708,7 @@ Qed.
         relation ϵT, whenever we have enough information to obtain ϵT.
    *)
 
+
 Definition eT j ϵS T1 T2 := 
     fun s1 s2 (ϵs : ϵS s1 s2) a1 a2 => forall R, LR j (T1 <[ s1..]) (T2 <[ s2..]) R -> R a1 a2.
  
@@ -721,6 +722,27 @@ Proof.
       rewrite H3. eauto.
     - eapply H1 in H0. eauto.
 Qed.
+
+Opaque eT.
+
+(* TODO: maybe factorize the construction of eT through the following choice principle, 
+    to enhance explainability of the construction? *)
+Lemma choice A B R :
+    (forall x : A, exists P : B x -> Prop, R x P) -> 
+    (forall x P Q, R x P -> R x Q -> forall b, P b -> Q b) ->
+    (forall x P Q, (forall b, P b -> Q b ) -> 
+        R x P -> R x Q) ->
+    @sig (forall x, B x -> Prop) (fun P => forall x, R x (P x)).
+Proof.
+    intros.
+    unshelve econstructor. 
+    exact (fun a b => forall P, R a P -> P b).
+    intros. destruct (H x).
+    eapply H1. 2:exact H2. 
+    intros.
+    eapply H0. exact H2. all:eauto.
+Qed.
+
 
 Lemma split_iff (R R': TmRel) : R <~> R' -> (forall t u, R t u -> R' t u) /\ (forall t u, R' t u -> R t u).
 Proof.
@@ -1429,7 +1451,6 @@ Proof.
 
 
     eapply (ϵT_iff_eT _ (ty k)). 2:eapply H. 1:eapply prefundamental_nat. Unshelve. 2:eauto.
-    Opaque eT.
     eapply (prefundamental_rec _ _ _ _ _ _ _ (eT (ty k) ϵNat (P1 <[ var 0 .: σ1 >> ren_term S]) (P2 <[ var 0 .: σ2 >> ren_term S]))) ; eauto.
     - eapply subst_ty''. eapply (lift_subst _ _ _ Nat); eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx. eauto.
     - ssimpl. assert (P1 <[zero.:σ1] = P1 <[zero .: var] <[σ1]). ssimpl. eauto. rewrite H0. eapply subst; eauto using LR_subst_escape.
@@ -1547,9 +1568,48 @@ Proof.
 rewrite H. eapply red_rec_succ; eauto using refl_ty.
 Qed.
 
+Lemma aux_subst_3 Γ l t u A :
+  Γ ⊢< l > t ≡ u : A ->
+  Γ ⊢s t .. ≡ u .. : (Γ ,, (l, A)).
+Proof.
+  intros.
+  econstructor; ssimpl; eauto using refl_subst, subst_id, validity_ty_ctx, validity_conv_left.
+Qed.
+
+
 Definition meta R t u := ∃ p, ∙ ⊢< prop > p : R <[u .: t ..].
 
 Axiom ob_to_meta : forall t i A R a, ∙ ⊢< prop > t : acc i A R a -> Acc (meta R) a.
+
+Lemma aaux Γ i k A R a q P p r b X Y l: 
+    Γ ,, (i, A) ⊢< Ax (ty k) > P : Sort (ty k) ->
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i (ty k) (S ⋅ A) (Pi prop (ty k) R' P') in
+    Γ ,, (i, A) ,, (Ru i (ty k), B) ⊢< (ty k) > p : S ⋅ P ->
+    Γ ⊢< prop > q : acc i A R a -> 
+    Γ ⊢< prop > r : R <[a .: b ..] ->
+    let Awk := (plus 2) ⋅ A in 
+    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
+    let Pwk := (up_ren (plus 2)) ⋅ P in 
+    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let t1 := accel i (ty k) Awk Rwk Pwk pwk (var 1) t0 in 
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
+    let t3 := lam prop (ty k) t2 (S ⋅ P) t1 in
+    let t4 := Pi prop l t2 (S ⋅ P) in
+    let t5 := lam i (ty k) A t4 t3 in
+    let t6 := app i (ty k) A t4 t5 b in 
+    let t7 := app prop (ty k) (R<[a .: b ..]) (S ⋅ (P <[ b ..])) t6 r in 
+    X = t7 ->
+    Y = P <[b..] ->
+    l = ty k ->
+    Γ ⊢< l > X -->> accel i (ty k) A R P p b (accinv i A R a q b r) : Y.
+Proof.
+    intros.
+Admitted.
+
+
 
 Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1 p2 :
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i -> 
@@ -1571,7 +1631,9 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     let R' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P' := P1 <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i (ty k) (S ⋅ A1) (Pi prop (ty k) R' P') in
-    (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 ϵa f1 f2), ϵP a1 a2 ϵa (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
+    (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 ϵa f1 f2), 
+        ∙ ⊢< Ru i (ty k)> f1 ≡ f2 : B <[a1..] ->
+        ϵP a1 a2 ϵa (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
     (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : S ⋅ P1 ->
     ∙ ⊢< i > a1 ≡ a2 : A1 ->
     forall (ϵa : ϵA a1 a2),
@@ -1584,22 +1646,27 @@ Proof.
     generalize q1 q2 a2 ϵa H9 H10. clear q1 q2 a2 ϵa H9 H10. 
     induction H11. rename x into a1. intros.
     pose (ϵPa12 := H7 _ _ ϵa). 
-    eapply LR_irred_tm; eauto. 1,2:shelve.
-    eapply H7.
-    Unshelve. 2:eapply red_to_redd. 2:eapply red_accel; eauto using validity_conv_left.
-
-
-    2:eapply red_to_redd. 2:eapply red_conv. 2:eapply red_accel; eauto using validity_conv_right.
-    2-7:shelve.
+    eapply LR_irred_tm; eauto. 
+    3:eapply H7.
+    eapply red_to_redd. eapply red_accel'; eauto using validity_conv_left.
+    eapply red_to_redd. eapply red_conv. eapply red_accel'; eauto using validity_conv_right. 1-3:admit.
+    eauto using subst_ty'', conv_sym, aux_subst_3.
     unfold ϵB. intros. subst.
     eapply LR_irred_tm; eauto.
+    (* eapply aaux. *)
     1,2:shelve.
-    eapply H10. unfold meta. eexists.
-    eauto using validity_conv_right.
+    unshelve eapply H10.
+    eapply (accinv _ _ _ a1 q1 b1 r1). eapply (accinv _ _ _ a2 q2 b2 r2).
+    unfold meta. eexists. eauto using validity_conv_right.
     eauto using LR_escape_tm.
     eapply conv_irrel.
-    eapply type_accinv; eauto using validity_conv_left. 
+    eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
+    eapply type_conv. eapply type_accinv'. 1-6:admit.
     Unshelve.
+    
+    Focus 2.
+    ssimpl. eapply aaux. Focus 5. ssimpl. assert ((P1 <[ var 1 .: S >> (S >> var)]) = S ⋅ P1). substify. ssimpl. 
+    (* reflexivity. *)
 
 Admitted. 
 
@@ -1695,7 +1762,7 @@ Proof.
 
     ssimpl. eauto. 
 
-    intros. ssimpl.  assert (ty k = Ru prop (ty k)) by eauto.  rewrite H at 1. 
+    intros. ssimpl.  assert (ty k = Ru prop (ty k)) by eauto.  rewrite H0 at 1. 
     unshelve eapply LR_pi.
 
     3:exact (fun t u => ∙ ⊢< prop > t ≡ u : R1 <[ a0 .: (s1 .: σ1)]).
@@ -1717,7 +1784,7 @@ Proof.
 
     assert (ϵB f1 f2).
     unfold ϵB. unfold ϵPi.
-    split. admit. (* todo: need more info about f1, f2 *)
+    split. asimpl in H. unfold C, P', R'. asimpl. setoid_rewrite rinstInst'_term_pointwise.  eapply H. 
     intros. unfold ϵC. unfold ϵPi. split.
     admit.
     intros. ssimpl.
@@ -1731,12 +1798,12 @@ Proof.
     unshelve econstructor. exact ϵB. unshelve econstructor. exact ϵA. ssimpl. eauto.
     ssimpl. eauto. ssimpl. eauto. ssimpl. eauto. ssimpl. eauto.
 
-    eapply LRv_p12 in H1 as temp.
+    eapply LRv_p12 in H2 as temp.
 
     destruct temp as (ϵPa0 & LR_Pa0 & ϵp).
     asimpl in LR_Pa0.
     assert (ϵPa0 <~> eP a0 a3 ϵa). eapply ϵT_iff_eT; eauto. ssimpl. admit.
-    rewrite H2 in ϵp.
+    rewrite H3 in ϵp.
     eapply ϵp.
 Admitted.
 
@@ -1764,7 +1831,7 @@ Lemma fundamental_accel_accin Γ i k A R a q P p :
     let t6 := accel i (ty k) Awk Rwk Pwk pwk (var 1) t5 in
     let t7 := R <[ S ⋅ a .: (var 0 .: S >> var)] in
     let t8 := lam prop (ty k) t7 (S ⋅ P) t6 in
-    let t9 := Pi prop prop t7 (S ⋅ P) in
+    let t9 := Pi prop (ty k) t7 (S ⋅ P) in
     let t10 := lam i (ty k) A t9 t8 in
     Γ ⊨< ty k > accel i (ty k) A R P p a q ≡ p <[ t10 .: a..] : P <[ a..].
 Proof.
@@ -1786,30 +1853,19 @@ Proof.
     (exists ϵP). split; ssimpl; eauto.
     eapply LR_redd_tm; eauto.
     ssimpl. eapply redd_refl. eapply validity_conv_left. 
-    eapply conv_conv. eapply conv_accel_accin. 1-6:admit.
+    eapply conv_conv. eapply conv_accel_accin. 
+    1-6:eauto using LR_subst_escape, refl_ty, subst, subst_ty'', validity_conv_left.
+    1-4:admit.
     ssimpl. eauto using validity_conv_left, LR_escape_ty, refl_ty.
 
     
-    eapply red_to_redd. ssimpl. eapply red_conv.
+    eapply red_to_redd. cbn. eapply red_conv.
     eapply red_accel'.
-    Focus 7. ssimpl. f_equal. ssimpl. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk. ssimpl. f_equal. f_equal.
-     setoid_rewrite rinstInst'_term_pointwise. ssimpl. reflexivity. setoid_rewrite rinstInst'_term_pointwise. ssimpl.
-     f_equal. f_equal. ssimpl. rewrite accinv_subst. f_equal; ssimpl; eauto.
+    Focus 4. ssimpl. f_equal. ssimpl. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk. ssimpl. f_equal. f_equal.
+    substify. ssimpl. reflexivity. substify. ssimpl.
+    f_equal. f_equal. ssimpl. rewrite accinv_subst. f_equal; ssimpl; eauto.
 Admitted.
 
-Lemma choice A B R :
-    (forall x : A, exists P : B x -> Prop, R x P) -> 
-    (forall x P Q, R x P -> R x Q -> forall b, P b -> Q b) ->
-    (forall x P Q, (forall b, P b -> Q b ) -> 
-        R x P -> R x Q) ->
-    exists P : forall x, B x -> Prop, forall x, R x (P x).
-intros.
-    exists (fun a b => forall P, R a P -> P b).
-    intros. destruct (H x).
-    eapply H1. 2:exact H2. 
-    intros.
-    eapply H0. exact H2. all:eauto.
-Qed.
 
 
 
@@ -1855,17 +1911,6 @@ Proof.
         refl_ty, subst_ty'', LR_subst_escape.    
 Qed.
 
-
-(* used to eliminate the condition l = ty k in the IHs in the proof of fundamental_ty *)
-Lemma helper_fund' Γ l t u A :
-    Γ ⊢< l > t ≡ u : A -> 
-    (forall k, l = ty k -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
-Proof.
-    intros. split. intros.
-    destruct l; eauto using fundamental_prop.
-    eauto.
-Qed.
-
 (* used to eliminate the condition 
         forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> ...
     from the IHs in the proof of fundamental_ty *)
@@ -1897,6 +1942,7 @@ Proof.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ, refl_ty.
     - eauto 6 using fundamental_rec, refl_ty.
+    - eauto using fundamental_prop_ty.
     - eauto 9 using fundamental_accel, refl_ty.
     - eauto using fundamental_conv, refl_ty.
     - eauto using fundamental_var.
@@ -1908,6 +1954,7 @@ Proof.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ.
     - eauto 6 using fundamental_rec, refl_ty.
+    - eauto using fundamental_prop_ty.
     - eauto using fundamental_accel.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta. 

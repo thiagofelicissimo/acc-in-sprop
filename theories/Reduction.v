@@ -73,7 +73,7 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
-    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t4 := Pi prop l t2 (S ⋅ P) in
     let t5 := lam i l A t4 t3 in
     Γ ⊢< l > accel i l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
 
@@ -87,14 +87,11 @@ where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 Reserved Notation "Γ ⊢< l > t ~ u : T" (at level 50, l, t, u, T at next level).
 
 Lemma red_accel' Γ i l A R a q P p X Y : 
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
     let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P' := P <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
-    Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
     let Awk := (plus 2) ⋅ A in 
     let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
@@ -104,14 +101,19 @@ Lemma red_accel' Γ i l A R a q P p X Y :
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
-    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t4 := Pi prop l t2 (S ⋅ P) in
     let t5 := lam i l A t4 t3 in
     X = p <[ t5 .: a ..] ->
     Y = P <[a ..] ->
     Γ ⊢< l > accel i l A R P p a q --> X : Y.
 Proof.
-    intros. subst. eauto using red_accel.
+    intros. subst. 
+    eapply validity_ty_ty in H1 as temp. 
+    eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
+    eauto using red_accel.
 Qed.
+
+
 
 
 Lemma red_to_conv Γ l t u A :
@@ -126,6 +128,30 @@ Proof.
     eauto using conv_beta, validity_conv_left.
 Qed.
 
+Lemma red_app' Γ t t' u i j A B X Y :
+    Γ ⊢< Ru i j > t --> t' : Pi i j A B -> 
+    Γ ⊢< i > u : A ->
+    X = app i j A B t' u -> 
+    Y = B <[ u..] ->
+    Γ ⊢< j > app i j A B t u --> X : Y.
+Proof.
+    intros. subst.
+    eapply red_to_conv in H as temp.  eapply validity_conv_left in temp. eapply validity_ty_ty in temp.
+    eapply type_inv_pi' in temp as (_ & Awt & BWt & _).
+    eapply red_app; eauto.
+Qed.
+
+Lemma red_beta' Γ t u i j A B A' B' X Y : 
+    Γ ⊢< Ax i > A ≡ A' : Sort i -> 
+    Γ ,, (i, A) ⊢< Ax j > B ≡ B' : Sort j -> 
+    Γ ,, (i , A) ⊢< j > t : B →
+    Γ ⊢< i > u : A →
+    X = t <[ u.. ] ->
+    Y = B <[ u..] ->
+    Γ ⊢< j > app i j A B (lam i j A' B' t) u --> X : Y.
+Proof.
+    intros. subst. eapply red_beta; eauto.
+Qed.
 
 Inductive ann_conv : ctx -> level -> term -> term -> term -> Prop :=
 
@@ -461,7 +487,7 @@ Definition red_inv_type Γ t v :=
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
-    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t4 := Pi prop l t2 (S ⋅ P) in
     let t5 := lam i l A t4 t3 in
         v = p <[ t5 .: a ..] /\ 
         Γ ⊢< Ax i > A : Sort i /\

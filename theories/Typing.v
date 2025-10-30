@@ -108,7 +108,7 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ⊢< i > a : A -> 
-    Γ ⊢< prop > acc i A R a : Sort prop
+    Γ ⊢< Ax prop > acc i A R a : Sort prop
 
 | type_accin : 
     ∀ Γ i A R a p,
@@ -215,7 +215,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop -> 
     Γ ⊢< i > a ≡ a' : A -> 
-    Γ ⊢< prop > acc i A R a ≡ acc i A' R' a' : Sort prop
+    Γ ⊢< Ax prop > acc i A R a ≡ acc i A' R' a' : Sort prop
 
 | conv_accin : 
     ∀ Γ i A A' R R' a a' p p',
@@ -307,36 +307,9 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 (S ⋅ P) t1 in
-    let t4 := Pi prop prop t2 (S ⋅ P) in
+    let t4 := Pi prop l t2 (S ⋅ P) in
     let t5 := lam i l A t4 t3 in
     Γ ⊢< l > accel i l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..]
-(* 
-| conv_accel_accin : 
-    ∀ Γ i l A R a q P p,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let B := Pi i l (S ⋅ A) (Pi prop l R (S ⋅ (up_ren S) ⋅ P)) in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : S ⋅ P ->
-    Γ ⊢< i > a : A -> 
-    let A_wk := (plus 2) ⋅ A in
-    let R_wk := (up_ren (up_ren (plus 2))) ⋅ R in
-    let acc_wk := acc i A_wk R_wk (var 1)  in
-    let R' := R <[(S ⋅ a) ..] in
-    Γ ⊢< prop > q : Pi i prop A (Pi prop prop R' acc_wk) ->
-
-    let t1 := R<[(plus 3) ⋅ a .: (var 0 .: (plus 3) >> var)] in 
-    let t2 := acc i ((plus 4) ⋅ A) ((up_ren (up_ren (plus 4))) ⋅ R) (var 1) in
-    let t3 := app i prop ((plus 2) ⋅ A) (Pi prop prop t1 t2) ((plus 2) ⋅ q) (var 1) in
-    let t4 := R<[(plus 2) ⋅ a .: (var 1 .: (plus 2) >> var)] in 
-    let t5 := acc i ((plus 3) ⋅ A) ((up_ren (up_ren (plus 3))) ⋅ R) (var 2) in
-    let t6 := app prop prop t4 t5 t3 (var 0) in
-    let t7 := accel i l A R P p (var 1) t6 in 
-    let t8 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
-    let t9 := lam prop l t8 (S ⋅ P) t7 in
-    let t10 := Pi prop prop t8 (S ⋅ P) in
-    let t11 := lam i l A t10 t9 in
-    Γ ⊢< l > accel i l A R P p a (accin i A R a q) ≡ p <[ t11 .: a ..] : P <[a ..] *)
 
 | conv_sym : 
     ∀ Γ l t u A,
@@ -362,7 +335,7 @@ Combined Scheme typing_conversion_mutind from typing_mut, conversion_mut.
 Axiom type_accinv :
     ∀ Γ i A R a p b r,
     Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, A<[shift>>var]) ⊢< Ax prop > R : Sort prop -> 
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > p : acc i A R a -> 
     Γ ⊢< i > b : A -> 

@@ -389,3 +389,36 @@ Proof.
   - edestruct IHtyping as (PWt & p_zeroWt & p_succWt & tWt & l_eq & conv); eauto using validity_conv_left.
     rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
 Qed.
+
+Lemma type_inv_acc' Γ i A R a T l :
+      Γ ⊢< l > acc i A R a : T ->
+      Γ ⊢< l > acc i A R a : T /\
+      Γ ⊢< Ax i > A : Sort i /\
+      Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop /\ 
+      Γ ⊢< i > a : A /\ 
+      l = Ax prop /\ 
+      Γ ⊢< Ax (Ax prop) > T ≡ Sort prop : Sort (Ax prop).
+Proof.
+  intro H.
+  apply validity_ty_ty in H as T_Wt.
+  split. auto.
+  dependent induction H; eauto.
+  - repeat split; eauto using refl_ty.
+  - edestruct IHtyping as (AWt & RWt & aWt & l_eq & conv); eauto using validity_conv_left.
+    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
+Qed.
+
+
+
+Lemma type_accinv' Γ i A R a p b r l T :
+    Γ ⊢< prop > p : acc i A R a -> 
+    Γ ⊢< i > b : A -> 
+    Γ ⊢< prop > r : R <[a.:b..] -> 
+    T = acc i A R b ->
+    l = prop ->
+    Γ ⊢< l > accinv i A R a p b r : T.
+Proof.
+  intros. subst. eapply validity_ty_ty in H as temp.
+  eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
+  eapply type_accinv; eauto.
+Qed.
