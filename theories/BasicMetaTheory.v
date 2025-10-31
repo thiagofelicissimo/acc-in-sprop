@@ -417,3 +417,14 @@ Proof.
   eapply type_conv.
   eauto. eapply conv_sym. eapply validity_ty_ty in H2. eauto.
 Qed.
+
+Lemma conv_app' Γ i j A B_ B t u A' B' t' u' :
+      Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
+      Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
+      Γ ⊢< i > u ≡ u' : A →
+      B_ = B <[ u .. ] ->
+      Γ ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B_.
+Proof.
+  intros. subst. eauto using conv_app.
+Qed.
