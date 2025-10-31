@@ -1216,14 +1216,14 @@ Proof.
         (* from this point on, it's just technical manipulations to show that the beta redex reduces *)
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. eapply red_beta'; fold subst_term; eauto ; ssimpl.
-        all:eauto 9 using refl_ty, subst2, subst, LR_subst_escape, 
+        all:eauto 9 using refl_ty, subst, LR_subst_escape, 
             validity_subst_conv_left, validity_conv_left, lift_subst, validity_ty_ctx, LR_escape_tm.
         ssimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
         ssimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
         
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. eapply red_beta; fold subst_term; ssimpl. 
-        all:eauto 10 using refl_ty, subst2, subst, subst, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
+        all:eauto 10 using refl_ty, subst, subst, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
             validity_subst_conv_right, validity_conv_right, validity_subst_conv_left, validity_conv_left, LR_escape_tm, refl_subst.
         
         ssimpl. eauto 6 using subst, refl_ty, validity_conv_left, subst_conv_sym, LR_subst_escape.
@@ -1726,7 +1726,7 @@ Proof.
     eauto using LR_escape_tm.
     eapply conv_irrel.
     eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
-    eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, aux_subst_4, subst_ty''.
+    eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, aux_subst_4, subst.
     eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm.
     
     admit.
@@ -1735,9 +1735,10 @@ Proof.
     ssimpl. eapply (aaux A1 R1 P1); eauto using validity_conv_left, LR_escape_tm, refl_ty. substify. ssimpl. reflexivity.
 
     ssimpl. eapply redd_conv.
-    eapply (aaux A3 R3 P3); eauto 6 using validity_subst_conv_left, validity_conv_right, conv_sym, conv_trans, refl_ty, LR_escape_tm, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, type_conv, conv_acc, aux_subst_4, subst_ty''.
+    eapply (aaux A3 R3 P3); eauto 6 using validity_subst_conv_left, validity_conv_right, conv_sym, conv_trans, refl_ty, LR_escape_tm, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, type_conv, conv_acc, aux_subst_4, subst.
     2:substify; ssimpl; reflexivity.
-    2: eauto using aux_subst_3, subst_ty'', conv_sym, LR_escape_tm.
+    2: eauto using aux_subst_3, subst, conv_sym, LR_escape_tm.
+
     admit.
     
 Admitted. 
@@ -1898,19 +1899,36 @@ Proof.
 
     (exists ϵP). split; ssimpl; eauto.
     eapply LR_redd_tm; eauto.
-    ssimpl. eapply redd_refl. eapply validity_conv_left. 
-    eapply conv_conv. eapply conv_accel_accin. 
-    1-6:eauto using LR_subst_escape, refl_ty, subst, subst_ty'', validity_conv_left.
-    1-4:admit.
-    ssimpl. eauto using validity_conv_left, LR_escape_ty, refl_ty.
-
-    
-    eapply red_to_redd. cbn. eapply red_conv.
-    eapply red_accel'.
-    Focus 4. ssimpl. f_equal. ssimpl. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. ssimpl. f_equal. f_equal.
-    substify. ssimpl. reflexivity. substify. ssimpl.
-    f_equal. f_equal. ssimpl. rewrite accinv_subst. f_equal; ssimpl; eauto.
-Admitted.
+    - ssimpl. eapply redd_refl. eapply validity_conv_left. 
+      eapply conv_conv. eapply conv_accel_accin.
+      1-6:eapply validity_conv_left; eapply subst; eauto 8 using refl_ty, LR_subst_escape.
+      + eapply lift_subst2; eauto using LR_subst_escape, validity_ty_ctx. ssimpl. reflexivity.
+      + eapply lift_subst; eauto using LR_subst_escape, validity_ty_ctx. 
+      + eapply lift_subst2; eauto using validity_ty_ctx, LR_subst_escape. unfold B, R', P'. simpl. 
+      f_equal. ssimpl. reflexivity. f_equal. ssimpl. substify. eauto. ssimpl. substify. eauto.
+      + unfold P''. ssimpl. substify. reflexivity.
+      + ssimpl. reflexivity.
+      + ssimpl. eauto using LR_escape_ty, refl_ty, validity_conv_left.
+    - eapply red_to_redd. ssimpl. eapply red_conv.
+      eapply red_accel'.
+      + eapply validity_conv_right; eapply subst; eauto using refl_ty. eapply subst_conv_sym.
+        eapply lift_subst; eauto using LR_subst_escape, validity_ty_ctx, subst_conv_sym.
+      + eapply validity_conv_right. eapply subst; eauto using refl_ty. eapply subst_conv_sym.
+        unshelve eapply lift_subst2; eauto using LR_subst_escape, validity_ty_ctx.
+        eauto using LR_subst_escape, validity_subst_conv_right, refl_subst.
+        unfold B, R', P'. simpl. f_equal. ssimpl. reflexivity. f_equal. ssimpl. substify.
+        reflexivity. ssimpl. substify. reflexivity.
+        unfold P''.  ssimpl. substify. reflexivity.
+      + eapply validity_conv_right. eapply subst; eauto using refl_ty, subst_conv_sym.
+        eapply refl_subst. eauto using validity_subst_conv_right, LR_subst_escape.
+        ssimpl. reflexivity.
+      + ssimpl. f_equal. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. ssimpl. f_equal. f_equal.
+        f_equal. ssimpl. substify. reflexivity. substify. reflexivity. f_equal. ssimpl. substify. reflexivity.
+        substify. reflexivity. f_equal. rewrite accinv_subst. f_equal; ssimpl; reflexivity. 
+      + reflexivity.
+      + ssimpl. eapply subst; eauto using refl_ty. econstructor. eauto using LR_subst_escape, subst_conv_sym. ssimpl. 
+        eapply subst; eauto using LR_subst_escape, subst_conv_sym, refl_ty.
+Qed.
 
 
 
@@ -1953,8 +1971,8 @@ Proof.
     2:eauto using subst, LR_subst_escape.
     eapply LR_prop. 
     2:reflexivity. 
-    eauto 6 using subst_ty, validity_conv_left, validity_ty_ty, 
-        refl_ty, subst_ty'', LR_subst_escape.    
+    eauto 6 using subst, validity_conv_left, validity_ty_ty, 
+        refl_ty, LR_subst_escape.    
 Qed.
 
 (* used to eliminate the condition 

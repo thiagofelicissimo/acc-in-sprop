@@ -109,34 +109,12 @@ Admitted.
 Theorem refl_ctx : forall Γ, ⊢ Γ -> ⊢ Γ ≡ Γ.
 Admitted.
 
-Theorem wk_ty : forall Γ Δ l t A ρ, ⊢ Δ -> Γ ⊢< l > t : A -> ρ : Γ ⊆ Δ -> Δ ⊢< l > (wk_tm ρ t) : (wk_tm ρ A). (* why t ⟨ ρ ⟩ doesnt work ? *)
-Admitted.
-
-Theorem wk_conv : forall Γ Δ l t u A ρ, ⊢ Δ -> Γ ⊢< l > t ≡ u : A -> ρ : Γ ⊆ Δ -> Δ ⊢< l > (wk_tm ρ t) ≡ (wk_tm ρ u) : (wk_tm ρ A).
-Admitted.
-
 Theorem subst Γ l t u A A' Δ σ τ :
   Δ ⊢s σ ≡ τ : Γ -> 
   Γ ⊢< l > t ≡ u : A -> 
   A' = A <[ σ ] ->
   Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : A'.
 Admitted.
-
-
-Theorem subst2 : forall Γ l t A Δ σ, Δ ⊢s σ : Γ -> Γ ⊢< l > t : A -> Δ ⊢< l > t <[ σ ] : A <[ σ ].
-Admitted.
-
-
-Corollary subst_ty : forall Γ l t u l' Δ σ, Δ ⊢s σ : Γ -> Γ ⊢< l > t ≡ u : Sort l' -> Δ ⊢< l > t <[ σ ] ≡ u <[ σ ] : Sort l'.
-Admitted.
-
-
-Corollary subst_ty' : forall Γ l t l' Δ σ, Δ ⊢s σ : Γ -> Γ ⊢< l > t : Sort l' -> Δ ⊢< l > t <[ σ ] : Sort l'.
-Admitted.
-
-Corollary subst_ty'' : forall Γ l t u l' Δ σ τ, Δ ⊢s σ ≡ τ : Γ -> Γ ⊢< l > t ≡ u : Sort l' -> Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : Sort l'.
-Admitted.
-
 
 Theorem conv_in_ctx_ty : forall Γ Δ l t A, ⊢ Γ ≡ Δ -> Γ ⊢< l > t : A -> Δ ⊢< l > t : A.
 Admitted.
@@ -228,14 +206,6 @@ Lemma aux_subst Γ l t u A :
 Proof.
   intros.
   econstructor; ssimpl; eauto using refl_subst, subst_id, validity_ty_ctx, validity_conv_left.
-Qed.
-
-Lemma aux_subst_1 Γ l t A :
-  Γ ⊢< l > t : A ->
-  Γ ⊢s t .. : (Γ ,, (l, A)).
-Proof.
-  intro kWt.
-  apply well_scons; ssimpl; eauto using validity_ty_ctx, subst_id.
 Qed.
 
 (* the following lemma helps automation to type some substitutions that appear often in the proof *)

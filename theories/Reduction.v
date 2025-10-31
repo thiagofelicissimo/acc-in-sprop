@@ -250,7 +250,7 @@ Proof.
       eapply red_conv. eapply red_beta; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
       eauto using subst, conv_sym, aux_subst, refl_ty.
       apply aconv_refl.
-      eauto using subst2, aux_subst_1.
+      eauto 6 using subst, aux_subst, validity_conv_left, refl_ty.
     - eapply aconv_inv in H3. simpl in H3. subst. 
       exists (rec l P p_zero p_succ n').
       split. eauto using red. 
