@@ -66,11 +66,11 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
-    let Awk := (plus 2) ⋅ A in 
-    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
-    let Pwk := (up_ren (plus 2)) ⋅ P in 
-    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let Awk := (S >> S) ⋅ A in 
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in 
+    let Pwk := (up_ren (S >> S)) ⋅ P in 
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 P'' t1 in
@@ -95,11 +95,11 @@ Lemma red_accel' Γ i l A R a q P p X Y :
     let P'' := P <[var 1.: (S >> (S >> var))] in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< prop > q : acc i A R a -> 
-    let Awk := (plus 2) ⋅ A in 
-    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
-    let Pwk := (up_ren (plus 2)) ⋅ P in 
-    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let Awk := (S >> S) ⋅ A in 
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in 
+    let Pwk := (up_ren (S >> S)) ⋅ P in 
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 P'' t1 in
@@ -201,7 +201,7 @@ Proof.
     eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
     eapply aconv_conv; eauto. 
     eauto using conv_pi.
-    eauto using subst_ty, aux_subst_1, conv_sym.
+    eauto using subst, conv_sym, aux_subst, refl_ty.
 Qed.
 
 
@@ -242,22 +242,20 @@ Proof.
       eapply red_conv. apply red_app; eauto using validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv.
       eapply red_conv; eauto.
       eapply conv_pi; eauto.
-      eauto using subst_ty, aux_subst_1, conv_sym.
+      eauto using subst, aux_subst, conv_sym, refl_ty.
       eauto using ann_conv.
     - apply aconv_inv in H3 as (A'' & B'' & v & u0_eq & A_conv_A'' & B_conv_B'' & t_sim_v). subst.
       apply aconv_inv in t_sim_v. simpl in t_sim_v. subst.
       exists (t <[ u.. ]). split.
       eapply red_conv. eapply red_beta; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
-      eauto using subst_ty, conv_sym, aux_subst_1.
+      eauto using subst, conv_sym, aux_subst, refl_ty.
       apply aconv_refl.
       eauto using subst2, aux_subst_1.
     - eapply aconv_inv in H3. simpl in H3. subst. 
       exists (rec l P p_zero p_succ n').
       split. eauto using red. 
       eapply aconv_conv. eapply aconv_refl. eauto using type_rec, red_to_conv, validity_conv_right.
-      assert (Sort l = Sort l <[ n'.. ]) by (ssimpl; eauto). rewrite H3. eapply subst.
-      eapply (conv_scons _ _ _ Γ (ty 0) Nat). eapply refl_subst. eapply subst_id. eauto using validity_ty_ctx.
-      ssimpl. eauto using red_to_conv, conv_sym. eauto using refl_ty.
+      eauto 6 using subst, refl_ty, aux_subst, red_to_conv, conv_sym.
     - eapply aconv_inv in H2. simpl in H2. subst. exists p_zero. split; eauto using red, ann_conv. 
     - eapply aconv_inv in H3. simpl in H3. subst. exists (p_succ <[ rec l P p_zero p_succ n .: n..]).
       split. eauto using red. eapply aconv_refl. eapply validity_conv_right.
@@ -387,10 +385,7 @@ Proof.
     - eapply redd_refl. eauto using type_rec.
     - eapply redd_step; eauto using red_rec. 
       eapply redd_conv. eapply IHredd; eauto.
-      eauto using subst_ty'', refl_ty, red_to_conv.
-      eapply subst_ty''; eauto using refl_ty. 
-      eapply conv_scons; ssimpl; 
-      eauto using refl_subst, subst_id, validity_ty_ctx, red_to_conv, conv_sym.
+      eauto 6 using subst, refl_ty, red_to_conv, conv_sym, aux_subst.
 Qed.
 
 
@@ -404,9 +399,8 @@ Proof.
     intros.
     dependent induction H2.
     - eapply red_to_redd. eapply red_rec_zero; eauto.
-    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. eapply subst_ty''. 2:eauto using refl_ty. 
-      eapply conv_scons. ssimpl. eauto using refl_subst, subst_id, validity_ty_ctx. ssimpl. 
-      eauto using red_to_conv, redd_to_conv, conv_sym, conv_trans.
+    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. 
+      eauto 7 using subst, refl_ty, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
       eapply IHredd; eauto.
 Qed.
 
@@ -420,9 +414,8 @@ Proof.
     intros.
     dependent induction H2.
     - eapply red_to_redd. eapply type_inv_succ' in H2 as (_ & nWt & _). eapply red_rec_succ; eauto.
-    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. eapply subst_ty''. 2:eauto using refl_ty. 
-      eapply conv_scons. ssimpl. eauto using refl_subst, subst_id, validity_ty_ctx. ssimpl. 
-      eauto using red_to_conv, redd_to_conv, conv_sym, conv_trans.
+    - eapply redd_step. eapply red_conv. eapply red_rec; eauto. 
+      eauto 7 using subst, refl_ty, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
       eapply IHredd; eauto.
 Qed.
 
@@ -482,11 +475,11 @@ Definition red_inv_type Γ t v :=
     let P' := P <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
     let P'' := P <[var 1.: (S >> (S >> var))] in
-    let Awk := (plus 2) ⋅ A in 
-    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
-    let Pwk := (up_ren (plus 2)) ⋅ P in 
-    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let Awk := (S >> S) ⋅ A in 
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in 
+    let Pwk := (up_ren (S >> S)) ⋅ P in 
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 P'' t1 in

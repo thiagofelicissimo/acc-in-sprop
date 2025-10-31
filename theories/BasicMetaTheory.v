@@ -115,7 +115,11 @@ Admitted.
 Theorem wk_conv : forall Γ Δ l t u A ρ, ⊢ Δ -> Γ ⊢< l > t ≡ u : A -> ρ : Γ ⊆ Δ -> Δ ⊢< l > (wk_tm ρ t) ≡ (wk_tm ρ u) : (wk_tm ρ A).
 Admitted.
 
-Theorem subst : forall Γ l t u A Δ σ τ, Δ ⊢s σ ≡ τ : Γ -> Γ ⊢< l > t ≡ u : A -> Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : A <[ σ ].
+Theorem subst Γ l t u A A' Δ σ τ :
+  Δ ⊢s σ ≡ τ : Γ -> 
+  Γ ⊢< l > t ≡ u : A -> 
+  A' = A <[ σ ] ->
+  Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : A'.
 Admitted.
 
 
@@ -218,6 +222,13 @@ Proof.
   apply conv_ccons; eauto using refl_ctx, validity_ty_ctx, validity_conv_left.
 Qed.
 
+Lemma aux_subst Γ l t u A :
+  Γ ⊢< l > t ≡ u : A ->
+  Γ ⊢s t .. ≡ u .. : (Γ ,, (l, A)).
+Proof.
+  intros.
+  econstructor; ssimpl; eauto using refl_subst, subst_id, validity_ty_ctx, validity_conv_left.
+Qed.
 
 Lemma aux_subst_1 Γ l t A :
   Γ ⊢< l > t : A ->

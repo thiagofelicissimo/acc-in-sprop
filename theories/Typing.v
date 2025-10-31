@@ -115,8 +115,8 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop -> 
     Γ ⊢< i > a : A -> 
-    let A_wk := (plus 2) ⋅ A in
-    let R_wk := (up_ren (up_ren (plus 2))) ⋅ R in
+    let A_wk := (S >> S) ⋅ A in
+    let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
     let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
     Γ ⊢< prop > p : Pi i prop A (Pi prop prop R' acc_wk) ->
@@ -223,8 +223,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop -> 
     Γ ⊢< i > a ≡ a' : A -> 
-    let A_wk := (plus 2) ⋅ A in
-    let R_wk := (up_ren (up_ren (plus 2))) ⋅ R in
+    let A_wk := (S >> S) ⋅ A in
+    let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
     let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
     Γ ⊢< prop > p ≡ p' : Pi i prop A (Pi prop prop R' acc_wk) ->
@@ -302,11 +302,11 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A -> 
     Γ ⊢< prop > q : acc i A R a -> 
-    let Awk := (plus 2) ⋅ A in 
-    let Rwk := (up_ren (up_ren (plus 2))) ⋅ R in 
-    let Pwk := (up_ren (plus 2)) ⋅ P in 
-    let pwk := (up_ren (up_ren (plus 2))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((plus 2) ⋅ a) ((plus 2) ⋅ q) (var 1) (var 0) in
+    let Awk := (S >> S) ⋅ A in 
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in 
+    let Pwk := (up_ren (S >> S)) ⋅ P in 
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
     let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in 
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in 
     let t3 := lam prop l t2 P'' t1 in
