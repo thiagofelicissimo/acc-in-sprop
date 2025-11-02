@@ -370,7 +370,6 @@ Axiom delta01 :
 Axiom f : nat -> totalspace * nat.
 Axiom g : totalspace * nat -> nat.
 
-Axiom fg_id : forall n, g (f n) = n.
 Axiom gf_id : forall x, f (g x) = x.
 
 (* and that well is decidable *)

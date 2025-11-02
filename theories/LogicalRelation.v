@@ -319,6 +319,7 @@ Proof.
 Qed.
 
 
+
 Definition LR_ind 
     (P : forall l A B R, Prop)
     (p_prop : forall A B R (p : LRΩ A B R), P prop A B R) 
@@ -409,6 +410,23 @@ Corollary LR_escape_tm  {l A B R t u }:
 Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
+    
+Hint Unfold val.
+
+Definition LR_pi' i k l S1 S2 ϵS T1 T2 ϵT R : 
+    let A1 := Pi i (ty k) S1 T1 in 
+    let A2 := Pi i (ty k) S2 T2 in
+    ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+    LR i S1 S2 ϵS -> 
+    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+    R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
+    l = Ru i (ty k) ->
+    LR l A1 A2 R.
+Proof.
+    intros. subst.
+    eapply LR_pi; eauto 9 using val_redd_to_whnf, LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv, type_pi.
+Qed.
+
 
 (* Lemma conv_aux {i j s1 s2 S1 T1 T2} : 
     ∙ ⊢< i > s1 ≡ s2 : S1 -> ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j -> ∙ ⊢< Ax j > T1 <[ s1 ..] ≡ T2 <[ s2.. ] : Sort j.
@@ -961,8 +979,7 @@ Proof.
 Qed.
 
 Notation "Γ ⊨< l > t ≡ u : A" := (LRv Γ l t u A) (at level 50, l, t, u, A at next level).
-    
-Hint Unfold val.
+
 
 Lemma prefundamental_sort l : LR (Ax l) (Sort l) (Sort l) (fun A B => exists R, LR l A B R).
 Proof.
@@ -1127,9 +1144,7 @@ Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 :
     LR (Ru i (ty k)) (Pi i (ty k) A1 B1) (Pi i (ty k) A2 B2) ϵpi.
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵpi.
-    eapply LR_pi; eauto. 
-    1,2: ssimpl; eauto using val_redd_to_whnf, conv_pi, validity_conv_left,
-            validity_conv_right, conv_ty_in_ctx_conv.
+    eapply LR_pi'; eauto.
     split; eauto.
 Qed.
 
@@ -1814,23 +1829,31 @@ Proof.
     clear ϵf H. (* removes clutter *)
     assert (LR (Ru i (ty k)) (B <[a0 .: σ1]) (B <[ a3 .: σ2]) ϵB).
     {
-        unfold B. simpl. unshelve eapply LR_pi. 3:exact ϵA. 5:exact ϵC. 1,2,3,4:shelve.
-
-        1,2:eapply val_redd_to_whnf. admit. unfold val. eauto. admit. unfold val. eauto.
-
-        admit.
-
+        unfold B. simpl. unshelve eapply LR_pi'. exact ϵA. exact ϵC.
+        5:eauto.
+        (* 4: unfold ϵB, ϵC; simpl; ssimpl; reflexivity. *)
+        admit. 
         ssimpl. eauto. 
+        
 
-        intros. ssimpl.  assert (ty k = Ru prop (ty k)) by eauto.  rewrite H at 1. 
-        unshelve eapply LR_pi.
+        intros. ssimpl. unshelve eapply LR_pi'. 
+        exact (fun t u => ∙ ⊢< prop > t ≡ u : R1 <[ a0 .: (s1 .: σ1)]).
+        intros; exact (eP s1 s2 ϵs).
+        5:eauto.
+   
+        assert (∙ ⊢< Ax (ty k) > P1 <[ s1.: σ1] ≡ P1 <[ s2.: σ2 ] : Sort (ty k))
+            by eauto 7 using subst, refl_ty, validity_conv_left, ConvSubst, LR_escape_tm, LR_subst_escape. 
+        eapply wk1_conv. eapply H.
+        1,2:unfold P'; ssimpl; substify; reflexivity.
+        reflexivity. 
+        unfold R'. ssimpl.
+        eapply validity_conv_left. unshelve eapply subst.
+        exact (a3 .: (s2 .: σ2)).
+        1-3:shelve. 2,3:eauto.
 
-        3:exact (fun t u => ∙ ⊢< prop > t ≡ u : R1 <[ a0 .: (s1 .: σ1)]).
-        5:intros; exact (eP s1 s2 ϵs).
-        1-4:shelve.
-        1,2:eapply val_redd_to_whnf. admit. unfold val. eauto. admit. unfold val. eauto.
 
-        admit.
+        econstructor. econstructor. eauto using LR_subst_escape.
+        eauto using LR_escape_tm. ssimpl.  eauto using LR_escape_tm.
 
         eapply LR_prop.
         1: {unfold R'. ssimpl. eapply subst; eauto using validity_conv_left, refl_ty.
@@ -1899,35 +1922,17 @@ Proof.
 
     (exists ϵP). split; ssimpl; eauto.
     eapply LR_redd_tm; eauto.
-    - ssimpl. eapply redd_refl. eapply validity_conv_left. 
-      eapply conv_conv. eapply conv_accel_accin.
-      1-6:eapply validity_conv_left; eapply subst; eauto 8 using refl_ty, LR_subst_escape.
-      + eapply lift_subst2; eauto using LR_subst_escape, validity_ty_ctx. ssimpl. reflexivity.
-      + eapply lift_subst; eauto using LR_subst_escape, validity_ty_ctx. 
-      + eapply lift_subst2; eauto using validity_ty_ctx, LR_subst_escape. unfold B, R', P'. simpl. 
-      f_equal. ssimpl. reflexivity. f_equal. ssimpl. substify. eauto. ssimpl. substify. eauto.
-      + unfold P''. ssimpl. substify. reflexivity.
-      + ssimpl. reflexivity.
-      + ssimpl. eauto using LR_escape_ty, refl_ty, validity_conv_left.
-    - eapply red_to_redd. ssimpl. eapply red_conv.
-      eapply red_accel'.
-      + eapply validity_conv_right; eapply subst; eauto using refl_ty. eapply subst_conv_sym.
-        eapply lift_subst; eauto using LR_subst_escape, validity_ty_ctx, subst_conv_sym.
-      + eapply validity_conv_right. eapply subst; eauto using refl_ty. eapply subst_conv_sym.
-        unshelve eapply lift_subst2; eauto using LR_subst_escape, validity_ty_ctx.
-        eauto using LR_subst_escape, validity_subst_conv_right, refl_subst.
-        unfold B, R', P'. simpl. f_equal. ssimpl. reflexivity. f_equal. ssimpl. substify.
-        reflexivity. ssimpl. substify. reflexivity.
-        unfold P''.  ssimpl. substify. reflexivity.
-      + eapply validity_conv_right. eapply subst; eauto using refl_ty, subst_conv_sym.
-        eapply refl_subst. eauto using validity_subst_conv_right, LR_subst_escape.
-        ssimpl. reflexivity.
-      + ssimpl. f_equal. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. ssimpl. f_equal. f_equal.
+    - ssimpl. eapply redd_refl.
+      eapply LR_escape_tm in ϵaccel; eauto.  asimpl in ϵaccel.
+      eapply validity_conv_left. eauto. 
+    - eapply LR_escape_tm in ϵaccel; eauto. eapply validity_conv_right in ϵaccel.
+      simpl in ϵaccel.
+      eapply type_inv_accel' in ϵaccel as (_ & AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv).  
+      eapply redd_conv; eauto using conv_sym.
+      eapply red_to_redd. simpl. eapply red_accel'; eauto.
+      ssimpl. f_equal. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. ssimpl. f_equal. f_equal.
         f_equal. ssimpl. substify. reflexivity. substify. reflexivity. f_equal. ssimpl. substify. reflexivity.
-        substify. reflexivity. f_equal. rewrite accinv_subst. f_equal; ssimpl; reflexivity. 
-      + reflexivity.
-      + ssimpl. eapply subst; eauto using refl_ty. econstructor. eauto using LR_subst_escape, subst_conv_sym. ssimpl. 
-        eapply subst; eauto using LR_subst_escape, subst_conv_sym, refl_ty.
+        substify. reflexivity. f_equal. rewrite accinv_subst. f_equal; ssimpl; reflexivity.
 Qed.
 
 

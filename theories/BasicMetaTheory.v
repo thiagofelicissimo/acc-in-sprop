@@ -389,6 +389,30 @@ Proof.
     rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
 Qed.
 
+Lemma type_inv_accel' Γ i l A R a q P p T l' :
+    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
+    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let P'' := P <[var 1.: (S >> (S >> var))] in
+    Γ ⊢< l' > accel i l A R P p a q : T ->
+    Γ ⊢< l' > accel i l A R P p a q : T /\
+    Γ ⊢< Ax i > A : Sort i /\
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop /\ 
+    Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' /\
+    Γ ⊢< i > a : A /\ 
+    Γ ⊢< prop > q : acc i A R a /\
+    l' = l /\ 
+    Γ ⊢< Ax l > T ≡ P <[a ..] : Sort l.
+Proof.
+  intros.
+  apply validity_ty_ty in H as T_Wt.
+  split. auto.
+  dependent induction H; eauto.
+  - repeat split; eauto using refl_ty.
+  - edestruct IHtyping as (AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv); eauto using validity_conv_left.
+    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
+Qed.  
 
 
 Lemma type_accinv' Γ i A R a p b r l T :
@@ -428,3 +452,4 @@ Lemma conv_app' Γ i j A B_ B t u A' B' t' u' :
 Proof.
   intros. subst. eauto using conv_app.
 Qed.
+
