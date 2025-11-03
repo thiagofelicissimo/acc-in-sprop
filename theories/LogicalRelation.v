@@ -154,10 +154,10 @@ Qed.
 (*     
     fun t1 t2 => exists k, ∙ ⊢< ty 0 > t1 -->>! (mk_Nat k) : Nat /\ ∙ ⊢< ty 0 > t2 -->>! (mk_Nat k) : Nat. *)
 
-Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : forall s1 s2, ϵS s1 s2 -> TmRel) : TmRel 
+Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : TmRel 
     := fun f1 f2 => 
         ∙ ⊢< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
-        forall s1 s2 (ϵs : ϵS s1 s2), ϵT s1 s2 ϵs (app i j S1 T1 f1 s1) (app i j S2 T2 f2 s2).
+        forall s1 s2 (ϵs : ϵS s1 s2), ϵT s1 s2 (app i j S1 T1 f1 s1) (app i j S2 T2 f2 s2).
 
 Definition same_rel (R1 R2 : term -> term -> Prop) := forall t u, R1 t u <-> R2 t u.
 
@@ -177,7 +177,7 @@ Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogR
     ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     rec i q S1 S2 ϵS ->
     (forall s1 s2 (ϵs : ϵS s1 s2), 
-        LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+        LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     LRTy k rec A1 A2 R
 | LRTy_pi2 k A1 A2 S1 S2 ϵS T1 T2 ϵT R
@@ -187,7 +187,7 @@ Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogR
     ∙ ,, (ty k, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     LRTy k rec S1 S2 ϵS ->
     (forall s1 s2 (ϵs : ϵS s1 s2), 
-        LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+        LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
     R <~> (ϵPi (ty k) (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     LRTy k rec A1 A2 R
 | LRTy_pi3 n k A1 A2 S1 S2 ϵS T1 T2 ϵT R
@@ -198,7 +198,7 @@ Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogR
     ∙ ,, (ty n, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     LRTy n rec S1 S2 ϵS ->
     (forall s1 s2 (ϵs : ϵS s1 s2), 
-        rec (ty k) (ltac :(simpl; lia)) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+        rec (ty k) (ltac :(simpl; lia)) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
     R <~> (ϵPi (ty n) (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     LRTy n rec A1 A2 R
 | LRTy_U l A1 A2 rec R : 
@@ -297,7 +297,7 @@ Definition LR_pi i k A1 A2 S1 S2 ϵS T1 T2 ϵT R :
     ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
     ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     LR i S1 S2 ϵS -> 
-    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     LR (Ru i (ty k)) A1 A2 R.
 Proof.
@@ -340,10 +340,10 @@ Definition LR_ind
         (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
         (LR_S : LR i S1 S2 ϵS)
         (LR_T : forall s1 s2 (ϵs : ϵS s1 s2), 
-                LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)),
+                LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)),
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         P i S1 S2 ϵS -> 
-        (forall s1 s2 (ϵs : ϵS s1 s2), P (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+        (forall s1 s2 (ϵs : ϵS s1 s2), P (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         P (Ru i (ty k)) A1 A2 R)
     (l : level) (A B : term) (R : TmRel) (x : LR l A B R) : P l A B R.
 Proof.
@@ -418,7 +418,7 @@ Definition LR_pi' i k l S1 S2 ϵS T1 T2 ϵT R :
     let A2 := Pi i (ty k) S2 T2 in
     ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     LR i S1 S2 ϵS -> 
-    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) ->
+    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     l = Ru i (ty k) ->
     LR l A1 A2 R.
@@ -614,7 +614,7 @@ Definition LR_inv_type l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1'
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) /\
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) /\
         LR i S1 S2 ϵS /\
-        (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2 ϵs)) /\
+        (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) /\
         R <~> ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT
     | _, _ => True
     end.
@@ -653,18 +653,18 @@ Proof.
       rewrite R_eq, H. 
       split.
       + intros. destruct H3. split. eauto. intros.
-        assert (forall s1 s2 ϵs, ϵT s1 s2 (proj2 (H2 s1 s2) ϵs) <~> ϵT' s1 s2 ϵs).
-            { intros. eapply H1. eauto. }
-        eapply H5. eapply LR_erasure; eauto. 
-        ++ rewrite <- H2 in ϵs. unshelve eauto using aconv_refl, type_app, LR_escape_tm, validity_conv_left; eauto.
+        assert (forall s1 s2, ϵS' s1 s2 -> ϵT s1 s2 <~> ϵT' s1 s2).
+            { intros. eapply H1. rewrite H2. eauto. eauto. }
+        eapply H5; eauto. eapply H2 in ϵs.  eapply LR_erasure; eauto.  
+        ++ eauto 6 using validity_conv_left, aconv_refl, LR_escape_tm.
         ++ eapply aconv_conv;  eauto using LR_escape_tm, subst, aux_subst, conv_sym.
            eapply sim_sym. eapply aconv_app; eauto using conv_trans, conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, LR_escape_ty, type_conv, validity_conv_right.
            eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi, conv_sym, conv_trans, conv_ty_in_ctx_conv, LR_escape_ty.
       + intros. destruct H3. split. eauto. intros.
-        assert (forall s1 s2 ϵs, ϵT' s1 s2 (proj1 (H2 s1 s2) ϵs) <~> ϵT s1 s2 ϵs).
-            { intros. symmetry. eapply H1. eauto. }
-        eapply H5.  eapply LR_erasure; eauto.
-        ++ rewrite H2 in ϵs. unshelve eauto using aconv_refl, type_app, LR_escape_tm, validity_conv_left; eauto.
+        assert (forall s1 s2, ϵS s1 s2 -> ϵT' s1 s2 <~> ϵT s1 s2).
+            { intros. symmetry. eapply H1. eauto. eapply LR_T'. rewrite <- H2. eauto. }
+        eapply H5; eauto.  eapply H2 in ϵs.  eapply LR_erasure; eauto.
+        ++ eauto 6 using validity_conv_left, aconv_refl, LR_escape_tm.
         ++ eapply aconv_conv; eauto using LR_escape_tm, subst, aux_subst, conv_sym.
            eapply aconv_app; eauto using conv_trans, conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, LR_escape_ty, type_conv, validity_conv_right.
            eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi, conv_sym, conv_trans, conv_ty_in_ctx_conv, LR_escape_ty.
@@ -719,13 +719,13 @@ Qed.
    *)
 
 
-Definition eT j ϵS T1 T2 := 
-    fun s1 s2 (ϵs : ϵS s1 s2) a1 a2 => forall R, LR j (T1 <[ s1..]) (T2 <[ s2..]) R -> R a1 a2.
+Definition eT j T1 T2 := 
+    fun s1 s2 a1 a2 => forall R, LR j (T1 <[ s1..]) (T2 <[ s2..]) R -> R a1 a2.
  
-Lemma ϵT_iff_eT i j S1 S2 ϵS T1 T2 ϵT s1 s2 ϵs :
+Lemma ϵT_iff_eT i j S1 S2 ϵS T1 T2 ϵT s1 s2 :
     LR i S1 S2 ϵS ->
     LR j (T1 <[ s1..]) (T2 <[ s2..]) ϵT-> 
-    ϵT <~> eT j ϵS T1 T2 s1 s2 ϵs.
+    ϵT <~> eT j T1 T2 s1 s2.
 Proof.
     intros; split; intros.
     - unfold eT. intros. assert (R <~> ϵT) by eauto using LR_irrel.
@@ -780,7 +780,7 @@ Proof.
         all: destruct LR_B as (R' & LR_B); eapply H in LR_B as (R'' & LR_B' & _); eauto.
     - destruct H0 as (ϵS' & LR_S' & ϵS_iff_ϵS').
       eapply split_iff in ϵS_iff_ϵS' as (ϵS_to_ϵS' & ϵS'_to_ϵS).
-      exists (ϵPi i (ty k) S2 S1 ϵS' T2 T1 (eT (ty k) ϵS' T2 T1)).
+      exists (ϵPi i (ty k) S2 S1 ϵS' T2 T1 (eT (ty k) T2 T1)).
       split.
       + eapply LR_pi; eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty. 
         intros. apply ϵS'_to_ϵS in ϵs as ϵs'.
@@ -825,7 +825,7 @@ Proof.
         eexists. eauto.
     - unshelve eapply LR_inv in H2. 2: eauto.
       destruct H2 as (S' & T' & ϵS' & ϵT' & _ & _ & C_red & T2_eq_T' & LR_S' & LR_T' & R'_iff).
-      pose proof LR_S' as temp. eapply H0 in temp as (ϵS'' & LR_S'' & ϵS_to).
+      pose proof LR_S' as temp. eapply H0 in temp as (ϵS'' & LR_S'' & ϵS_to). clear H0.
       
       (* we first show that the ϵS, ϵS', ϵS'' are all equivalent *)
       assert (ϵS <~> ϵS'') as _temp by eauto using LR_irrel.
@@ -840,28 +840,28 @@ Proof.
 
       (* finally, we show that ϵS is symmetric *)
       eapply LR_sym' in LR_S as temp. destruct temp as (ϵSc & LR_Sc & ϵSc_to).
-      assert (ϵSc <~> ϵS') by eauto using LR_irrel. setoid_rewrite H2 in ϵSc_to.
+      assert (ϵSc <~> ϵS') by eauto using LR_irrel. setoid_rewrite H0 in ϵSc_to.
       eapply split_iff in ϵSc_to as (temp1 & temp2).
       assert (forall t u, ϵS t u -> ϵS u t) as ϵS_sym by eauto.
-      clear ϵSc LR_Sc H2 temp1 temp2.
+      clear ϵSc LR_Sc H0 temp1 temp2.
 
-      exists (ϵPi i (ty k) S1 S' ϵS'' T1 T' (eT (ty k) ϵS'' T1 T')).
+      exists (ϵPi i (ty k) S1 S' ϵS'' T1 T' (eT (ty k) T1 T')).
       split.
       + eapply LR_pi; eauto using conv_trans, conv_ty_in_ctx_conv, conv_sym, LR_escape_ty.
         intros. assert (ϵS s1 s2) as ϵs' by eauto. pose (LR_T_1 := LR_T _ _ ϵs').
-        assert (ϵS' s2 s2) as ϵs'' by eauto. pose (LR_T_2 := LR_T' _ _ ϵs'').
-        unshelve eapply H1 in LR_T_2. 2: eauto. 
+        assert (ϵS' s2 s2) as ϵs'' by eauto. eapply LR_T' in ϵs'' as LR_T_2. 
+        unshelve eapply H1 in LR_T_2. 3:eauto.
         destruct LR_T_2 as (ϵT'' & LR_T'' & ϵT_to).
-        eapply LR_iff_rel. 2:eauto. 
+        eapply LR_iff_rel. 2:eauto.
         eapply ϵT_iff_eT; eauto.
         split; eauto.
       + intros. rewrite H, R'_iff in *.
-        destruct H2, H3.
+        destruct H0, H2.
         split; eauto 6 using conv_trans, conv_conv, conv_sym, conv_pi, conv_ty_in_ctx_conv, LR_escape_ty.
         intros.
         assert (ϵS s1 s2) as ϵs' by eauto. pose (LR_T_1 := LR_T _ _ ϵs').
         assert (ϵS' s2 s2) as ϵs'' by eauto. pose (LR_T_2 := LR_T' _ _ ϵs'').
-        unshelve eapply H1 in LR_T_2. 2: eauto. 
+        unshelve eapply H1 in LR_T_2. 3: eauto. 
         destruct LR_T_2 as (ϵT'' & LR_T'' & ϵT_to).        
         rewrite <- ϵT_iff_eT; eauto. eauto.
 Qed.
@@ -1052,11 +1052,11 @@ Lemma getLR_of_motive_aux {Γ i k A1 ϵA P1 P2 σ1 σ2} :
     LR i (A1 <[σ1]) (A1 <[σ2]) ϵA ->
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) -> 
     ⊩s σ1 ≡ σ2 : Γ -> 
-    let eP := eT (ty k) ϵA (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) in
+    let eP := eT (ty k) (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) in
     ∀ (b1 b2 : term) (ϵb : ϵA b1 b2), 
-        (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2 ϵb))
-        /\ (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2 ϵb))
-        /\ (forall b3 (ϵb' : ϵA b1 b3), LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2 ϵb)).
+        (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2))
+        /\ (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2))
+        /\ (forall b3 (ϵb' : ϵA b1 b3), LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2)).
 Proof.
     intros.
     assert (⊩s (b1 .: σ1) ≡ (b2 .: σ2) : (Γ ,, (i, A1))) as ϵaσ. 
@@ -1083,16 +1083,15 @@ Corollary getLR_of_motive {Γ i k A1 ϵA P1 P2 σ1 σ2} :
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) -> 
     ⊩s σ1 ≡ σ2 : Γ -> 
     exists eP, 
-        eP = eT (ty k) ϵA (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) /\
-        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2 ϵb))) /\
-        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2 ϵb))) /\
-        (∀ (b1 b2 b3 : term) (ϵb : ϵA b1 b2) (ϵb' : ϵA b1 b3), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2 ϵb))).
+        eP = eT (ty k) (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) /\
+        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2))) /\
+        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2))) /\
+        (∀ (b1 b2 b3 : term) (ϵb : ϵA b1 b2) (ϵb' : ϵA b1 b3), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2))).
 Proof.
     intros. eexists. split. reflexivity. 
     split. 2:split.
-    all:intros; eapply getLR_of_motive_aux in H1; eauto; destruct H1 as (K1 & K2 & K3); eauto.
+    all:intros; eapply getLR_of_motive_aux in ϵb as temp; eauto; destruct temp as (K1 & K2 & K3); eauto.
 Qed.
-
 
 Lemma LRv_to_LR_ty Γ A1 A2 i σ1 σ2 : 
     ⊩s σ1 ≡ σ2 : Γ -> 
@@ -1139,7 +1138,7 @@ Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 :
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     LR i A1 A2 ϵA ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1..]) (B2 <[ a2..]) (ϵB a1 a2 ϵa)) -> 
+    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1..]) (B2 <[ a2..]) (ϵB a1 a2)) -> 
     let ϵpi := ϵPi i (ty k) A1 A2 ϵA B1 B2 ϵB in 
     LR (Ru i (ty k)) (Pi i (ty k) A1 B1) (Pi i (ty k) A2 B2) ϵpi.
 Proof.
@@ -1158,7 +1157,7 @@ Lemma fundamental_common_pi Γ σ1 σ2 i A1 A2 k B1 B2 :
         let ϵpi := ϵPi i (ty k) (A1 <[ σ1]) (A2 <[ σ2]) ϵA
                 (B1 <[ var 0 .: (σ1 >> ren_term S)]) (B2 <[ var 0 .: (σ2 >> ren_term S)]) ϵB in
         LR i (A1 <[ σ1]) (A2 <[ σ2]) ϵA /\
-        (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1 .: σ1]) (B2 <[ a2 .: σ2]) (ϵB a1 a2 ϵa)) /\
+        (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1 .: σ1]) (B2 <[ a2 .: σ2]) (ϵB a1 a2)) /\
         LR (Ru i (ty k)) ((Pi i (ty k) A1 B1) <[ σ1]) ((Pi i (ty k) A2 B2) <[ σ2]) ϵpi.
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵσ12. 
@@ -1269,7 +1268,7 @@ Proof.
     eapply LRv_t12 in ϵσ as temp. destruct temp as (ϵpi' & LR_pi' & ϵt).
           eassert (ϵpi' <~> ϵPi _ _ _ _ _ _ _ _) by eauto using LR_irrel.
     rewrite H in ϵt. destruct ϵt. ssimpl.
-    assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) ϵu11 <~> ϵB (u1 <[ σ1]) (u2 <[ σ2]) ϵu12) 
+    assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) <~> ϵB (u1 <[ σ1]) (u2 <[ σ2])) 
         as Hiff by eauto using LR_irrel.
     rewrite Hiff. eapply LR_erasure; eauto.
     (* from this point on, it's just technical manipulations to show that the terms are equal up to annotation conversion *)
@@ -1376,38 +1375,37 @@ Lemma prefundamental_rec k P1 p_zero1 p_succ1 P2 p_zero2 p_succ2 ϵP:
     ∙  ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
     (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (forall n1 n2 (ϵn : ϵNat n1 n2), 
-        LR (ty k) (P1 <[ n1..]) (P2 <[ n2..]) (ϵP n1 n2 ϵn)) -> 
-    ϵP zero zero ϵzero' p_zero1 p_zero2 -> 
+        LR (ty k) (P1 <[ n1..]) (P2 <[ n2..]) (ϵP n1 n2)) -> 
+    ϵP zero zero p_zero1 p_zero2 -> 
     (forall n1 n2 (ϵn : ϵNat n1 n2) t1 t2,
-        ϵP n1 n2 ϵn t1 t2 -> 
-        ϵP (succ n1) (succ n2) (ϵsucc' ϵn) (p_succ1 <[t1 .: n1 ..]) (p_succ2 <[t2 .: n2 ..])) -> 
-    forall n1 n2 (ϵn : ϵNat n1 n2), ϵP n1 n2 ϵn (rec (ty k) P1 p_zero1 p_succ1 n1) (rec (ty k) P2 p_zero2 p_succ2 n2).
+        ϵP n1 n2 t1 t2 -> 
+        ϵP (succ n1) (succ n2) (p_succ1 <[t1 .: n1 ..]) (p_succ2 <[t2 .: n2 ..])) -> 
+    forall n1 n2 (ϵn : ϵNat n1 n2), ϵP n1 n2 (rec (ty k) P1 p_zero1 p_succ1 n1) (rec (ty k) P2 p_zero2 p_succ2 n2).
 Proof.
     intros. generalize n1 n2 ϵn. clear n1 n2 ϵn. 
-    apply ϵNat_dep_ind; intros.
-    - pose (LR' := H4 _ _ ϵzero'). 
-      pose (LR'' := H4 _ _ (ϵzero _ _ r r0)).
+    apply ϵNat_ind; intros.
+    - pose (LR' := H2 _ _ ϵzero'). 
+      pose (LR'' := H2 _ _ (ϵzero _ _ H5 H6)).
       assert (ϵNat t1 zero) as ϵt1zero. eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
       pose (LR''' := H4 _ _ ϵt1zero).
-      assert (ϵP zero zero ϵzero' <~> ϵP t1 zero ϵt1zero) by eauto using LR_sym, LR_irrel.
-      assert (ϵP t1 t2 (ϵzero t1 t2 r r0) <~> ϵP t1 zero ϵt1zero) by eauto using LR_sym, LR_irrel.
-      rewrite H6. rewrite <- H5. 
-      destruct r, r0.
+      assert (ϵP zero zero <~> ϵP t1 zero) by eauto using LR_sym, LR_irrel.
+      assert (ϵP t1 t2 <~> ϵP t1 zero) by eauto using LR_sym, LR_irrel.
+      rewrite H8. rewrite <- H7. 
+      destruct H5, H6.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_zero; eauto using validity_conv_left.
       eapply redd_conv. eapply redd_rec_zero; 
       eauto 8 using validity_conv_right, subst, aux_subst, type_zero, conv_sym, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, refl_ty.
       eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm, prefundamental_nat, ϵzero'.
 
-    - rename ϵ into ϵn. 
-      pose (LR' := H2 _ _ (ϵsucc' ϵn)).
-      pose (LR'' := H2 _ _ (ϵsucc _ _ _ _ r r0 ϵn)).
+    - pose (LR' := H2 _ _ (ϵsucc' H7)).
+      pose (LR'' := H2 _ _ (ϵsucc _ _ _ _ H5 H6 H7)).
       assert (ϵNat t1 (succ t2')) as ϵt1succt2'. eapply ϵsucc; eauto using val_redd_to_whnf, typing, redd_whnf_to_conv, validity_conv_right.
       pose (LR''' := H2 _ _ ϵt1succt2').
-      assert (ϵP (succ t1') (succ t2') (ϵsucc' ϵn) <~> ϵP t1 (succ t2') ϵt1succt2') by eauto using LR_sym, LR_irrel.
-      assert (ϵP t1 t2 (ϵsucc t1 t2 t1' t2' r r0 ϵn) <~> ϵP t1 (succ t2') ϵt1succt2') by eauto using LR_sym, LR_irrel.
-      rewrite H7. rewrite <- H6.
-      destruct r,r0.
+      assert (ϵP (succ t1') (succ t2') <~> ϵP t1 (succ t2')) by eauto using LR_sym, LR_irrel.
+      assert (ϵP t1 t2 <~> ϵP t1 (succ t2')) by eauto using LR_sym, LR_irrel.
+      rewrite H10. rewrite <- H9.
+      destruct H5, H6.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_succ; eauto using validity_conv_left.
       eapply redd_conv.
@@ -1440,21 +1438,22 @@ Proof.
     eapply getLR_of_motive in ϵσ12 as temp; eauto. 2: simpl;eauto using prefundamental_nat.  
     destruct temp as (eP & eP_eq & LR_P11 & LR_P12 & LR_P11').
     
-    exists (eP _ _ ϵt12). split; asimpl. eauto.
+    exists (eP (t1 <[ σ1]) (t2 <[ σ2])). 
+    (* exists eP. *)
+    split; asimpl. eauto.
 
     eapply prefundamental_rec; eauto.
     - eapply subst; eauto using lift_subst, LR_subst_escape, validity_ty_ctx, validity_conv_left.
     - eapply subst; eauto using LR_subst_escape. ssimpl. reflexivity.
     - eapply subst; eauto using lift_subst2, LR_subst_escape, validity_ty_ctx, validity_conv_left. substify. ssimpl. reflexivity.
-    - intros. ssimpl. eauto.
+    - intros. ssimpl. eapply LR_P12. eauto.
     - pose (LR_Pzero := LR_P11 _ _ ϵzero'). eapply LRv_to_LR_tm in LRv_pzero12 as LR_pzero; eauto. asimpl_unsafe. eauto.
     - intros. ssimpl. 
       pose (LR_Psucc := LR_P11 _ _ ϵn).
       assert (⊩s (t0 .: (n1 .: σ1)) ≡ (t3 .: (n2 .: σ2)) : (Γ ,, (ty 0, Nat)),, (ty k, P1)) 
         as ϵtnσ by eauto using LR_subst, prefundamental_nat.
-      eapply LRv_to_LR_tm in LRv_psucc12; eauto. asimpl_unsafe. eauto. 
+      eapply LRv_to_LR_tm in LRv_psucc12; eauto. simpl. asimpl_unsafe. eauto using ϵsucc'.
 Qed.
-
 
 Lemma fundamental_beta Γ i k A B t u :
     Γ ⊢< Ax i > A : Sort i ->
@@ -1737,26 +1736,26 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R3 : Sort prop ->    
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P3 : Sort (ty k) ->
-    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (P1<[a1..]) (P2<[a2..]) (ϵP a1 a2 ϵa)) ->
-    let ϵB a1 a2 ϵa f1 f2 := forall b1 b2 (ϵb : ϵA b1 b2) r1 r2 (r_Wt : ∙ ⊢< prop > r1 ≡ r2 : R1 <[a1 .:b1 ..]) t1 t2,
+    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (P1<[a1..]) (P2<[a2..]) (ϵP a1 a2)) ->
+    let ϵB a1 a2 f1 f2 := forall b1 b2 (ϵb : ϵA b1 b2) r1 r2 (r_Wt : ∙ ⊢< prop > r1 ≡ r2 : R1 <[a1 .:b1 ..]) t1 t2,
         t1 = app prop (ty k) (R1<[a1 .: b1 ..]) (S ⋅ (P1 <[b1..])) 
                 (app i (ty k) A1 (Pi prop (ty k) (R1<[(S ⋅ a1) .: (var 0 .: (S >> var))]) (P1 <[var 1 .: (S >> S >> var)])) f1 b1) 
             r1 ->
         t2 = app prop (ty k) (R3<[a2 .: b2 ..]) (S ⋅ (P3 <[b2..])) 
                 (app i (ty k) A3 (Pi prop (ty k) (R3<[(S ⋅ a2) .: (var 0 .: (S >> var))]) (P3 <[var 1 .: (S >> S >> var)])) f2 b2) 
             r2 ->
-            ϵP b1 b2 ϵb t1 t2 in
+            ϵP b1 b2 t1 t2 in
     let R' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
     let P' := P1 <[var 1 .: (S >> S >> S >> var)] in
     let B := Pi i (ty k) (S ⋅ A1) (Pi prop (ty k) R' P') in
-    (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 ϵa f1 f2), 
+    (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 f1 f2), 
         ∙ ⊢< Ru i (ty k)> f1 ≡ f2 : B <[a1..] ->
-        ϵP a1 a2 ϵa (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
+        ϵP a1 a2 (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
     (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : P1 <[var 1.: (S >> (S >> var))] ->
     ∙ ⊢< i > a1 ≡ a2 : A1 ->
     forall (ϵa : ϵA a1 a2),
     ∙ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 -> 
-    ϵP a1 a2 ϵa (accel i (ty k) A1 R1 P1 p1 a1 q1) (accel i (ty k) A2 R2 P2 p2 a2 q2).
+    ϵP a1 a2 (accel i (ty k) A1 R1 P1 p1 a1 q1) (accel i (ty k) A2 R2 P2 p2 a2 q2).
 Proof.
     intros. 
     assert (Acc (meta R1) a1) by eauto using validity_conv_left, ob_to_meta.
@@ -1768,7 +1767,7 @@ Proof.
         by eauto using conv_accel, validity_conv_right.
     eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
 
-    eapply LR_irred_tm; eauto. 3:eapply H7. all:clear H7.
+    eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
     - eauto 6 using red_to_redd, red_accel', validity_conv_left.
     - eapply red_to_redd; eapply red_conv; eauto 7 using red_accel', validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst, conv_sym, aux_subst.
     - unfold ϵB. all:clear ϵB. intros; subst.
@@ -1778,6 +1777,7 @@ Proof.
       eapply (accinv i A1 R1 a1 q1 b1 r1). 
       eapply (accinv i A2 R2 a2 q2 b2 r2).
       unfold meta; eexists; eauto using validity_conv_right.
+      eauto.
       eauto using LR_escape_tm.
       { eapply conv_irrel.
         - eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
@@ -1881,7 +1881,8 @@ Proof.
     
 
     
-    exists (eP _ _ ϵa12). split; ssimpl. eauto.
+    exists (eP (a1 <[ σ1]) (a2 <[ σ2])). 
+    split; ssimpl. eauto.
     eapply (prefundamental_accel (A1 <[σ2]) (R1 <[ var 0 .: (var 1 .: σ2 >> ren_term (↑ >> ↑))]) (P1 <[ var 0 .: σ2 >> ren_term ↑])); 
     eauto 9 using subst, LR_subst_escape, validity_conv_left, refl_ty, lift_subst, aux_subst, validity_conv_left, validity_ty_ctx, lift_subst2.
     1:eapply subst; eauto using validity_conv_left, refl_ty; eapply lift_subst2; eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx; ssimpl; reflexivity.
@@ -1894,12 +1895,12 @@ Proof.
     intros.
 
 
-    pose (ϵC s1 s2 ϵs := 
+    pose (ϵC s1 s2 := 
         ϵPi prop (ty k) (R1 <[ a0 .: (s1 .: σ1)]) (R1 <[ a3 .: (s2 .: σ2)]) 
             (λ t0 u0, ∙ ⊢< prop > t0 ≡ u0 : R1 <[ a0 .: (s1 .: σ1)]) 
             (P1 <[ ↑ ⋅ s1 .: σ1 >> subst_term (↑ >> var)]) 
             (P1 <[ ↑ ⋅ s2 .: σ2 >> subst_term (↑ >> var)])
-            (λ x x0 _, eP s1 s2 ϵs)).
+            (λ x x0, eP s1 s2)).
 
     pose (ϵB := ϵPi i (ty k) (A1 <[ σ1]) (A1 <[ σ2]) ϵA 
                     (C <[up_term_term (a0 .:σ1)]) (C <[up_term_term (a3 .:σ2)]) ϵC).
@@ -1934,7 +1935,7 @@ Proof.
             econstructor. econstructor. eauto using LR_subst_escape. eauto using LR_escape_tm. ssimpl. eauto using LR_escape_tm. } 
           unshelve eapply LR_pi'. 
           exact (fun t u => ∙ ⊢< prop > t ≡ u : R1 <[ a0 .: (s1 .: σ1)]).
-          intros; exact (eP s1 s2 ϵs).
+          intros; exact (eP s1 s2).
           + eapply wk1_conv. eapply H.
             1,2:unfold P'; ssimpl; substify; reflexivity.
             all : eauto using validity_conv_left.
