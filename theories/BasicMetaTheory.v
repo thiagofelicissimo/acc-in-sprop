@@ -98,6 +98,26 @@ Proof.
 Qed.
 
 
+Definition rtyping (Γ : ctx) (ρ : nat → nat) (Δ : ctx) : Prop :=
+  ∀ x A l,
+    nth_error Δ x = Some (l , A) →
+    ∃ B,
+      nth_error Γ (ρ x) = Some (l , B) ∧
+      (plus (S x) >> ρ) ⋅ A = (plus (S (ρ x))) ⋅ B.
+
+Lemma typing_ren l Γ Δ ρ t A A' :
+  rtyping Δ ρ Γ →
+  Γ ⊢< l > t : A →
+  A' = ρ ⋅ A ->
+  Δ ⊢< l > ρ ⋅ t : A'.
+Admitted.
+
+Lemma conv_ren l Γ Δ ρ t u A A' :
+  rtyping Δ ρ Γ →
+  Γ ⊢< l > t ≡ u : A →
+  A' = ρ ⋅ A -> 
+  Δ ⊢< l > ρ ⋅ t ≡ ρ ⋅ u : A'.
+Admitted.
 
 Theorem refl_subst : forall Γ σ Δ, Γ ⊢s σ : Δ -> Γ ⊢s σ ≡ σ : Δ.
 Admitted.
@@ -453,3 +473,31 @@ Proof.
   intros. subst. eauto using conv_app.
 Qed.
 
+Lemma conv_pi' Γ i j l A B A' B' :
+      Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j →
+      l = Ru i j ->
+      Γ ⊢< Ax l > Pi i j A B ≡ Pi i j A' B' : Sort l.
+Proof.
+  intros. subst. eauto using conv_pi.
+Qed.
+
+Lemma conv_var' Γ x l A T :
+      nth_error Γ x = Some (l , A) →
+      ⊢ Γ -> 
+      T = ((plus (S x)) ⋅ A) ->
+      Γ ⊢< l > (var x) ≡ (var x) : T.
+Proof.
+  intros. subst. eauto using conv_var.
+Qed.
+
+Lemma conv_lam' Γ i j A B t A' B' t' l T:
+      Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
+      Γ ,, (i , A) ⊢< j > t ≡ t' : B →
+      l = Ru i j ->
+      T = Pi i j A B ->
+      Γ ⊢< l > lam i j A B t ≡ lam i j A' B' t' : T.
+Proof.
+  intros. subst. eauto using conv_lam.
+Qed.
