@@ -2175,6 +2175,70 @@ Proof.
     eapply prefundamental_cast; eauto using subst, LR_subst_escape.
 Qed.
 
+Lemma prefundamental_cast_refl l A B ϵA e a1 a2 : 
+    LR l A B ϵA -> 
+    ϵA a1 a2 ->
+    ∙ ⊢< prop > e : obseq (Ax l) (Sort l) A B ->
+    ϵA (cast l A B e a1) a2.
+Proof.
+    intros LR_AB ϵa eWt.
+    generalize l A B ϵA LR_AB e a1 a2 ϵa eWt.
+    clear l A B ϵA LR_AB e a1 a2 ϵa eWt.
+    refine (LR_ind _ _ _ _ _); intros.
+    - destruct p. rewrite H0 in *. 
+      eapply conv_trans; eauto using conv_sym.
+      eapply conv_conv; eauto using conv_sym.
+      eapply conv_cast_refl; eauto using validity_conv_left.  
+    - rewrite H in *. eapply LR_irred_tm; eauto using prefundamental_nat.
+      2:eapply redd_refl; eauto using LR_escape_tm, prefundamental_nat, validity_conv_right.
+      admit.
+    - rewrite H0 in *. destruct ϵa as (R' & lr). exists R'. 
+      eapply LR_irred_ty; eauto. 
+      2:eapply redd_refl; eauto using LR_escape_ty, validity_conv_right. 
+      admit.
+    - rewrite H in *. unfold ϵPi. split.
+      admit.
+      intros s1 s2 ϵs.
+      eapply H0 in ϵs as ϵs'.
+      2:{ eapply type_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty, validity_conv_right, conv_ty_in_ctx_conv.
+          eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. 1,2:admit. }
+      destruct ϵa.
+      eapply H3 in ϵs' as temp.
+      eapply H1 in temp; eauto.
+      2:{ eapply type_conv. eapply type_injpi2 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
+               eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. admit.
+            eapply conv_obseq; eauto using ctx_typing, conversion. 1,2:admit. }
+      assert (ϵT (cast i S1 S2 (injpi1 i (ty k) S2 S1 T2 T2 e) s1) s2 <~> ϵT s1 s2) by eauto 7 using LR_irrel, LR_sym.
+      rewrite H4 in temp. clear H4.
+      eapply LR_irred_tm; eauto.
+Admitted.
+
+Lemma fundamental_cast_refl Γ k A B e a :
+    Γ ⊢< Ax (ty k) > A ≡ B : Sort (ty k) ->
+    Γ ⊨< Ax (ty k) > A ≡ B : Sort (ty k) ->
+    Γ ⊢< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A B ->
+    Γ ⊨< prop > e ≡ e : obseq (Ax (ty k)) (Sort (ty k)) A B ->
+    Γ ⊢< ty k > a : A ->
+    Γ ⊨< ty k > a ≡ a : A ->
+    Γ ⊨< ty k > cast (ty k) A B e a ≡ a : B.
+Proof.
+    intros A_conv_B LRv_AB eWt LRv_e aWt LRv_a.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    eapply LRv_to_LR_ty in LRv_AB as temp; eauto. destruct temp as (ϵA & LR_AB).
+    eapply LRv_to_LR_tm in LRv_a as LR_a; eauto.
+    assert (⊩s σ1 ≡ σ1 : Γ) as ϵσ11 by eauto using LR_subst_sym, LR_subst_trans.
+    eapply LRv_to_LR_ty_copy in ϵσ11 as LR_AB'; eauto. clear ϵσ11.
+    assert (Γ ⊨< Ax (ty k) > B ≡ B : Sort (ty k)) as LRv_BB by eauto using LRv_sym, LRv_trans.
+    eapply LRv_to_LR_ty in LRv_BB as temp; eauto. destruct temp as (ϵB & LR_B).
+    assert (ϵB <~> ϵA) by eauto using LR_irrel, LR_sym. eapply LR_iff_rel in LR_B; eauto.
+    clear ϵB H LRv_AB LRv_BB LRv_a.
+    eexists. split; eauto.
+    ssimpl. eapply prefundamental_cast_refl; eauto.
+    eapply validity_conv_left, subst; eauto using refl_ty, LR_subst_escape.
+Qed.
+
+    
+
 Lemma fundamental_var Γ x k A :
     nth_error Γ x = Some (ty k, A) ->
     ⊢ Γ ->
@@ -2265,7 +2329,7 @@ Proof.
     - eauto using fundamental_accel.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
-    - admit.
+    - eauto using fundamental_cast_refl. 
     - admit. 
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
