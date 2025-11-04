@@ -2015,8 +2015,35 @@ Proof.
 Qed.
 
 
-
-
+Lemma fundamental_eta Γ i n A B t u :
+    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊨< Ax i > A ≡ A : Sort i ->
+    Γ,, (i, A) ⊢< Ax (ty n) > B : Sort (ty n) ->
+    Γ,, (i, A) ⊨< Ax (ty n) > B ≡ B : Sort (ty n) ->
+    Γ ⊢< Ru i (ty n) > t : Pi i (ty n) A B ->
+    Γ ⊨< Ru i (ty n) > t ≡ t : Pi i (ty n) A B ->
+    Γ ⊢< Ru i (ty n) > u : Pi i (ty n) A B ->
+    Γ ⊨< Ru i (ty n) > u ≡ u : Pi i (ty n) A B ->
+    let t_app_x := app i (ty n) (S ⋅ A) (up_ren S ⋅ B) (S ⋅ t) (var 0) in
+    let u_app_x := app i (ty n) (S ⋅ A) (up_ren S ⋅ B) (S ⋅ u) (var 0) in
+    Γ,, (i, A) ⊢< ty n > t_app_x ≡ u_app_x : B ->
+    Γ,, (i, A) ⊨< ty n > t_app_x ≡ u_app_x : B ->
+    Γ ⊢< Ru i (ty n) > t ≡ u : Pi i (ty n) A B ->
+    Γ ⊨< Ru i (ty n) > t ≡ u : Pi i (ty n) A B.
+Proof.
+    intros AWt LRv_A BWt LRv_B tWt LRv_t uWt LRv_u tx ux tx_conv_ux LRv_tx_ux t_conv_u.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    eapply fundamental_common_pi in ϵσ as temp; eauto using refl_ty.
+    destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
+    eexists. split;eauto.
+    unfold ϵPi. split. 
+    - eapply subst; eauto using LR_subst_escape.
+    - intros. 
+      assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A))) as ϵsσ by eauto using LR_subst.
+      eapply LRv_to_LR_tm in LRv_tx_ux as ϵtx_ux; eauto.
+      unfold tx, ux in ϵtx_ux. asimpl in ϵtx_ux.
+      eapply ϵtx_ux.
+Qed.
 
 Lemma fundamental_var Γ x k A :
     nth_error Γ x = Some (ty k, A) ->
@@ -2105,7 +2132,8 @@ Proof.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_accel.
     - eauto using fundamental_conv.
-    - eauto using fundamental_beta. 
+    - eauto using fundamental_beta.
+    - destruct j. eauto using fundamental_eta. eauto using fundamental_prop. 
     - eauto using fundamental_rec_zero.
     - eauto using fundamental_rec_succ.
     - eauto using fundamental_accel_accin.

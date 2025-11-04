@@ -235,15 +235,17 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
       Γ ⊢'< i > u : A →
       Γ ⊢'< j > app i j A B (lam i j A B t) u ≡ t <[ u .. ] : B <[ u .. ] 
 
-(* | conv'_eta : 
-    ∀ Γ i j A B t,
+
+| conv_eta :
+    ∀ Γ i j A B t u,
       Γ ⊢'< Ax i > A : Sort i →
       Γ ,, (i , A) ⊢'< Ax j > B : Sort j →
       Γ ⊢'< Ru i j > t : Pi i j A B →
-      let t_wk := wk_tm (_wk_step _wk_id) t in 
-      let A_wk := wk_tm (_wk_step _wk_id) A in 
-      let B_wk := wk_tm (_wk_up (_wk_step _wk_id)) B in (* is this right? *)
-      Γ ⊢'< Ru i j > lam i j A B (app i j A_wk B_wk t_wk (var 0)) ≡ t : Pi i j A B *)
+      Γ ⊢'< Ru i j > u : Pi i j A B →
+      let t_app_x := app i j (S ⋅ A) ((up_ren S) ⋅ B) (S ⋅ t) (var 0) in 
+      let u_app_x := app i j (S ⋅ A) ((up_ren S) ⋅ B) (S ⋅ u) (var 0) in 
+      Γ ,, (i , A) ⊢'< j > t_app_x ≡ u_app_x : B →
+      Γ ⊢'< Ru i j > t ≡ u : Pi i j A B
 
 | conv'_rec_zero : 
     ∀ Γ l P p_zero p_succ,
