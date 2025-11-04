@@ -19,6 +19,14 @@ Import CombineNotations.
 
 Reserved Notation "Γ ⊢< l > t --> u : T" (at level 50, l, t, u, T at next level).
     
+Definition val t := 
+    match t with 
+    | app i j A B t u => False
+    | rec i P pzero psucc n => False 
+    | accel _ _ A R a q P p => False
+    | cast _ _ _ _ _ => False
+    | _ => True 
+    end.
 
 Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
 | red_app Γ t t' u i j A B :
@@ -82,6 +90,49 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< l > t --> u : A ->
     Γ ⊢< Ax l > A ≡ B : Sort l -> 
     Γ ⊢< l > t --> u : B
+
+| red_cast1 Γ i A A' B e a :
+    Γ ⊢< Ax i > A --> A' : Sort i ->
+    Γ ⊢< Ax i > B : Sort i ->
+    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢< i > a : A -> 
+    Γ ⊢< i > cast i A B e a --> cast i A' B e a : B
+
+| red_cast2 Γ i A B B' e a :
+    Γ ⊢< Ax i > A : Sort i ->
+    val A ->
+    Γ ⊢< Ax i > B --> B' : Sort i ->
+    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢< i > a : A -> 
+    Γ ⊢< i > cast i A B e a --> cast i A B' e a : B
+
+| red_cast_nat Γ e t : 
+    Γ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat -> 
+    Γ ⊢< ty 0 > t : Nat ->
+    Γ ⊢< ty 0 > cast (ty 0) Nat Nat e t --> t : Nat 
+
+| red_cast_sort Γ i A e :
+    Γ ⊢< Ax i > A : Sort i -> 
+    Γ ⊢< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) ->
+    Γ ⊢< Ax i > cast (Ax i) (Sort i) (Sort i) e A --> A : Sort i
+
+| red_cast_pi Γ i j A1 A2 B1 B2 e f :
+    Γ ⊢< Ax i > A1 : Sort i ->
+    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ⊢< Ax i > A2 : Sort i ->
+    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ⊢< Ru i j > f : Pi i j A1 B1 -> 
+    let A1' := S ⋅ A1 in
+    let A2' := S ⋅ A2 in 
+    let B1' := (up_ren S) ⋅ B1 in 
+    let B2' := (up_ren S) ⋅ B2 in
+    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i j A1' B1' (S ⋅ f) t1 in 
+    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in 
+    let t4 := lam i j A2 B2 t3 in 
+    Γ ⊢< Ru i j > cast (Ru i j) (Pi i j A1 B1) (Pi i j A2 B2) e f --> t4 : Pi i j A2 B2
+    
 where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 
 
@@ -122,12 +173,14 @@ Lemma red_to_conv Γ l t u A :
     Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
 Proof.
     intros. induction H; eauto using conversion, refl_ty.
-    eapply conv_trans. eapply conv_app. 
-    1,2:(eapply refl_ty; eauto using validity_conv_left).
-    2: eauto using refl_ty.
-    eapply conv_conv. eapply conv_lam; eauto using refl_ty, conv_sym, conv_ty_in_ctx_conv, type_conv.
-    eapply conv_pi; eauto using conv_ty_in_ctx_conv, conv_sym.
-    eauto using conv_beta, validity_conv_left.
+    - eapply conv_trans. eapply conv_app. 
+      1,2:(eapply refl_ty; eauto using validity_conv_left).
+      2: eauto using refl_ty.
+      eapply conv_conv. eapply conv_lam; eauto using refl_ty, conv_sym, conv_ty_in_ctx_conv, type_conv.
+      eapply conv_pi; eauto using conv_ty_in_ctx_conv, conv_sym.
+      eauto using conv_beta, validity_conv_left.
+    - eapply conv_cast_refl; eauto using conv_nat, validity_ty_ctx.
+    - eapply conv_cast_refl; eauto using conv_sort, validity_ty_ctx. 
 Qed.
 
 Lemma red_app' Γ t t' u i j A B X Y :
@@ -221,7 +274,7 @@ Lemma aconv_inv Γ l t v T :
 Proof.
     intro H.
     destruct t.
-    1,2,3,4,6,7,8,9,10,11,12,13 : (dependent induction H; unfold aconv_inv_type in *; eauto).
+    1,2,3,4,6,7,8,9,10,11,12,13,14,15,16 : (dependent induction H; unfold aconv_inv_type in *; eauto).
     unfold aconv_inv_type.
     dependent induction H; eauto.
     - exists t1. exists t2. exists t3. apply type_inv_app' in H as (_ & AWt & BWt & tWT & _). repeat split; eauto using refl_ty, ann_conv.
@@ -263,6 +316,17 @@ Proof.
     - eapply aconv_inv in H5. simpl in H5. subst. eexists. split; eauto using red. eauto using conversion, validity_conv_right, aconv_refl.
     - eapply aconv_conv in H1; eauto using conv_sym. eapply IHred in H1 as (u' & H' & H'').
       exists u'. split; eauto using red, ann_conv, conv_sym.
+    - eapply aconv_inv in H3. simpl in H3. subst. eexists. split; eauto using red.
+      eapply aconv_refl. eapply type_cast; eauto using validity_conv_right, type_conv, red_to_conv.
+      eapply type_conv; eauto. eauto 6 using conv_obseq, refl_ty, red_to_conv, conversion, validity_ty_ctx.
+    - eapply aconv_inv in H4. simpl in H4. subst. eexists. split; eauto using red. 
+      eapply aconv_refl. eapply type_conv; eauto using red_to_conv, conv_sym. 
+      eapply type_cast; eauto using red_to_conv, validity_conv_right.
+      eapply type_conv; eauto. eapply conv_obseq; eauto using refl_ty, red_to_conv, conv_sort, validity_ty_ctx.
+    - eapply aconv_inv in H1. simpl in H1. subst. eexists. split; eauto using red, aconv_refl.
+    - eapply aconv_inv in H1. simpl in H1. subst. eexists. split; eauto using red, aconv_refl.
+    - eapply aconv_inv in H5. simpl in H5. subst. eexists. split; eauto using red.
+      eapply aconv_refl. eapply validity_conv_right. eauto using conv_cast_pi.
 Qed.
 
 Lemma sim_trans Γ l t u v A : 
@@ -492,6 +556,60 @@ Definition red_inv_type Γ t v :=
         Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' /\
         Γ ⊢< i > a : A /\ 
         Γ ⊢< prop > q : acc i A R a
+    | cast _ Nat Nat e t => 
+        v = t /\
+        Γ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat /\
+        Γ ⊢< ty 0 > t : Nat
+    | cast l (Sort i) (Sort j) e A => 
+        v = A /\ 
+        Γ ⊢< Ax i > A : Sort i /\
+        Γ ⊢< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) /\
+        i = j /\ 
+        l = Ax i
+    | cast l (Pi i j A1 B1) (Pi i' j' A2 B2) e f => 
+        let A1' := S ⋅ A1 in
+        let A2' := S ⋅ A2 in 
+        let B1' := (up_ren S) ⋅ B1 in 
+        let B2' := (up_ren S) ⋅ B2 in
+        let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+        let t2 := app i j A1' B1' (S ⋅ f) t1 in 
+        let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in 
+        let t4 := lam i j A2 B2 t3 in 
+        v = t4 /\
+        Γ ⊢< Ax i > A1 : Sort i /\
+        Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j /\
+        Γ ⊢< Ax i > A2 : Sort i /\
+        Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j /\
+        Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) /\
+        Γ ⊢< Ru i j > f : Pi i j A1 B1 /\
+        l = Ru i j /\ 
+        i' = i /\ 
+        j' = j
+
+    | cast i A B e t => 
+        (exists A',
+            v = cast i A' B e t /\
+            Γ ⊢< Ax i > A --> A' : Sort i /\
+            Γ ⊢< Ax i > B : Sort i /\
+            Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
+            Γ ⊢< i > t : A) \/ 
+        (exists B', 
+            v = cast i A B' e t /\ 
+            val A /\
+            Γ ⊢< Ax i > B --> B' : Sort i /\
+            Γ ⊢< Ax i > A : Sort i /\
+            Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
+            Γ ⊢< i > t : A)
+(* 
+
+    | cast i A B e t => 
+        Γ ⊢< Ax i > A : Sort i /\
+        Γ ⊢< Ax i > B : Sort i /\
+        Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
+        Γ ⊢< i > t : A /\ 
+        ((exists A', v = cast i A' B e t /\ Γ ⊢< Ax i > A --> A' : Sort i)
+         \/ 
+        (exists B', v = cast i A B' e t /\ val A /\ Γ ⊢< Ax i > B --> B' : Sort i)) *)
     | _ => False
     end.
 
@@ -508,8 +626,11 @@ Fixpoint size (t : term) : nat :=
   | rec _ P p0 ps t => 1 + size P + size p0 + size ps + size t
   | accel _ _ A R a q P p => 1 + size A + size R + size a + size q + size P + size p 
   | acc _ A R a => 1 + size A + size R + size a 
-  | accin _ A R a p => 1 + size A + size R + size a + size p
-  | box => 0
+  (* | accin _ A R a p => 1 + size A + size R + size a + size p *)
+  | cast _ A B e t => 1 + size A + size B + size e + size t 
+  | obseq _ A a b => 1 + size A + size a + size b
+  | _ => 0
+  (* | injpi1 _ _ A1 A2 B1 B2 e => 1 + size A1 + size A2 + size B1 + size B2 + size e *)
 end.
 
 
@@ -532,7 +653,28 @@ Proof.
     - simpl. split; eauto.
     - simpl. split; eauto. split; eauto.
     - eapply IHred. eauto.
+    - destruct A.
+      1,4,5,7-16: simpl;left;eexists; split; eauto.
+      1-3:(unshelve eapply (H _ _) in H0); simpl. 1-3:lia. 1-3:inversion H0.
+    - destruct B.
+      1,4,5,7-16:destruct A; simpl; right; eexists; split; eauto.
+      1-3:(unshelve eapply (H _ _) in H2); simpl. 1-3:lia. 1-3:inversion H2.
+    - simpl. split; eauto.
+    - simpl. split; eauto.
+    - simpl. split; eauto. split; eauto. split; eauto. split; eauto. split; eauto.
 Qed.
+
+Lemma val_whnf Γ l t A : val t -> whnf Γ l t A.
+Proof.
+    intros. unfold whnf. intros.
+    destruct t.
+    all:eapply red_inv in H0.
+    (* admit. simpl in H0.a dependent destruction H0. *)
+    1-4, 6-8, 10, 11, 13, 15, 16: simpl in H0; dependent destruction H0.
+    1-4:inversion H.
+Qed.
+
+Hint Unfold val.
 
 
 Lemma red_det Γ l t u v A : 
@@ -553,6 +695,17 @@ Proof.
     - apply red_inv in H3 as (eq & _). eauto.
     - apply red_inv in H5 as (eq & _). eauto.
     - eapply IHred. eapply red_conv; eauto using conv_sym.
+    - destruct A.
+      1-4, 6-8, 10, 11, 13, 15, 16: eapply red_inv in H; simpl in H; dependent destruction H.
+      1-4:eapply red_inv in H3; simpl in H3; destruct H3 as [ (A_ & eq & red & _) | (A_ & eq & false & red & _)]; 
+        try inversion false; eapply IHred in red; subst; eauto.
+    - destruct B.
+      1-4, 6-8, 10, 11, 13, 15, 16: eapply red_inv in H1; simpl in H1; dependent destruction H1.
+      1-4:destruct A; eapply red_inv in H4; simpl in H4; destruct H4 as [ (A_ & eq & red1 & _) | (A_ & eq & _ & red2 & _)];
+      try eapply val_whnf in red1 ; eauto; try inversion red1; try eapply IHred in red2; subst; eauto.
+    - eapply red_inv in H1. destruct H1. eauto.
+    - eapply red_inv in H1. destruct H1. eauto.
+    - eapply red_inv in H5. destruct H5. eauto.
 Qed.
 
 Lemma redd_whnf_det Γ l t u v A : 
@@ -570,22 +723,12 @@ Proof.
           apply IHredd; eauto. split; eauto.
 Qed.
 
-Definition val t := 
-    match t with 
-    | app i j A B t u => False
-    | rec i P pzero psucc n => False 
-    | accel _ _ A R a q P p => False
-    | _ => True 
-    end.
 
 Lemma val_redd_to_whnf Γ l t A : Γ ⊢< l > t : A -> val t -> Γ ⊢< l > t -->>! t : A.
 Proof.
     intros.
     split; eauto using redd_refl.
-    unfold whnf. intros.
-    destruct t.
-    1-4,6-8, 10, 11, 13: eapply red_inv in H1; inversion H1. 
-    1, 2, 3: inversion H0.
+    unfold whnf. intros. eapply val_whnf in H1; eauto.
 Qed.
 
 Lemma sim_left_redd_whnf_val Γ l t t' u A :

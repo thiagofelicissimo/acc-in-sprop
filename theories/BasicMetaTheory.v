@@ -74,16 +74,6 @@ Proof.
   intro H.
   dependent induction H; eauto.
 Qed.
-
-Lemma type_inv_box Γ T l :
-      Γ ⊢< l > box : T ->
-      False. 
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-
 (*
   To prove the following properties, we can try to follow the same order as in 
   Harper & Pfenning's "On equivalence and canonical forms in the lf type theory".
