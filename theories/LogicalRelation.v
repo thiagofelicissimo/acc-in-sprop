@@ -2051,9 +2051,21 @@ Proof.
     refine (LR_ind _ _ _ _ _); intros; dependent destruction eq; eauto.
 Qed.
 
+
+(* these are consequences of the standard model *)
 Axiom nat_neq_sort : forall e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
 Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
 Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
+Axiom pi_sort_inj : forall i j i' j' A A' B B' e,
+    Ru i j = Ru i' j' ->
+    ∙ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A B) (Pi i' j' A' B') -> 
+    i = i' /\ j = j'.
+
+(* and the following are definable *)
+Axiom obseq_sym : level -> term -> term -> term -> term -> term.
+Axiom type_obseq_sym : forall Γ l A a b e, 
+    Γ ⊢< prop > e : obseq l A a b -> 
+    Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.    
 
 Lemma nat_neq_sort_red l l' A B e : 
     ∙ ⊢< Ax l' > A -->>! Nat : Sort l' ->
@@ -2105,17 +2117,7 @@ Qed.
 
 
 
-Axiom obseq_sym : level -> term -> term -> term -> term -> term.
-Axiom type_obseq_sym : forall Γ l A a b e, 
-    Γ ⊢< prop > e : obseq l A a b -> 
-    Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.
-    
 
-
-Axiom pi_sort_inj : forall i j i' j' A A' B B' e,
-    Ru i j = Ru i' j' ->
-    ∙ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A B) (Pi i' j' A' B') -> 
-    i = i' /\ j = j'.
 
 
 Lemma pi_sort_inj_red l i j i' j' A A' B B' T T' e :
@@ -2213,6 +2215,54 @@ Proof.
     conv_sort', validity_ty_ctx, conv_obseq.
 Qed.
 
+Lemma redd_cast_pi_pi Γ i k A B S T S' T' e s' a :
+    Γ ⊢< Ax (Ru i (ty k)) > A -->> Pi i (ty k) S T : Sort (Ru i (ty k)) ->
+    Γ ⊢< Ax (Ru i (ty k)) > B -->> Pi i (ty k) S' T' : Sort (ty (ru i k)) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty k))) (Sort (Ru i (ty k))) A B ->
+    Γ ⊢< i > s' : S' ->
+    Γ ⊢< Ru i (ty k) > a : A ->
+    let s := cast i S' S (injpi1 i (ty k) S S' T T' e) s' in
+    let app' := app i (ty k) S T a s in
+    let res' := cast (ty k) (T <[ s..]) (T' <[ s'..]) (injpi2 i (ty k) S S' T T' e s')  app' in
+    Γ ⊢< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> res' : T' <[s'..].
+Proof.
+    intros A_red B_red eWt s'Wt aWt s app' res'.
+    eapply redd_to_conv in A_red as temp.
+    eapply validity_conv_right, type_inv_pi in temp as (SWt & TWt).
+    eapply redd_to_conv in B_red as temp.
+    eapply validity_conv_right, type_inv_pi in temp as (S'Wt & T'Wt).    
+
+    eassert (Γ ⊢< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> _ : T' <[ s'..]).
+    {
+      eapply redd_app; eauto.
+      eapply redd_conv.
+      eapply redd_trans.
+      eapply redd_cast1; eauto using validity_conv_left, redd_to_conv.
+      2:eauto using redd_to_conv.
+      eapply redd_trans.
+      eapply redd_cast2; 
+      eauto 9 using validity_conv_right, redd_to_conv, type_conv, conv_obseq, 
+        validity_ty_ctx, conv_sort, refl_ty, validity_conv_left.
+      eapply red_to_redd.
+      eapply red_conv.
+      eapply red_cast_pi; eauto 7 using type_conv, redd_to_conv, conv_obseq, validity_ty_ctx, conv_sort.
+      eauto using redd_to_conv, conv_sym. }
+
+    eapply redd_trans. eauto.
+    eapply red_to_redd.
+    eapply redd_to_conv, validity_conv_right, type_inv_app' in H as (_ & _ & _ & H & _).
+    eapply type_inv_lam' in H as (_ & _ & _ & H & _).
+    eapply red_beta'; eauto using refl_ty.
+
+    unfold res', app', s.
+    simpl. f_equal. 
+    ssimpl. rewrite subst_id_reduce1. ssimpl. reflexivity.
+    f_equal; ssimpl; try rewrite subst_id_reduce1; ssimpl; reflexivity.
+    f_equal; ssimpl; try rewrite subst_id_reduce1; ssimpl; reflexivity.
+Qed.
+
+
+
 
 Opaque LR. 
 Lemma prefundamental_cast l A1 A2 ϵA B1 B2 ϵB : 
@@ -2301,15 +2351,15 @@ Proof.
            destruct temp as (eq1 & eq2). dependent destruction eq2.
            unfold ϵPi. intros. split. 
            eapply conv_conv; eauto using conv_cast, LR_escape_ty, redd_whnf_to_conv.
-           clear LR_A12' LR_B12'.
+           (* clear LR_A12' LR_B12'. *)
            intros s1 s2 ϵs.
-           eapply H0 in LR_S12' as temp; eauto.
+           eapply H0 in LR_S12' as temp; eauto. clear H0.
            destruct temp as (_ & K2).
            eapply K2 in ϵs as temp; eauto using LR_escape_tm. 
            2:{ eapply conv_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
-            destruct H2.
-            eapply H5 in temp as temp'.
+            destruct H2 as (H2a & H2b).
+            eapply H2b in temp as temp'.
             eapply H1 in temp. 2:eapply LR_T; eauto. 2,3:eauto using LR_T12'.
             destruct temp as (K1 & _). eapply LR_irred_tm; eauto. 3:eapply K1; eauto. all:clear K1 K2.
             4:{ eapply conv_injpi2 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
@@ -2317,7 +2367,11 @@ Proof.
             3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast; eauto using LR_escape_ty, LR_escape_tm.
                 eapply conv_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                 eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
-            1,2:admit.
+            1,2: destruct A1_red_pi, A2_red_pi, B1_red, B2_red.
+            * eapply redd_cast_pi_pi; eauto using LR_escape_tm, validity_conv_left.
+            * eapply redd_conv. eapply redd_cast_pi_pi; eauto using validity_conv_right, LR_escape_tm, LR_escape_ty, type_conv.
+              eapply type_conv; eauto using validity_conv_right, conv_obseq, LR_escape_ty, conv_sort, ctx_typing.
+              eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
            destruct temp as (eq1 & eq2). dependent destruction eq2.
            unfold ϵPi. intros. split. 
@@ -2337,11 +2391,14 @@ Proof.
             3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast; eauto using LR_escape_ty, LR_escape_tm.
                 eapply conv_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                 eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
-            1,2:admit.
+            1,2: destruct A1_red_pi, A2_red_pi, B1_red, B2_red.
+            * eapply redd_cast_pi_pi; eauto using LR_escape_tm, validity_conv_left.
+            * eapply redd_conv. eapply redd_cast_pi_pi; eauto using validity_conv_right, LR_escape_tm, LR_escape_ty, type_conv.
+              eapply type_conv; eauto using validity_conv_right, conv_obseq, LR_escape_ty, conv_sort, ctx_typing.
+              eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm.
       + split; intros; eapply nat_neq_pi_red in A1_red_pi; 
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_pi.
-Admitted.
-
+Qed.
 
 Lemma fundamental_cast Γ k A1 A2 B1 B2 e1 e2 a1 a2 :
     Γ ⊢< Ax (ty k) > A1 ≡ A2 : Sort (ty k) ->
@@ -2373,8 +2430,9 @@ Lemma prefundamental_cast_refl l A B ϵA e a1 a2 :
     ϵA (cast l A B e a1) a2.
 Proof.
     intros LR_AB ϵa eWt.
-    generalize l A B ϵA LR_AB e a1 a2 ϵa eWt.
-    clear l A B ϵA LR_AB e a1 a2 ϵa eWt.
+    pose proof (LR_AB' := LR_AB).
+    generalize l A B ϵA LR_AB LR_AB' e a1 a2 ϵa eWt.
+    clear l A B ϵA LR_AB LR_AB' e a1 a2 ϵa eWt.
     refine (LR_ind _ _ _ _ _); intros.
     - destruct p. rewrite H0 in *. 
       eapply conv_trans; eauto using conv_sym.
@@ -2395,21 +2453,38 @@ Proof.
       eauto 6 using LR_escape_ty, type_conv, 
         redd_to_conv, conv_sym, validity_conv_left.
       eauto using redd_to_conv.
-    - rewrite H in *. unfold ϵPi. split.
-      admit.
+    - eapply LR_escape_tm in ϵa as a1_conv_a2; eauto.
+      eapply LR_escape_ty in LR_AB' as A1_conv_A2. clear LR_AB'.
+      rewrite H in *. unfold ϵPi. split.
+      1:{ eapply conv_trans. eapply conv_conv.
+          eapply conv_cast_refl; eauto 6 using redd_whnf_to_conv, validity_conv_left.
+          eauto using conv_sym, conv_trans, redd_whnf_to_conv.
+          eauto using conv_conv, redd_whnf_to_conv.
+      }
       intros s1 s2 ϵs.
-      eapply H0 in ϵs as ϵs'.
-      2:{ eapply type_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty, validity_conv_right, conv_ty_in_ctx_conv.
-          eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. 1,2:admit. }
+      eapply H0 in ϵs as ϵs'; eauto.
+      2:{ eapply (type_injpi1 _ _ _ S2 S1 T2 T1) ; eauto using validity_conv_left, LR_escape_ty, validity_conv_right, conv_ty_in_ctx_conv.
+          eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
+          (* eauto 8 using LR_escape_ty, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi, validity_conv_right, refl_ty, conv_ty_in_ctx_conv. } *)
       destruct ϵa.
       eapply H3 in ϵs' as temp.
       eapply H1 in temp; eauto.
-      2:{ eapply type_conv. eapply type_injpi2 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
-               eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. admit.
-            eapply conv_obseq; eauto using ctx_typing, conversion. 1,2:admit. }
-      assert (ϵT (cast i S1 S2 (injpi1 i (ty k) S2 S1 T2 T2 e) s1) s2 <~> ϵT s1 s2) by eauto 7 using LR_irrel, LR_sym.
+      2:{ eapply type_conv. eapply (type_injpi2 _ _ _ S1 S2 T1 T2) ; 
+          eauto using validity_conv_left, LR_escape_ty, LR_escape_tm, type_conv, validity_conv_right, conv_ty_in_ctx_conv.
+          eapply type_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion.
+          eapply conv_obseq; eauto using ctx_typing, conversion.
+          2:eapply subst; eauto using validity_conv_right, refl_ty, aux_subst, LR_escape_tm.  
+          eapply subst; eauto using validity_conv_left, refl_ty.
+          eapply aux_subst.
+          eapply conv_cast; eauto using LR_escape_ty, LR_escape_tm, conv_sym, conv_conv.
+          eapply conv_injpi1; eauto using LR_escape_ty, conv_sym, validity_conv_right, conv_ty_in_ctx_conv, refl_ty.
+          eapply conv_conv; eauto using refl_ty.
+          eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
+      assert (ϵT (cast i S1 S2 (injpi1 i (ty k) S2 S1 T2 T1 e) s1) s2 <~> ϵT s1 s2) by eauto 7 using LR_irrel, LR_sym.
       rewrite H4 in temp. clear H4.
       eapply LR_irred_tm; eauto.
+      eapply redd_conv.
+      (* eapply redd_cast_pi_pi. *)
 Admitted.
 
 Lemma fundamental_cast_refl Γ k A B e a :
@@ -2436,7 +2511,104 @@ Proof.
     eapply validity_conv_left, subst; eauto using refl_ty, LR_subst_escape.
 Qed.
 
+
+Lemma red_cast_pi' Γ i j A1 A2 B1 B2 e f X Y l :
+    Γ ⊢< Ax i > A1 : Sort i ->
+    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ⊢< Ax i > A2 : Sort i ->
+    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ⊢< Ru i j > f : Pi i j A1 B1 -> 
+    let A1' := S ⋅ A1 in
+    let A2' := S ⋅ A2 in 
+    let B1' := (up_ren S) ⋅ B1 in 
+    let B2' := (up_ren S) ⋅ B2 in
+    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i j A1' B1' (S ⋅ f) t1 in 
+    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in 
+    let t4 := lam i j A2 B2 t3 in 
+    X = Pi i j A2 B2 ->
+    Y = t4 ->
+    l = Ru i j ->
+    Γ ⊢< l > cast l (Pi i j A1 B1) (Pi i j A2 B2) e f --> Y : X.
+Proof.
+    intros. subst. eauto using red_cast_pi.
+Qed.
     
+
+Lemma type_inv_cast' Γ i A B e a l T :
+    Γ ⊢< l > cast i A B e a : T ->
+    Γ ⊢< l > cast i A B e a : T /\
+    Γ ⊢< Ax i > A : Sort i /\
+    Γ ⊢< Ax i > B : Sort i /\
+    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
+    Γ ⊢< i > a : A /\
+    l = i /\
+    Γ ⊢< Ax i > T ≡ B : Sort l.
+Proof.
+  intro H.
+  apply validity_ty_ty in H as T_Wt.
+  split. auto.
+  dependent induction H; eauto.
+  - repeat split; eauto using refl_ty.
+  - edestruct IHtyping as (AWt & BWt & eWt & aWt & l_eq & conv); eauto using validity_conv_left.
+    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
+Qed.
+
+Lemma fundamental_cast_pi Γ i n A1 A2 B1 B2 e f :
+    Γ ⊢< Ax i > A1 : Sort i ->
+    Γ ⊨< Ax i > A1 ≡ A1 : Sort i ->
+    Γ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
+    Γ,, (i, A1) ⊨< Ax (ty n) > B1 ≡ B1 : Sort (ty n) ->
+    Γ ⊢< Ax i > A2 : Sort i ->
+    Γ ⊨< Ax i > A2 ≡ A2 : Sort i ->
+    Γ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ,, (i, A2) ⊨< Ax (ty n) > B2 ≡ B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊨< prop > e ≡ e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
+    Γ ⊨< Ru i (ty n) > f ≡ f : Pi i (ty n) A1 B1 ->
+    let A1' := S ⋅ A1 in
+    let A2' := S ⋅ A2 in
+    let B1' := up_ren S ⋅ B1 in
+    let B2' := up_ren S ⋅ B2 in
+    let t5 := cast i A2' A1' (injpi1 i (ty n) A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t6 := app i (ty n) A1' B1' (S ⋅ f) t5 in
+    let t7 := cast (ty n) (B1 <[ t5 .: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t6 in
+    let t8 := lam i (ty n) A2 B2 t7 in
+    Γ ⊨< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f ≡ t8 : Pi i (ty n) A2 B2.
+Proof.
+    intros A1Wt LRv_A1 B1Wt LRv_B1 A2Wt LRv_A2 B2Wt LRv_B2 eWt LRv_e fWt LRv_f A1' A2' B1' B2' t5 t6 t7 t8.
+    unfold LRv. intros σ1 σ2 ϵσ.
+    assert (Γ ⊨< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f 
+            ≡ cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f : (Pi i (ty n) A2 B2)).
+    eapply fundamental_cast; eauto using refl_ty, conv_pi'.
+    1,2:eapply fundamental_pi; eauto using refl_ty.
+    eapply H in ϵσ as temp.
+    destruct temp as (LR_pi & lr & ϵcast).
+    eexists. split. eauto.
+    eapply LR_redd; eauto.
+    eauto using redd_refl, validity_conv_left, LR_escape_tm.
+    eapply red_to_redd.
+    simpl in ϵcast. eapply LR_escape_tm, validity_conv_right, type_inv_cast' in ϵcast as temp; eauto.
+    destruct temp as (_ & pi1 & pi2 & e'Wt & f'Wt & _).
+    eapply type_inv_pi' in pi1 as (_ & A1'Wt & B1'Wt & _).
+    eapply type_inv_pi' in pi2 as (_ & A2'Wt & B2'Wt & _).
+    eapply red_conv.
+    simpl.
+    eapply red_cast_pi'; eauto.
+    1:{unfold t5, A1', A2', B1', B2'.
+      f_equal. f_equal. ssimpl. substify. reflexivity.
+      ssimpl. reflexivity.
+      f_equal. 
+      1,2,3:ssimpl; reflexivity.
+      f_equal.
+      1,2:ssimpl; reflexivity.
+      f_equal; ssimpl; reflexivity. }
+    assert (Pi i (ty n) (A2 <[ σ2]) (B2 <[ up_term_term σ2]) = (Pi i (ty n) A2 B2) <[ σ2]) by (ssimpl; reflexivity).
+    rewrite H0.
+    eapply subst; eauto using conv_pi, refl_ty, LR_subst_escape, LR_subst_sym.
+Qed.
 
 Lemma fundamental_var Γ x k A :
     nth_error Γ x = Some (ty k, A) ->
@@ -2529,7 +2701,7 @@ Proof.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
     - eauto using fundamental_cast_refl. 
-    - admit. 
+    - destruct j. 2: eauto using fundamental_prop. dependent destruction x. eauto using fundamental_cast_pi. 
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
     - destruct j. eauto using fundamental_eta. eauto using fundamental_prop. 
@@ -2542,7 +2714,7 @@ Proof.
       eapply H in H2 as (ϵA & LR_A & ϵtu). eapply H0 in H3 as (ϵA' & LR_A' & ϵuv).
       assert (ϵA <~> ϵA') by eauto using LR_sym, LR_irrel. rewrite <- H2 in ϵuv.
       eapply LR_trans_tm in ϵuv; eauto.
-Admitted.
+Qed.
 
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
