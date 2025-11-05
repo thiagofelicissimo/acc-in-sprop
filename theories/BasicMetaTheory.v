@@ -491,3 +491,12 @@ Lemma conv_lam' Γ i j A B t A' B' t' l T:
 Proof.
   intros. subst. eauto using conv_lam.
 Qed.
+
+Lemma conv_sort' l l' Γ T : 
+      ⊢ Γ ->
+      T = Sort (Ax l) ->
+      l' = Ax (Ax l) ->
+      Γ ⊢< l' > Sort l ≡ Sort l : T.
+Proof.
+  intros. subst. eauto using conv_sort.
+Qed.
