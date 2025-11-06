@@ -897,7 +897,7 @@ Proof.
     eapply LR_iff_rel; eauto using LR_irrel.
 Qed.
 
-Lemma LR_sym_tm l A B R t u : LR l A B R -> R t u -> R u t.
+Lemma LR_sym_tm {l A B R t u} : LR l A B R -> R t u -> R u t.
 Proof.
     intros. eapply LR_sym' in H as temp. 
     destruct temp as (R' & lr & equiv).
@@ -906,7 +906,7 @@ Proof.
     rewrite H1. eapply equiv in H0. eauto.
 Qed.
 
-Lemma LR_trans_tm l A B R t u v : 
+Lemma LR_trans_tm {l A B R t u v} : 
     LR l A B R -> 
     R t v -> R v u -> R t u.
 Proof.
@@ -2085,6 +2085,7 @@ Proof.
 Qed.
 
 
+
 Lemma nat_neq_pi_red l' A B i j S T e : 
     ∙ ⊢< Ax l' > A -->>! Nat : Sort l' ->
     ∙ ⊢< Ax l' > B -->>! Pi i j S T : Sort l' ->
@@ -2467,65 +2468,63 @@ Proof.
     generalize l A B ϵA LR_AB LR_AB' e a.
     clear l A B ϵA LR_AB LR_AB' e a.
     refine (LR_ind _ _ _ _ _); intros.
-    - destruct p. intros; rewrite H2 in *. 
-      + eapply conv_conv; eauto using conv_sym.
-        eapply conv_cast_refl; eauto using validity_conv_left.
-    - intros; rewrite H in *. 
-      + eapply LR_irred_tm; eauto using prefundamental_nat.
-        2:eapply redd_refl; eauto using LR_escape_tm, prefundamental_nat, validity_conv_right.
-        destruct A1_red_nat, A2_red_nat.
-        eapply redd_conv. eapply redd_cast_nat_nat; 
-        eauto 6 using LR_escape_tm, prefundamental_nat, type_conv, 
-          redd_to_conv, conv_sym, validity_conv_left.
-        eauto using redd_to_conv.
-      - intros; rewrite H0 in *. 
-      + destruct H1 as (R' & lr). exists R'. 
-        eapply LR_irred_ty; eauto. 
-        2:eapply redd_refl; eauto using LR_escape_ty, validity_conv_right. 
-        destruct A1_red_U, A2_red_U.
-        eapply redd_conv. eapply redd_cast_sort_sort; 
-        eauto 6 using LR_escape_ty, type_conv, 
-          redd_to_conv, conv_sym, validity_conv_left.
-        eauto using redd_to_conv.
+    - destruct p. rewrite H2 in *. 
+      eapply conv_conv; eauto using conv_sym.
+      eapply conv_cast_refl; eauto using validity_conv_left.
+    - rewrite H in *. 
+      eapply LR_irred_tm; eauto using prefundamental_nat.
+      2:eapply redd_refl; eauto using LR_escape_tm, prefundamental_nat, validity_conv_right.
+      destruct A1_red_nat, A2_red_nat.
+      eapply redd_conv. eapply redd_cast_nat_nat; 
+      eauto 6 using LR_escape_tm, prefundamental_nat, type_conv, 
+        redd_to_conv, conv_sym, validity_conv_left.
+      eauto using redd_to_conv.
+    - rewrite H0 in *. 
+      destruct H1 as (R' & lr). exists R'. 
+      eapply LR_irred_ty; eauto. 
+      2:eapply redd_refl; eauto using LR_escape_ty, validity_conv_right. 
+      destruct A1_red_U, A2_red_U.
+      eapply redd_conv. eapply redd_cast_sort_sort; 
+      eauto 6 using LR_escape_ty, type_conv, 
+        redd_to_conv, conv_sym, validity_conv_left.
+      eauto using redd_to_conv.
 
-    - intros.
-
-    
-      + eapply LR_escape_tm in H2 as a1_conv_a2; eauto.
-        eapply LR_escape_ty in LR_AB' as A1_conv_A2. 
-      rewrite H in *.
-      unfold ϵPi. split. 
+    - eapply LR_escape_tm in H2 as a1_conv_a2; eauto.
+      eapply LR_escape_ty in LR_AB' as A1_conv_A2.
+      rewrite H in *. unfold ϵPi. split. 
       eapply conv_conv; eauto  using conv_cast_refl, LR_escape_tm, validity_conv_left, redd_whnf_to_conv, conv_sym, conv_trans.
 
       intros s1 s2 ϵs.
-      assert (ϵS s1 s1) as ϵs11. eapply LR_sym_tm in ϵs as K; eauto. eapply LR_trans_tm in K; eauto.
+      assert (ϵS s1 s1) as ϵs11 by eauto using (LR_sym_tm LR_S), (LR_trans_tm LR_S).
       destruct H2. eapply H4 in ϵs as ϵs'. eapply LR_trans_tm; eauto.
       assert (ϵT s1 s2 <~> ϵT s1 s1) by eauto using LR_irrel.
       rewrite H5. clear ϵs ϵs' H5 s2.
-      eapply H0 in LR_S as ϵs11'; eauto. Unshelve. 3:exact (injpi1 i (ty k) S1 S2 T1 T2 e). 
-      2:{eapply type_conv. eapply type_injpi1; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv.
-      eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv.
-      eapply conv_obseq; eauto using conv_sym, LR_escape_ty, ctx_typing, conv_sort. }
-      assert (ϵS (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1).
-      assert (ϵS (cast i S1 S2 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1)).
-      eapply prefundamental_cast; eauto using LR_escape_tm, LR_sym. eapply refl_ty. 
-      1:{eapply type_conv. eapply type_injpi1; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv.
-      eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv.
-      eapply conv_obseq; eauto using conv_sym, LR_escape_ty, ctx_typing, conv_sort. }
-      eapply LR_trans_tm in H5; eauto.
-      eapply LR_sym_tm in H5; eauto.
-      eapply LR_sym_tm in ϵs11'; eauto.
-      clear ϵs11'. rename H5 into ϵs11'.
-      eapply H4 in ϵs11' as ϵs11''. 
-      assert (ϵT (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1 <~> ϵT s1 s1).
-      eapply LR_T, LR_sym in ϵs11. eapply LR_T, LR_sym in ϵs11'. eauto using LR_irrel.
 
-      assert (ϵT (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1 (app i (ty k) S1 T1 a (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1)) (app i (ty k) S1 T1 a (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1))).
-      eapply LR_sym_tm in ϵs11'' as temp; eauto. eapply LR_trans_tm in temp; eauto.
-      eapply H1 in H6; eauto. Unshelve. 3:exact ((injpi2 i (ty k) S1 S2 T1 T2 e s1)). 
-      2:{ eapply type_injpi2; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv, LR_escape_tm, type_conv.
-          eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv. }
-    
+      assert (∙ ⊢< prop > injpi1 i (ty k) S1 S2 T1 T2 e : obseq (Ax i) (Sort i) S1 S2) as injpi1Wt.
+      { eapply type_conv. eapply type_injpi1; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv.
+      eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv.
+      eapply conv_obseq; eauto using conv_sym, LR_escape_ty, ctx_typing, conv_sort. }
+
+      eassert (∙ ⊢< prop > injpi2 i (ty k) S1 S2 T1 T2 e s1 : _) as injpi2Wt.
+      { eapply type_injpi2; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv, LR_escape_tm, type_conv.
+        eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv. }
+
+      eapply H0 in LR_S as ϵs11'; eauto.
+
+      assert (ϵS (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1).
+      { eapply LR_trans_tm  in ϵs11'; eauto.
+        eapply LR_sym_tm; eauto. 
+        eapply prefundamental_cast; eauto using LR_escape_tm, LR_sym, refl_ty. }
+      clear ϵs11'. rename H5 into ϵs11'.
+
+      eapply H4 in ϵs11' as ϵs11''. 
+      assert (ϵT (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1 <~> ϵT s1 s1) by eauto 6 using LR_irrel, LR_sym. 
+
+      eassert (ϵT (cast _ _ _ _ _) _ (app i (ty k) S1 T1 a _) (app i (ty k) S1 T1 a (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1))) 
+        by eauto using (LR_sym_tm (LR_T _ _ _)), (LR_trans_tm (LR_T _ _ _)).
+
+      eapply H1 in H6; eauto. 
+
       eapply LR_trans_tm in ϵs11''; eauto.
       eapply LR_app_ann. 4:eauto using conv_sym, LR_escape_ty. 3:eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty.
       eauto.
