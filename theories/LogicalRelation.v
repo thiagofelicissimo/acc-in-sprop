@@ -1044,46 +1044,6 @@ Proof.
 Qed. 
 
 
-
-Lemma lift_subst σ1 σ2 i A A' Γ: 
-    ⊢ Γ ,, (i, A) -> 
-    ∙ ⊢s σ1 ≡ σ2 : Γ -> 
-    A' = A <[ σ1] ->
-    ∙ ,, (i, A') ⊢s ((var 0) .: (σ1 >> ren_term S)) ≡ ((var 0) .: (σ2 >> ren_term S)) : (Γ ,, (i, A)).
-Proof.
-    intros. subst. eapply conv_scons.
-    ssimpl.  admit. (* consequence of weakening *)
-    ssimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). simpl. ssimpl. eauto. 
-    rewrite H1. 
-    eapply conv_var. eauto. inversion H. 
-    eapply validity_subst_conv_left in H0. 
-    econstructor. econstructor.
-    eauto using validity_conv_left, subst, refl_subst, refl_ty.
-Admitted.
-
-
-Lemma lift_subst2 σ1 σ2 i j B A _A _B Γ: 
-    ⊢ Γ ,, (i, A) ,,(j, B) -> 
-    ∙ ⊢s σ1 ≡ σ2 : Γ -> 
-    _A = A <[ σ1] ->
-    _B = B<[var 0 .: σ1 >> ren_term S] ->
-    ∙ ,, (i, _A) ,, (j, _B) ⊢s ((var 0) .: (var 1 .: (σ1 >> ren_term (S >> S)))) ≡ ((var 0) .: (var 1 .: (σ2 >> ren_term (S >> S)))) : (Γ ,, (i, A)) ,,(j, B).
-Proof.
-    intros. subst. eapply conv_scons. eapply conv_scons. ssimpl. admit. (* consequence of weakening *)
-    ssimpl. assert (A <[ σ1 >> ren_term (S >> S)] = (plus (S 1)) ⋅ A <[σ1]). ssimpl. reflexivity.
-    rewrite H1. eapply conv_var. eauto. shelve.
-    ssimpl. assert (B <[ var 1 .: σ1 >> ren_term (S >> S)] = (plus (S 0)) ⋅ B<[ var 0 .: σ1 >> ren_term S]). ssimpl. reflexivity.
-    rewrite H1. eapply conv_var. eauto.
-    dependent destruction H. eapply lift_subst in H; eauto.
-    dependent destruction H. asimpl in H3. 
-    econstructor. 
-    eauto using validity_ty_ctx, validity_conv_left.
-    eapply lift_subst in H1; eauto using validity_ty_ctx. 
-    eauto using validity_conv_left, subst, refl_subst, refl_ty.
-Admitted.
-
-
-
 Lemma getLR_of_motive_aux {Γ i k A1 ϵA P1 P2 σ1 σ2} : 
     LR i (A1 <[σ1]) (A1 <[σ2]) ϵA ->
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) -> 
@@ -1637,39 +1597,7 @@ Definition meta R t u := ∃ p, ∙ ⊢< prop > p : R <[u .: t ..].
 
 Axiom ob_to_meta : forall t i A R a, ∙ ⊢< prop > t : acc i A R a -> Acc (meta R) a.
 
-(* Lemma wk1_conv Γ i l t u B B' A σ: 
-    Γ ⊢< l > t ≡ u : B -> 
-    t <[σ] = S ⋅ t -> 
-    u <[σ] = S ⋅ u -> 
-    B' = S ⋅ B -> 
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ⊢< l > t <[σ] ≡ u <[σ] : B'.
-Proof.
-    intros. rewrite H0, H1. subst.
-    substify. eapply subst. admit. eauto.
-Admitted.
 
-Lemma wk1_type Γ i l t B B' A σ: 
-    Γ ⊢< l > t : B -> 
-    t <[σ] = S ⋅ t -> 
-    B' = S ⋅ B -> 
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ⊢< l > t <[σ] : B'.
-Proof.
-    intros. eapply validity_conv_left. eauto using wk1_conv, refl_ty.
-Qed. *)
-
-Lemma wk1_conv Γ i l t t' u u' B B' A : 
-    Γ ⊢< l > t ≡ u : B -> 
-    t' = S ⋅ t -> 
-    u' = S ⋅ u -> 
-    B' = S ⋅ B -> 
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ⊢< l > t' ≡ u' : B'.
-Proof.
-    intros. subst.
-    substify. eapply subst. admit. eauto.
-Admitted.
 
 Lemma wk1_type Γ i l t t' B B' A : 
     Γ ⊢< l > t : B -> 
