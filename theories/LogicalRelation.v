@@ -151,9 +151,6 @@ Proof.
           eapply ϵsucc; eauto.
 Qed.  
 
-(*     
-    fun t1 t2 => exists k, ∙ ⊢< ty 0 > t1 -->>! (mk_Nat k) : Nat /\ ∙ ⊢< ty 0 > t2 -->>! (mk_Nat k) : Nat. *)
-
 Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : TmRel 
     := fun f1 f2 => 
         ∙ ⊢< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
@@ -207,28 +204,52 @@ Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogR
     R <~> (fun B1 B2 => exists R, rec l lt_ty_ax B1 B2 R) ->
     LRTy (ax l) rec A1 A2 R.
 
-
-Definition LR (l : level) : LogRel.
+Definition LR' (l : level) (s : Acc (λ i j : level, i ◃ j) l) : LogRel.
     refine (@Fix_F _ (fun i j => i ◃ j) (fun _ => LogRel) _ l _).
     - intros. destruct x.
         + apply (LRTy n). apply X.
         + apply LRΩ.
-    - apply wf_inverse_image. apply lt_wf.
+    - exact s. 
 Defined.
 
+Print LR'.
 
-Notation "⊩< l > A ≡ B ↓ R" :=  (LR l A B R) (at level 50, A, B, R at next level).
 
-Axiom proof_irrel : forall (P : Prop) (p q : P), p = q.
-
-Lemma acc_irrel i (f g : forall (l : level) (p : l ◃ ty i), Acc (λ i j : level, i ◃ j) l) : f = g.
+Lemma LRTy_respects_iff_aux n A B R rec rec' : 
+    (forall l p A B R, rec l p A B R <-> rec' l p A B R) ->
+    LRTy n rec A B R -> LRTy n rec' A B R.
 Proof.
-    apply proof_irrel.
+    intros rec_iff_rec' lr. induction lr; try rewrite rec_iff_rec' in *. 
+    - econstructor; eauto.
+    - econstructor; eauto.
+    - eapply LRTy_pi2; eauto.
+    - eapply LRTy_pi3; eauto.
+      intros. rewrite <- rec_iff_rec'. eauto.
+    - eapply LRTy_U; eauto. setoid_rewrite <- rec_iff_rec'. eauto.
 Qed.
 
-Lemma LR_prop_eq : LR prop = LRΩ.
+Lemma wf_lvl_lt : well_founded (λ i j : level, i ◃ j).
 Proof.
-    unfold LR. rewrite <- Fix_F_eq. auto.
+    apply wf_inverse_image. apply lt_wf.
+Qed.
+    
+Lemma LR_acc_irrel l s s' A B R :
+    LR' l s A B R -> LR' l s' A B R.
+Proof.
+    generalize l s s' A B R. clear l s s' A B R.
+    refine (@well_founded_ind _ (fun i j => i ◃ j) _ _ _).
+    apply wf_lvl_lt.
+    intros. destruct x.
+    - unfold LR'. unfold LR' in H0. rewrite <- Fix_F_eq in *.
+      eapply LRTy_respects_iff_aux in H0. eapply H0.
+      intros. split. intros. unfold LR' in H. eapply H in H1. eapply H1. eauto.
+      intros. unfold LR' in H. eapply H in H1. eapply H1. eauto.
+    - unfold LR' in *. rewrite <- Fix_F_eq in *. eauto.
+Qed.
+
+Lemma LR_prop_eq s : LR' prop s = LRΩ.
+Proof.
+    unfold LR'. rewrite <- Fix_F_eq. auto.
 Qed.
 
 Definition nat_to_lvl n := 
@@ -245,22 +266,37 @@ Proof.
 Qed.
 
 
-Lemma LR_ty_eq i : 
-    LR (ty i) = LRTy i (fun l _ => LR l).
+Definition LR l := LR' l (wf_lvl_lt l).
+
+(* Notation "⊩< l > A ≡ B ↓ R" :=  (LR l A B R) (at level 50, A, B, R at next level). *)
+
+Lemma LR_ty_eq i s A B R : 
+    LR' (ty i) s A B R <-> LRTy i (fun l x => LR l) A B R.
 Proof.
-    unfold LR. rewrite <- Fix_F_eq. f_equal. 
-(* Set Printing Implicit. *)
-    pattern (fun l => wf_inverse_image level nat lt lvl_to_nat lt_wf l). 
-    set (G := (λ (F : forall l (p : l ◃ ty i), Acc (λ i j : level, i ◃ j) l) (l : level) (p : l ◃ ty i),
-@Fix_F _ (fun x y => x ◃ y) (λ _ : level, LogRel)
-(λ (x : level) (H : ∀ y : level, y ◃ x → LogRel),
-match x as l0 return ((∀ y : level, y ◃ l0 → LogRel) → LogRel) with
-| ty n => λ X : ∀ y : level, y ◃ ty n → LogRel, LRTy n X
-| prop => λ _ : ∀ y : level, y ◃ prop → LogRel, LRΩ
-end H) _ (F l p))).
-    transitivity (G (fun l p => wf_inverse_image level nat lt lvl_to_nat lt_wf l)).
-    erewrite (@acc_irrel i (fun l _ => wf_inverse_image level nat lt lvl_to_nat lt_wf l)). reflexivity. reflexivity.
+    unfold LR'. unfold LR. 
+    
+    rewrite <- Fix_F_eq.
+    split.
+    intros. eapply LRTy_respects_iff_aux in H. eapply H.
+      intros. split; intros.
+      pose (K := LR_acc_irrel _ (Acc_inv s p) (wf_lvl_lt l)).
+      unfold LR' in K. 
+      eapply K in H0. eauto. 
+      pose (K := LR_acc_irrel _ (wf_lvl_lt l) (Acc_inv s p)).
+      unfold LR' in K. 
+      eapply K in H0. eauto.
+
+    intros. eapply LRTy_respects_iff_aux in H. eapply H.
+      intros. split; intros.
+      pose (K := LR_acc_irrel _ (wf_lvl_lt l) (Acc_inv s p)).
+     
+      unfold LR' in K. 
+      eapply K in H0. eauto. 
+ pose (K := LR_acc_irrel _ (Acc_inv s p) (wf_lvl_lt l)).      unfold LR' in K. 
+      eapply K in H0. eauto.
 Qed.
+
+
 
 Definition LR_prop A1 A2 R : 
     ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
@@ -268,7 +304,7 @@ Definition LR_prop A1 A2 R :
     LR prop A1 A2 R.
 Proof.
     intros.
-    rewrite LR_prop_eq. split; eauto.
+    unfold LR. rewrite LR_prop_eq. split; eauto.
 Qed.
 
 Definition LR_nat A1 A2 R : 
@@ -277,7 +313,7 @@ Definition LR_nat A1 A2 R :
     R <~> ϵNat ->
     LR (ty 0) A1 A2 R.
 Proof.
-    intros. rewrite LR_ty_eq.
+    intros. unfold LR. rewrite LR_ty_eq.
     constructor; eauto.
 Qed.
 
@@ -287,7 +323,7 @@ Definition LR_U l A1 A2 R :
     R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
     LR (Ax l) A1 A2 R.
 Proof.
-    intros. unfold Ax. rewrite LR_ty_eq.
+    intros. unfold Ax. unfold LR. rewrite LR_ty_eq.
     constructor; eauto.
 Qed.
 
@@ -301,17 +337,18 @@ Definition LR_pi i k A1 A2 S1 S2 ϵS T1 T2 ϵT R :
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     LR (Ru i (ty k)) A1 A2 R.
 Proof.
-    intros. unfold Ru. rewrite LR_ty_eq.
+    intros. unfold Ru. unfold LR. rewrite LR_ty_eq.
     assert (i ⊴ (ty k) \/ ty k ◃ i) by eauto using Nat.le_gt_cases.
     destruct H5. inversion H5.
     - pose proof (f_equal nat_to_lvl H7) as H'. rewrite lvl_to_nat_to_lvl in H'. rewrite H' in *. 
       simpl. assert (max k k = k) by lia. rewrite H6. eapply LRTy_pi2; eauto. 
-      rewrite <- LR_ty_eq. auto.
-      rewrite <- LR_ty_eq. auto.
+      unfold LR in H2. simpl in H2. rewrite <- LR_ty_eq.  eauto.
+      unfold LR in H3. intros. rewrite <- LR_ty_eq. eauto.
     - assert (ru i k = k). unfold ru. destruct i. simpl in H7. lia. auto.
       rewrite H8. eapply LRTy_pi1; eauto. 
       simpl. lia.
-      rewrite <- LR_ty_eq. auto.
+      unfold LR in H3. intros.
+      rewrite <- LR_ty_eq. eauto.
     - destruct i. 2:inversion H5.
       simpl in H5. assert (ru (ty n) k = n). unfold ru. lia.
       rewrite H6. eapply LRTy_pi3; eauto. lia. 
@@ -353,17 +390,17 @@ Proof.
     apply wf_inverse_image. apply lt_wf.
     intros l H A B R x.
     destruct l.
-    - rewrite LR_ty_eq in x. 
+    - unfold LR in x. rewrite LR_ty_eq in x. 
       set (rec := (λ (l : level) (_ : l ◃ ty n), LR l)).
         assert (rec = (λ (l : level) (_ : l ◃ ty n), LR l)) by reflexivity.
         rewrite <- H0 in x.
         induction x.
         + apply p_nat; auto.
         + rewrite H0 in H4. rewrite H0 in H5. 
-          rewrite <- LR_ty_eq in H5.
+          setoid_rewrite <- LR_ty_eq in H5.
           assert (k = ru i k). unfold ru. destruct i. simpl in q. lia. lia.
           rewrite H8 at 1. eapply p_pi; eauto.
-        + rewrite H0 in H4. rewrite <- LR_ty_eq in H4.
+        + rewrite H0 in H4. setoid_rewrite <- LR_ty_eq in H4.
           rewrite H0 in x. rewrite <- LR_ty_eq in x.
           assert (k = ru (ty k) k). simpl. lia.
           rewrite H7 at 1. eapply p_pi; eauto.
@@ -372,7 +409,7 @@ Proof.
           eapply p_pi; eauto. 
           intros. apply H. simpl. lia. auto.
         + rewrite H0 in H3. eapply p_U; eauto.
-    - rewrite LR_prop_eq in x. apply p_prop. auto.
+    - unfold LR in x. rewrite LR_prop_eq in x. apply p_prop. auto.
 Qed.
 
 Lemma LR_escape l A B R : 
@@ -563,7 +600,7 @@ Proof.
     generalize l A B R. clear l A B R.
     refine (LR_ind _ _ _ _ _).
     - intros. destruct p. split; intros.
-        + rewrite LR_prop_eq. split.
+        + eapply LR_prop. 
             ++ eauto 6 using conv_sym, conv_trans, sim_to_conv.
             ++ intros. destruct (H0 t u). split; eauto using conv_conv, conv_sym, sim_to_conv.
         + destruct (H0 t' u'). destruct (H0 t u). eauto 8 using sim_to_conv, conv_trans, conv_sym.
@@ -644,7 +681,7 @@ Lemma LR_irrel l A B B' R1 R2 :
 Proof.
     intro lr1. generalize l A B R1 lr1 B' R2. clear l A B R1 lr1 B' R2.
     refine (LR_ind _ _ _ _ _).
-    - intros. rewrite LR_prop_eq in H. destruct p, H. destruct (H1 t1 t2), (H2 t1 t2). split; eauto.
+    - intros. unfold LR in H. rewrite LR_prop_eq in H. destruct p, H. destruct (H1 t1 t2), (H2 t1 t2). split; eauto.
     - intros. eapply (LR_inv A1_red_nat) in H0. destruct H0 as (_ & _ & _ & H0). symmetry. rewrite H. auto.
     - intros. eapply (LR_inv A1_red_U) in H1. destruct H1 as (_ & _ & _ & H'). rewrite H0. rewrite H'. split; eauto.
     - intros. eapply (LR_inv A1_red_pi) in H2. 
@@ -685,7 +722,7 @@ Lemma LR_iff_rel l A B R R' :
 Proof.
     intros. generalize l A B R H0 R' H. clear l A B R H0 R' H. 
     refine (LR_ind _ _ _ _ _); intros.
-    - rewrite LR_prop_eq. destruct p. split; eauto. intros. rewrite <- H. eauto.
+    - eapply LR_prop; destruct p; eauto. intros. rewrite <- H. eauto.
     - eapply LR_nat; eauto. intros. rewrite <- H0. eauto.
     - eapply LR_U; eauto. intros. rewrite <- H1. eauto.
     - eapply LR_pi; eauto. intros. rewrite <- H2. eauto.
@@ -766,8 +803,7 @@ Proof.
     refine (LR_ind _ _ _ _ _); intros.
     - destruct p. exists R.
       split. 
-      + rewrite LR_prop_eq. 
-        split; eauto using conv_sym.   
+      + eapply LR_prop; eauto using conv_sym.   
         setoid_rewrite H0. split; eauto using conv_conv, conv_sym.
       + setoid_rewrite H0. split; eauto using conv_sym.
     - eexists. split.
@@ -803,9 +839,9 @@ Lemma LR_trans' l A B C R R' :
 Proof.
     intro lr. generalize l A B R lr C R'. clear l A B R lr C R'.
     refine (LR_ind _ _ _ _ _); intros.
-    - rewrite LR_prop_eq in H. destruct H. destruct p.
+    - unfold LR in H. rewrite LR_prop_eq in H. destruct H. destruct p.
       exists R. split.
-      + rewrite LR_prop_eq. split; eauto using conv_trans.
+      + eapply LR_prop; eauto using conv_trans.
       + intros. rewrite H2 in H3. rewrite H2. rewrite H0 in H4. 
         eauto using conv_trans, conv_conv, conv_sym.
     - unshelve eapply LR_inv in H0 as temp. 2:eauto.
@@ -2266,7 +2302,6 @@ Qed.
 
 
 
-Opaque LR. 
 
 
 (* Failed factorization attempt: the following lemma does not work,
@@ -2298,7 +2333,7 @@ Proof.
     generalize l A1 A2 ϵA LR_A12 LR_A12' B1 B2 ϵB LR_B12 LR_B12'.
     clear l A1 A2 ϵA LR_A12 LR_A12' B1 B2 ϵB LR_B12 LR_B12'.
     refine (LR_ind _ _ _ _ _); intros.
-    - rewrite LR_prop_eq in LR_B12. destruct LR_B12.
+    - unfold LR in LR_B12. rewrite LR_prop_eq in LR_B12. destruct LR_B12.
       destruct p.
       split; intros; try rewrite H0 in *; try rewrite H2 in *; eapply conv_cast; eauto.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
