@@ -136,8 +136,6 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
 where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 
 
-Reserved Notation "Γ ⊢< l > t ~ u : T" (at level 50, l, t, u, T at next level).
-
 Lemma red_accel' Γ i l A R a q P p X Y : 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
     let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
@@ -208,141 +206,6 @@ Proof.
     intros. subst. eapply red_beta; eauto.
 Qed.
 
-Inductive ann_conv : ctx -> level -> term -> term -> term -> Prop :=
-
-| aconv_refl :
-    ∀ Γ l t A,
-      Γ ⊢< l > t : A -> 
-      Γ ⊢< l > t ~ t : A
-(* 
-| aconv_lam :
-    ∀ Γ i j A B t A' B' t',
-      Γ ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
-      Γ ,, (i , A) ⊢< j > t : B →
-      Γ ⊢< Ru i j > lam i j A B t ~ lam i j A' B' t : Pi i j A B *)
-
-| aconv_app :
-    ∀ Γ i j A B t u A' B' t',
-      Γ ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
-      Γ ⊢< Ru i j > t ~ t' : Pi i j A B →
-      Γ ⊢< i > u : A →
-      Γ ⊢< j > app i j A B t u ~ app i j A' B' t' u : B <[ u .. ] 
-  
-| aconv_conv : 
-    ∀ Γ l A B t t',
-      Γ ⊢< l > t ~ t' : A -> 
-      Γ ⊢< Ax l > A ≡ B : Sort l ->
-      Γ ⊢< l > t ~ t' : B
-
-where "Γ ⊢< l > t ~ u : A" := (ann_conv Γ l t u A).
-
-Lemma sim_to_conv Γ l t u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t ≡ u : A.
-Proof.
-    intros. induction H; eauto using conversion, refl_ty.
-Qed.
-
-Lemma sim_sym Γ l t u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > u ~ t : A.
-Proof.
-    intros. induction H; eauto using ann_conv.
-    eapply aconv_conv.
-    eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
-    eapply aconv_conv; eauto. 
-    eauto using conv_pi.
-    eauto using subst, conv_sym, aux_subst, refl_ty.
-Qed.
-
-
-Definition aconv_inv_type Γ t v :=
-    match t with 
-    | app i j A B t u => 
-        exists A' B' t', 
-            v = app i j A' B' t' u /\
-            Γ ⊢< Ax i > A ≡ A' : Sort i /\
-            Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j /\
-            Γ ⊢< Ru i j > t ~ t' : Pi i j A B 
-    | _ => v = t 
-    end.
-    
-Lemma aconv_inv Γ l t v T : 
-    Γ ⊢< l > t ~ v : T -> aconv_inv_type Γ t v.
-Proof.
-    intro H.
-    destruct t.
-    1,2,3,4,6,7,8,9,10,11,12,13,14,15,16 : (dependent induction H; unfold aconv_inv_type in *; eauto).
-    unfold aconv_inv_type.
-    dependent induction H; eauto.
-    - exists t1. exists t2. exists t3. apply type_inv_app' in H as (_ & AWt & BWt & tWT & _). repeat split; eauto using refl_ty, ann_conv.
-    - exists A'. exists B'. exists t'. repeat split; eauto.
-Qed.
-  
-
-Lemma sim_left_red Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t --> t' : A ->
-    exists u', Γ ⊢< l > u --> u' : A 
-    /\ Γ ⊢< l > t' ~ u' : A.
-Proof.
-    intros. generalize u H. clear u H. induction H0; intros.
-    - apply aconv_inv in H3 as (A' & B' & v & u0_eq & A_conv_A' & B_conv_B' & t_sim_v). subst.
-      eapply IHred in t_sim_v as (v' & v_red_v' & t'_sim_v').
-      exists (app i j A' B' v' u). split.
-      eapply red_conv. apply red_app; eauto using validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv.
-      eapply red_conv; eauto.
-      eapply conv_pi; eauto.
-      eauto using subst, aux_subst, conv_sym, refl_ty.
-      eauto using ann_conv.
-    - apply aconv_inv in H3 as (A'' & B'' & v & u0_eq & A_conv_A'' & B_conv_B'' & t_sim_v). subst.
-      apply aconv_inv in t_sim_v. simpl in t_sim_v. subst.
-      exists (t <[ u.. ]). split.
-      eapply red_conv. eapply red_beta; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
-      eauto using subst, conv_sym, aux_subst, refl_ty.
-      apply aconv_refl.
-      eauto 6 using subst, aux_subst, validity_conv_left, refl_ty.
-    - eapply aconv_inv in H3. simpl in H3. subst. 
-      exists (rec l P p_zero p_succ n').
-      split. eauto using red. 
-      eapply aconv_conv. eapply aconv_refl. eauto using type_rec, red_to_conv, validity_conv_right.
-      eauto 6 using subst, refl_ty, aux_subst, red_to_conv, conv_sym.
-    - eapply aconv_inv in H2. simpl in H2. subst. exists p_zero. split; eauto using red, ann_conv. 
-    - eapply aconv_inv in H3. simpl in H3. subst. exists (p_succ <[ rec l P p_zero p_succ n .: n..]).
-      split. eauto using red. eapply aconv_refl. eapply validity_conv_right.
-      eapply conv_rec_succ; eauto.
-    - eapply aconv_inv in H5. simpl in H5. subst. eexists. split; eauto using red. eauto using conversion, validity_conv_right, aconv_refl.
-    - eapply aconv_conv in H1; eauto using conv_sym. eapply IHred in H1 as (u' & H' & H'').
-      exists u'. split; eauto using red, ann_conv, conv_sym.
-    - eapply aconv_inv in H3. simpl in H3. subst. eexists. split; eauto using red.
-      eapply aconv_refl. eapply type_cast; eauto using validity_conv_right, type_conv, red_to_conv.
-      eapply type_conv; eauto. eauto 6 using conv_obseq, refl_ty, red_to_conv, conversion, validity_ty_ctx.
-    - eapply aconv_inv in H4. simpl in H4. subst. eexists. split; eauto using red. 
-      eapply aconv_refl. eapply type_conv; eauto using red_to_conv, conv_sym. 
-      eapply type_cast; eauto using red_to_conv, validity_conv_right.
-      eapply type_conv; eauto. eapply conv_obseq; eauto using refl_ty, red_to_conv, conv_sort, validity_ty_ctx.
-    - eapply aconv_inv in H1. simpl in H1. subst. eexists. split; eauto using red, aconv_refl.
-    - eapply aconv_inv in H1. simpl in H1. subst. eexists. split; eauto using red, aconv_refl.
-    - eapply aconv_inv in H5. simpl in H5. subst. eexists. split; eauto using red.
-      eapply aconv_refl. eapply validity_conv_right. eauto using conv_cast_pi.
-Qed.
-
-Lemma sim_trans Γ l t u v A : 
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > u ~ v : A ->
-    Γ ⊢< l > t ~ v : A.
-Proof.
-    intros. generalize v H0. clear v H0.
-    induction H; intros.
-    - eauto.
-    - eapply aconv_inv in H3 as (A'' & B'' & t'' & v_eq & A'_conv_A'' & B'_conv_B'' & t'_sim_t''). subst.
-      eapply aconv_app; eauto using conv_trans, conv_ty_in_ctx_conv, conv_sym. 
-      eapply IHann_conv. eapply aconv_conv; eauto. eauto using conv_pi, conv_sym, conv_ty_in_ctx_conv.
-    - eapply aconv_conv; eauto. eapply IHann_conv. eauto using aconv_conv, conv_sym.
-Qed.
-
 Reserved Notation "Γ ⊢< l > t -->> u : T" (at level 50, l, t, u, T at next level).
 
 Inductive redd : ctx -> level -> term -> term -> term -> Prop := 
@@ -350,21 +213,6 @@ Inductive redd : ctx -> level -> term -> term -> term -> Prop :=
   | redd_step Γ l t u v A : Γ ⊢< l > t --> v : A -> Γ ⊢< l > v -->> u : A -> Γ ⊢< l > t -->>u : A 
 where "Γ ⊢< l > t -->> t' : A " := (redd Γ l t t' A).
 
-
-
-
-Lemma sim_left_redd Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t -->> t' : A ->
-    exists u', Γ ⊢< l > u -->> u' : A 
-    /\ Γ ⊢< l > t' ~ u' : A.
-Proof.
-    intros. generalize u H. clear u H. induction H0; intros.
-    - exists u. split; eauto using redd, sim_to_conv, validity_conv_right.
-    - pose proof H1 as t_sim_u0. eapply sim_left_red in H1 as (u' & u0_red_U' & v_sim_u'); eauto.
-      eapply IHredd in v_sim_u' as (u'' & u'_redd & u_sim).
-      exists u''. split; eauto using redd.
-Qed.
 
 Definition whnf Γ l t A := forall u, Γ ⊢< l > t --> u : A -> False.
 
@@ -436,8 +284,6 @@ Proof.
     - eapply redd_step; eauto. eauto using red_conv.
 Qed.
 
-
-
 Lemma redd_rec Γ l P p_zero p_succ n n' :
     Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
     Γ ⊢< l > p_zero : P <[ zero .. ] -> 
@@ -481,21 +327,6 @@ Proof.
     - eapply redd_step. eapply red_conv. eapply red_rec; eauto. 
       eauto 7 using subst, refl_ty, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
       eapply IHredd; eauto.
-Qed.
-
-Lemma sim_left_redd_whnf Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t -->>! t' : A ->
-    exists u', Γ ⊢< l > u -->>! u' : A 
-    /\ Γ ⊢< l > t' ~ u' : A.
-Proof.
-    intros.
-    destruct H0.
-    eapply sim_left_redd in H0 as (u' & u_redd_u' & t'_sim_u'); eauto.
-    exists u'. split; eauto.
-    split; eauto.
-    unfold whnf. intros. apply sim_sym in t'_sim_u'.
-    eapply sim_left_red in H0 as (t'' & t'_red & _); eauto.
 Qed.
 
 
@@ -600,16 +431,6 @@ Definition red_inv_type Γ t v :=
             Γ ⊢< Ax i > A : Sort i /\
             Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
             Γ ⊢< i > t : A)
-(* 
-
-    | cast i A B e t => 
-        Γ ⊢< Ax i > A : Sort i /\
-        Γ ⊢< Ax i > B : Sort i /\
-        Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\ 
-        Γ ⊢< i > t : A /\ 
-        ((exists A', v = cast i A' B e t /\ Γ ⊢< Ax i > A --> A' : Sort i)
-         \/ 
-        (exists B', v = cast i A B' e t /\ val A /\ Γ ⊢< Ax i > B --> B' : Sort i)) *)
     | _ => False
     end.
 
@@ -626,11 +447,9 @@ Fixpoint size (t : term) : nat :=
   | rec _ P p0 ps t => 1 + size P + size p0 + size ps + size t
   | accel _ _ A R a q P p => 1 + size A + size R + size a + size q + size P + size p 
   | acc _ A R a => 1 + size A + size R + size a 
-  (* | accin _ A R a p => 1 + size A + size R + size a + size p *)
   | cast _ A B e t => 1 + size A + size B + size e + size t 
   | obseq _ A a b => 1 + size A + size a + size b
   | _ => 0
-  (* | injpi1 _ _ A1 A2 B1 B2 e => 1 + size A1 + size A2 + size B1 + size B2 + size e *)
 end.
 
 
@@ -669,7 +488,6 @@ Proof.
     intros. unfold whnf. intros.
     destruct t.
     all:eapply red_inv in H0.
-    (* admit. simpl in H0.a dependent destruction H0. *)
     1-4, 6-8, 10, 11, 13, 15, 16: simpl in H0; dependent destruction H0.
     1-4:inversion H.
 Qed.
@@ -731,18 +549,6 @@ Proof.
     unfold whnf. intros. eapply val_whnf in H1; eauto.
 Qed.
 
-Lemma sim_left_redd_whnf_val Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t -->>! t' : A ->
-    val t' ->
-    Γ ⊢< l > u -->>! t' : A.
-Proof.
-    intros.
-    eapply sim_left_redd_whnf in H0 as (u' & u_redd_u' & t'_sim_u'); eauto.
-    destruct t'.
-    5,9: inversion H1.
-    all: eapply aconv_inv in t'_sim_u'; simpl in t'_sim_u'; subst; eauto.
-Qed.
 
 Lemma iredd_comp_redd_whnf Γ l t u v A :
     Γ ⊢< l > v -->> t : A -> 
@@ -758,4 +564,105 @@ Proof.
       + eapply H2 in H. inversion H.
       + eapply red_det in H; eauto. subst. 
         eapply IHredd; eauto.
+Qed.
+
+Reserved Notation "Γ ⊢< l > t ~ u : T" (at level 50, l, t, u, T at next level).
+
+Inductive ann_conv : ctx -> level -> term -> term -> term -> Prop :=
+
+| aconv_refl :
+    ∀ Γ l t A,
+      Γ ⊢< l > t : A -> 
+      Γ ⊢< l > t ~ t : A
+
+| aconv_app :
+    ∀ Γ i j A B t u A' B' t' T,
+      Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
+      Γ ⊢< Ru i j > t ~ t' : Pi i j A B →
+      Γ ⊢< i > u : A →
+      Γ ⊢< Ax j > T ≡ B <[ u.. ] : Sort j ->
+      Γ ⊢< j > app i j A B t u ~ app i j A' B' t' u : T
+
+where "Γ ⊢< l > t ~ u : A" := (ann_conv Γ l t u A).
+
+Lemma sim_to_conv Γ l t u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t ≡ u : A.
+Proof.
+    intros. induction H; eauto using conversion, refl_ty.
+Qed.
+  
+Lemma aconv_conv Γ l t u T T' : 
+    Γ ⊢< l > t ~ u : T -> 
+    Γ ⊢< Ax l > T ≡ T' : Sort l ->
+    Γ ⊢< l > t ~ u : T'.
+Proof.
+    intros.
+    dependent induction H.
+    - eapply aconv_refl. eauto using type_conv.
+    - eapply aconv_app; eauto using conv_sym, conv_trans.
+Qed.
+
+Lemma sim_sym Γ l t u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > u ~ t : A.
+Proof.
+    intros. induction H; eauto using ann_conv.
+    eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
+    eapply aconv_conv; eauto using conv_pi.
+    eauto using conv_trans, subst, aux_subst, refl_ty.
+Qed.
+
+Lemma sim_left_red Γ l t t' u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t --> t' : A ->
+    exists u', Γ ⊢< l > u --> u' : A 
+    /\ Γ ⊢< l > t' ~ u' : A.
+Proof.
+    intros H. generalize t'. clear t'. 
+    dependent induction H; intros.
+    - eauto 6 using red_to_conv, validity_conv_right, aconv_refl.
+    - dependent induction H4.
+      + eapply IHann_conv in H4 as (u' & red & sim).
+        eexists. split.
+        eapply red_conv. eapply red_app'; eauto using type_conv, red_conv, conv_pi, conv_sym, conv_ty_in_ctx_conv.
+        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+        eapply aconv_app; eauto.
+      + dependent destruction H1. eexists.
+        split. eapply red_conv.
+        eapply red_beta'; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
+        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+        eapply aconv_refl. 
+        eapply validity_conv_left. 
+        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+      + eapply IHred in H1 as (v & red & sim); eauto using conv_trans.
+        eexists. split; eauto using red_conv, aconv_conv.
+Qed.
+
+Lemma sim_left_redd Γ l t t' u A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t -->> t' : A ->
+    exists u', Γ ⊢< l > u -->> u' : A 
+    /\ Γ ⊢< l > t' ~ u' : A.
+Proof.
+    intros. generalize u H. clear u H. induction H0; intros.
+    - exists u. split; eauto using redd, sim_to_conv, validity_conv_right.
+    - pose proof H1 as t_sim_u0. eapply sim_left_red in H1 as (u' & u0_red_U' & v_sim_u'); eauto.
+      eapply IHredd in v_sim_u' as (u'' & u'_redd & u_sim).
+      exists u''. split; eauto using redd.
+Qed.
+
+Lemma sim_left_redd_whnf Γ l t u v A :
+    Γ ⊢< l > t ~ u : A -> 
+    Γ ⊢< l > t -->>! v : A ->
+    val v ->
+    Γ ⊢< l > u -->>! v : A.
+Proof.
+    intros. 
+    destruct H0. split.
+    2:assumption.
+    eapply sim_left_redd in H0 as (u' & u_redd_u' & t'_sim_u'); eauto.
+    dependent induction t'_sim_u'; eauto.
+    inversion H1.
 Qed.

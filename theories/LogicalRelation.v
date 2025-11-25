@@ -37,13 +37,6 @@ Fixpoint mk_Nat k :=
     | O => zero 
     | S k => succ (mk_Nat k)
     end.
-
-Lemma sim_nat_to_eq k Γ l v A : Γ ⊢< l > (mk_Nat k) ~ v : A -> mk_Nat k = v.
-Proof.
-    generalize Γ l v A. clear  Γ l v A. destruct k.
-    - intros. apply aconv_inv in H. eauto.
-    - intros. apply aconv_inv in H. simpl in H. rewrite H. eauto.
-Qed.  
     
 
 Lemma sim_left_redd_whnf_mknat Γ l t k u A :
@@ -51,19 +44,10 @@ Lemma sim_left_redd_whnf_mknat Γ l t k u A :
     Γ ⊢< l > t -->>! mk_Nat k : A ->
     Γ ⊢< l > u -->>! mk_Nat k : A.
 Proof.
-    intros. eapply sim_left_redd_whnf in H0 as (v & H1 & H2); eauto.
-    eapply sim_nat_to_eq in H2. subst. eauto.
+    intros. eapply sim_left_redd_whnf in H0; eauto.
+    destruct k; simpl; eauto.
 Qed.
 
-
-Lemma sim_left_redd_whnf_sort Γ l t l' u A :
-    Γ ⊢< l > t ~ u : A -> 
-    Γ ⊢< l > t -->>! Sort l' : A ->
-    Γ ⊢< l > u -->>! Sort l' : A.
-Proof.
-    intros. eapply sim_left_redd_whnf in H0 as (v & H1 & H2); eauto.
-    eapply aconv_inv in H2. simpl in H2. subst. eauto.
-Qed.
 
 Lemma leq_ru_left {i} {k} : i ⊴ Ru i (ty k).
 Proof.
@@ -117,11 +101,11 @@ Lemma ϵNat_erasure t1 t2 t1' t2' :
 Proof.
     intros. generalize t1' t2' H H0. clear t1' t2' H H0.
     induction H1; intros u1 u2 t1_sim_u1 t2_sim_u2.
-    - eapply sim_left_redd_whnf_val in H; simpl; eauto.
-      eapply sim_left_redd_whnf_val in H0; simpl; eauto.
+    - eapply sim_left_redd_whnf in H; simpl; eauto.
+      eapply sim_left_redd_whnf in H0; simpl; eauto.
       eapply ϵzero; eauto.
-    - eapply sim_left_redd_whnf_val in H; simpl; eauto.
-      eapply sim_left_redd_whnf_val in H0; simpl; eauto.
+    - eapply sim_left_redd_whnf in H; simpl; eauto.
+      eapply sim_left_redd_whnf in H0; simpl; eauto.
       eapply ϵsucc; eauto.
 Qed.
 
@@ -605,22 +589,18 @@ Proof.
             ++ intros. destruct (H0 t u). split; eauto using conv_conv, conv_sym, sim_to_conv.
         + destruct (H0 t' u'). destruct (H0 t u). eauto 8 using sim_to_conv, conv_trans, conv_sym.
     - intros. split; intros.
-        + eapply sim_left_redd_whnf in A1_red_nat as (_Nat & A'_redd_nat & nat_sim); eauto.
-          eapply aconv_inv in nat_sim. simpl in nat_sim. subst.
-          eapply sim_left_redd_whnf in A2_red_nat as (_Nat & B'_redd_nat & nat_sim); eauto.
-          eapply aconv_inv in nat_sim. simpl in nat_sim. subst.
+        + eapply sim_left_redd_whnf in A1_red_nat; eauto.
+          eapply sim_left_redd_whnf in A2_red_nat; eauto.
           apply LR_nat; eauto.
         + rewrite H in *. eauto 7 using ϵNat_erasure, redd_whnf_to_conv, conv_sym, aconv_conv. 
     - intros. split; intros.
-        + apply LR_U; eauto using sim_left_redd, sim_sym, sim_left_redd_whnf_sort.
+        + apply LR_U; eauto using sim_left_redd, sim_sym, sim_left_redd_whnf.
         + rewrite H0 in *. destruct H3 as (R' & lr). destruct (H t u R' lr).
           apply redd_whnf_to_conv in A1_red_U as A1_conv_U.
           exists R'. eapply H3; eauto using aconv_conv, conv_sym.
     - intros. split; intros.
-        + eapply sim_left_redd_whnf in A1_red_pi as (_pi & A'_redd_pi & pi_sim); eauto.
-          eapply aconv_inv in pi_sim. simpl in pi_sim. subst.
-          eapply sim_left_redd_whnf in A2_red_pi as (_pi & B'_redd_pi & pi_sim); eauto.
-          eapply aconv_inv in pi_sim. simpl in pi_sim. subst.
+        + eapply sim_left_redd_whnf in A1_red_pi; eauto.
+          eapply sim_left_redd_whnf in A2_red_pi; eauto.
           eapply LR_pi; eauto 6 using sim_left_redd, sim_sym, sim_to_conv, conv_trans, conv_sym.
         + rewrite H in *. destruct H4. apply redd_whnf_to_conv in A1_red_pi as A1_conv_pi. split.
             ++ eauto 8 using sim_to_conv, conv_trans, conv_sym, conv_conv.
@@ -630,6 +610,43 @@ Proof.
                +++ eapply aconv_conv; eauto using LR_escape_tm, subst, aux_subst, conv_sym.
                    eapply aconv_app; eauto 9 using validity_conv_right, refl_ty, conv_ty_in_ctx_ty, LR_escape_tm, LR_escape_ty, type_conv.
                    eauto using aconv_conv, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi, LR_escape_ty.
+Qed.
+
+
+Lemma LR_app_ann_left l i j A B S1 S2 T1 T2 ϵA t u v: 
+    LR l A B ϵA -> 
+    ϵA (app i j S1 T1 t u) v -> 
+    ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
+    ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
+    ϵA (app i j S2 T2 t u) v.
+Proof.
+    intros.
+    eapply LR_escape_tm in H0 as H0'; eauto.
+    eapply validity_conv_left in H0' as appWt.
+    eapply validity_conv_right in H0' as vWt.
+    eapply type_inv_app' in appWt 
+        as (_ & _ & _ & tWt & uWt & eq & conv).
+    subst.
+    eapply LR_erasure; eauto using aconv_refl.
+    eapply aconv_app; eauto using aconv_refl.
+Qed.
+
+Lemma LR_app_ann_right l i j A B S1 S2 T1 T2 ϵA t u v: 
+    LR l A B ϵA -> 
+    ϵA v (app i j S1 T1 t u) -> 
+    ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
+    ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
+    ϵA v (app i j S2 T2 t u).
+Proof.
+    intros.
+    eapply LR_escape_tm in H0 as H0'; eauto.
+    eapply validity_conv_right in H0' as appWt.
+    eapply validity_conv_left in H0' as vWt.
+    eapply type_inv_app' in appWt 
+        as (_ & _ & _ & tWt & uWt & eq & conv).
+    subst.
+    eapply LR_erasure; eauto using aconv_refl.
+    eapply aconv_app; eauto using aconv_refl.
 Qed.
 
 Definition LR_inv_type l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : Prop :=
@@ -692,19 +709,15 @@ Proof.
       + intros. destruct H3. split. eauto. intros.
         assert (forall s1 s2, ϵS' s1 s2 -> ϵT s1 s2 <~> ϵT' s1 s2).
             { intros. eapply H1. rewrite H2. eauto. eauto. }
-        eapply H5; eauto. eapply H2 in ϵs.  eapply LR_erasure; eauto.  
-        ++ eauto 6 using validity_conv_left, aconv_refl, LR_escape_tm.
-        ++ eapply aconv_conv;  eauto using LR_escape_tm, subst, aux_subst, conv_sym.
-           eapply sim_sym. eapply aconv_app; eauto using conv_trans, conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, LR_escape_ty, type_conv, validity_conv_right.
-           eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi, conv_sym, conv_trans, conv_ty_in_ctx_conv, LR_escape_ty.
+        eapply H5; eauto. eapply H2 in ϵs. 
+        eapply LR_app_ann_left. 2:eapply LR_app_ann_right.
+        all:eauto using validity_conv_left, refl_ty, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
       + intros. destruct H3. split. eauto. intros.
         assert (forall s1 s2, ϵS s1 s2 -> ϵT' s1 s2 <~> ϵT s1 s2).
             { intros. symmetry. eapply H1. eauto. eapply LR_T'. rewrite <- H2. eauto. }
-        eapply H5; eauto.  eapply H2 in ϵs.  eapply LR_erasure; eauto.
-        ++ eauto 6 using validity_conv_left, aconv_refl, LR_escape_tm.
-        ++ eapply aconv_conv; eauto using LR_escape_tm, subst, aux_subst, conv_sym.
-           eapply aconv_app; eauto using conv_trans, conv_sym, conv_ty_in_ctx_conv, LR_escape_tm, LR_escape_ty, type_conv, validity_conv_right.
-           eapply aconv_conv; eauto using aconv_refl, validity_conv_right, conv_pi, conv_sym, conv_trans, conv_ty_in_ctx_conv, LR_escape_ty.
+        eapply H5; eauto.  eapply H2 in ϵs.  
+        eapply LR_app_ann_left. 2:eapply LR_app_ann_right.
+        all:eauto using validity_conv_left, refl_ty, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
 Qed.
 
 Definition PER {A} (R:A -> A -> Prop) := 
@@ -1262,28 +1275,15 @@ Proof.
     eexists. split. asimpl_unsafe. unshelve eapply LR_B11; eauto.
 
     eapply LRv_t12 in ϵσ as temp. destruct temp as (ϵpi' & LR_pi' & ϵt).
-          eassert (ϵpi' <~> ϵPi _ _ _ _ _ _ _ _) by eauto using LR_irrel.
+    eassert (ϵpi' <~> ϵPi _ _ _ _ _ _ _ _) by eauto using LR_irrel.
     rewrite H in ϵt. destruct ϵt. ssimpl.
     assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) <~> ϵB (u1 <[ σ1]) (u2 <[ σ2])) 
         as Hiff by eauto using LR_irrel.
-    rewrite Hiff. eapply LR_erasure; eauto.
-    (* from this point on, it's just technical manipulations to show that the terms are equal up to annotation conversion *)
-    eapply aconv_refl. eapply type_app'; ssimpl;
-            eauto 8 using LR_subst_escape, validity_conv_left, 
-                validity_subst_conv_left, subst, refl_ty.
-        
-    ssimpl. eapply aconv_conv.        
+    rewrite Hiff. 
 
-
-    eapply aconv_app; eauto 8 using refl_ty, subst, LR_subst_escape, validity_conv_right, validity_ty_ctx,
-        validity_subst_conv_right, type_conv, lift_subst, conv_ty_in_ctx_conv, refl_subst, lift_subst.
-
-    eapply aconv_refl. eapply type_conv; eauto using LR_subst_escape, validity_conv_right, validity_subst_conv_right, subst.
-    eapply conv_pi; eauto 9 using LR_subst_escape, subst, lift_subst, validity_conv_left, validity_ty_ctx, refl_ty.
-
-    ssimpl. eapply subst; eauto using validity_conv_left, refl_ty. 
-    econstructor; ssimpl. eauto using subst_conv_sym, LR_subst_escape. 
-    eauto using subst, subst_conv_sym, LR_subst_escape, LR_escape, conv_sym.
+    eapply LR_app_ann_right; eauto.
+    eapply subst; eauto. eapply lift_subst; eauto using LR_subst_escape, validity_subst_conv_right, validity_conv_left, validity_ty_ctx, refl_subst.
+    eapply subst; eauto using LR_subst_escape, validity_subst_conv_right, refl_subst, lift_subst.
 Qed.
 
 
@@ -2401,25 +2401,6 @@ Proof.
     eapply prefundamental_cast; eauto using subst, LR_subst_escape.
 Qed.
 
-
-Lemma LR_app_ann l i j A B S1 S2 T1 T2 ϵA t u v: 
-    LR l A B ϵA -> 
-    ϵA (app i j S1 T1 t u) v -> 
-    ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
-    ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
-    ϵA (app i j S2 T2 t u) v.
-Proof.
-    intros.
-    eapply LR_escape_tm in H0 as H0'; eauto.
-    eapply validity_conv_left in H0' as appWt.
-    eapply validity_conv_right in H0' as vWt.
-    eapply type_inv_app' in appWt as (_ & _ & _ & tWt & uWt & eq & conv).
-    subst.
-    eapply LR_erasure; eauto using aconv_refl.
-    eapply aconv_conv; eauto using conv_sym.
-    eapply aconv_app; eauto using aconv_refl.
-Qed.
-
 Lemma prefundamental_cast_refl l A B ϵA a e : 
     LR l A B ϵA -> 
     ϵA a a ->
@@ -2489,10 +2470,10 @@ Proof.
       eapply H1 in H6; eauto. 
 
       eapply LR_trans_tm in ϵs11''; eauto.
-      eapply LR_app_ann. 4:eauto using conv_sym, LR_escape_ty. 3:eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty.
+      eapply LR_app_ann_left. 4:eauto using conv_sym, LR_escape_ty. 3:eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty.
       eauto.
       eapply LR_sym_tm; eauto.
-      eapply LR_app_ann.  4:eauto using conv_sym, LR_escape_ty. 3:eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty.
+      eapply LR_app_ann_left.  4:eauto using conv_sym, LR_escape_ty. 3:eauto using conv_sym, conv_ty_in_ctx_conv, LR_escape_ty.
       eauto.
       eapply LR_sym_tm; eauto.
 
