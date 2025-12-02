@@ -135,6 +135,15 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     
 where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 
+Lemma red_meta_conv Γ u v l A B w :
+  Γ ⊢< l > u --> v : A →
+  A = B →
+  v = w →
+  Γ ⊢< l > u --> w : B.
+Proof.
+  intros. subst. assumption.
+Qed.
+
 
 Lemma red_accel' Γ i l A R a q P p X Y : 
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->

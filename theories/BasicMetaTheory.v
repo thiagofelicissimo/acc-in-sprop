@@ -16,6 +16,22 @@ Proof.
   intro H. destruct l; destruct l'; inversion H; auto.
 Qed.
 
+Lemma meta_conv Γ t l A B :
+  Γ ⊢< l > t : A →
+  A = B →
+  Γ ⊢< l > t : B.
+Proof.
+  intros ? ->. auto.
+Qed.
+
+Lemma meta_conv_conv Γ u v l A B :
+  Γ ⊢< l > u ≡ v : A →
+  A = B →
+  Γ ⊢< l > u ≡ v : B.
+Proof.
+  intros ? ->. auto.
+Qed.
+
 (* basic inversion lemmas *)
 
 
