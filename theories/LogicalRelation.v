@@ -641,20 +641,20 @@ Proof.
     eapply aconv_app; eauto using aconv_refl.
 Qed.
 
-Definition LR_inv_type l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : Prop :=
-    match l, A1' with 
-    | prop, _ => LRΩ A1 A2 R
-    | _, Nat => 
+
+Definition LR_inv_ty_statement l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : Prop :=
+    match A1' with 
+    | Nat => 
         l = ty 0 /\ 
         ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) /\ 
         ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) /\ 
         R <~> ϵNat
-    | _, Sort l' => 
+    | Sort l' => 
         l = Ax l' /\ 
         ∙ ⊢< Ax (Ax l') > A1 -->>! Sort l' : Sort (Ax l') /\ 
         ∙ ⊢< Ax (Ax l') > A2 -->>! Sort l' : Sort (Ax l') /\ 
         R <~> (fun B1 B2 => exists R', LR l' B1 B2 R')
-    | _, Pi i (ty k) S1 T1 => exists S2 T2 ϵS ϵT,
+    | Pi i (ty k) S1 T1 => exists S2 T2 ϵS ϵT,
         l = Ru i (ty k) /\ 
         ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) /\
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) /\
@@ -662,26 +662,32 @@ Definition LR_inv_type l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1'
         LR i S1 S2 ϵS /\
         (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) /\
         R <~> ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT
-    | _, _ => False
+    | _ => False
     end.
 
-Lemma LR_inv {l A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : LR l A1 A2 R -> LR_inv_type l A1 A2 A1' R A1_redd_A1'.
+Lemma LR_ty_inv {n A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢< Ax (ty n) > A1 -->>! A1' : Sort (ty n)) : LR (ty n) A1 A2 R -> LR_inv_ty_statement (ty n) A1 A2 A1' R A1_redd_A1'.
 Proof.
-    intro lr. generalize l A1 A2 R lr A1' A1_redd_A1'. clear l A1 A2 R lr A1' A1_redd_A1'.
-    refine (LR_ind _ _ _ _ _).
-    - intros. auto. 
-    - intros. 
-      eapply redd_whnf_det in A1_red_nat as A1'_eq_Nat; eauto. subst.
+    intro lr. remember (ty n) as l.
+    generalize l A1 A2 R lr A1' A1_redd_A1' Heql. clear l A1 A2 R lr A1' A1_redd_A1' Heql.
+    refine (LR_ind _ _ _ _ _); intros; dependent destruction Heql.
+    - eapply redd_whnf_det in A1_red_nat as A1'_eq_Nat; eauto. subst.
       simpl. eauto.
-    - intros.
-      eapply redd_whnf_det in A1_red_U as A1'_eq_U; eauto. subst.
+    - eapply redd_whnf_det in A1_red_U as A1'_eq_U; eauto. subst.
       simpl. eauto.
-    - intros. 
-      eapply redd_whnf_det in A1_red_pi as A1'_eq_pi; eauto. subst.
+    - eapply redd_whnf_det in A1_red_pi as A1'_eq_pi; eauto. subst.
       simpl. do 4 eexists. 
       split; eauto.
       split; eauto. 
 Qed.
+
+Lemma LR_prop_inv {A2 A1 R} : LR prop A1 A2 R -> LRΩ A1 A2 R.
+Proof.
+    intro lr. remember prop as l.
+    generalize l A1 A2 R lr Heql. clear l A1 A2 R lr Heql.
+    refine (LR_ind _ _ _ _ _); intros; dependent destruction Heql.
+    assumption. 
+Qed.
+
 
 Lemma LR_irrel l A B B' R1 R2 : 
     LR l A B R1 -> 
@@ -690,11 +696,10 @@ Lemma LR_irrel l A B B' R1 R2 :
 Proof.
     intro lr1. generalize l A B R1 lr1 B' R2. clear l A B R1 lr1 B' R2.
     refine (LR_ind _ _ _ _ _).
-    - intros. unfold LR in H. rewrite LR_prop_eq in H. destruct p, H. destruct (H1 t1 t2), (H2 t1 t2). split; eauto.
-    - intros. eapply (LR_inv A1_red_nat) in H0. destruct H0 as (_ & _ & _ & H0). symmetry. rewrite H. auto.
-    - intros. eapply (LR_inv A1_red_U) in H1. destruct H1 as (_ & _ & _ & H'). rewrite H0. rewrite H'. split; eauto.
-    - intros. eapply (LR_inv A1_red_pi) in H2. 
-      destruct H2 as (S2' & T2' & ϵS' & ϵT' & l_eq & A1_red' & A2_red' & T_eq & LR_S' & LR_T' & R_eq).
+    - intros. eapply LR_prop_inv in H. destruct p, H. destruct (H1 t1 t2), (H2 t1 t2). split; eauto.
+    - intros. eapply (LR_ty_inv A1_red_nat) in H0 as (_ & _ & _ & H0). symmetry. rewrite H. auto.
+    - intros. eapply (LR_ty_inv A1_red_U) in H1 as (_ & _ & _ & H'). rewrite H0. rewrite H'. split; eauto.
+    - intros. eapply (LR_ty_inv A1_red_pi) in H2 as (S2' & T2' & ϵS' & ϵT' & l_eq & A1_red' & A2_red' & T_eq & LR_S' & LR_T' & R_eq).
       assert (ϵS <~> ϵS') by eauto. 
       rewrite R_eq, H. 
       split.
@@ -844,17 +849,17 @@ Lemma LR_trans' l A B C R R' :
 Proof.
     intro lr. generalize l A B R lr C R'. clear l A B R lr C R'.
     refine (LR_ind _ _ _ _ _); intros.
-    - unfold LR in H. rewrite LR_prop_eq in H. destruct H. destruct p.
+    - eapply LR_prop_inv in H. destruct H. destruct p.
       exists R. split.
       + eapply LR_prop; eauto using conv_trans.
       + intros. rewrite H2 in H3. rewrite H2. rewrite H0 in H4. 
         eauto using conv_trans, conv_conv, conv_sym.
-    - unshelve eapply LR_inv in H0 as temp. 2:eauto.
+    - unshelve eapply LR_ty_inv in H0 as temp. 2:eauto.
       destruct temp as (_ & _ & C_red & H').
       eexists. split.
       + eapply LR_nat; eauto.
       + intros. rewrite H in *. rewrite H' in *. eauto using ϵNat_trans.
-    - unshelve eapply LR_inv in H1 as temp. 2:eauto. 
+    - unshelve eapply LR_ty_inv in H1 as temp. 2:eauto. 
       destruct temp as (_ & _ & C_red & H').
       exists (fun A B => exists R, LR l A B R).
       split. 
@@ -864,7 +869,7 @@ Proof.
         eapply H in H3; eauto. 
         destruct H3 as (R'' & LR & _). 
         eexists. eauto.
-    - unshelve eapply LR_inv in H2. 2: eauto.
+    - unshelve eapply LR_ty_inv in H2. 2: eauto.
       destruct H2 as (S' & T' & ϵS' & ϵT' & _ & _ & C_red & T2_eq_T' & LR_S' & LR_T' & R'_iff).
       pose proof LR_S' as temp. eapply H0 in temp as (ϵS'' & LR_S'' & ϵS_to). clear H0.
       
@@ -1044,7 +1049,8 @@ Proof.
       exists (fun A B => exists R, LR i A B R).
       split; eauto using prefundamental_sort.
     - intros ϵsort. destruct ϵsort as (R & ϵsort & ϵAB).
-      unshelve eapply LR_inv in ϵsort. shelve. eauto using  val_redd_to_whnf, typing, ctx_nil.
+      unshelve eapply LR_ty_inv in ϵsort. 
+      shelve. eauto using  val_redd_to_whnf, typing, ctx_nil.
       destruct ϵsort as (_ & _ & _ & equiv). rewrite <- equiv. eauto.
 Qed. 
 
@@ -2249,11 +2255,11 @@ Proof.
     generalize l A1 A2 ϵA LR_A12 LR_A12' B1 B2 ϵB LR_B12 LR_B12'.
     clear l A1 A2 ϵA LR_A12 LR_A12' B1 B2 ϵB LR_B12 LR_B12'.
     refine (LR_ind _ _ _ _ _); intros.
-    - unfold LR in LR_B12. rewrite LR_prop_eq in LR_B12. destruct LR_B12.
+    - eapply LR_prop_inv in LR_B12. destruct LR_B12.
       destruct p.
       split; intros; try rewrite H0 in *; try rewrite H2 in *; eapply conv_cast; eauto.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
-      unshelve eapply LR_inv in LR_B12 ; eauto.
+      unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
       1,4,5,7-16:inversion LR_B12.
       + split; intros; eapply nat_neq_sort_red in A1_red_nat; 
@@ -2278,7 +2284,7 @@ Proof.
            eauto using redd_to_conv, conv_trans, conv_sym.
 
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
-      unshelve eapply LR_inv in LR_B12 ; eauto.
+      unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
       1,4,5,7-16:inversion LR_B12.
       + destruct LR_B12 as (eq' & _ & B2_red & ϵB_iff_ϵsort).
@@ -2303,7 +2309,7 @@ Proof.
       + split; intros; eapply nat_neq_sort_red in A1_red_U; 
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_U.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
-      unshelve eapply LR_inv in LR_B12 ; eauto.
+      unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
       1,4,5,7-16:inversion LR_B12.
       + split; intros; eapply sort_neq_pi_red in A1_red_pi; 
