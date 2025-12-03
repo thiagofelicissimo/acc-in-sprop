@@ -158,6 +158,22 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< i > b : A ->
     Γ ⊢< Ax prop > obseq i A a b : Sort prop 
 
+| type_obsrefl : 
+    ∀ l Γ A a, 
+      Γ ⊢< Ax l > A : Sort l ->
+      Γ ⊢< l > a : A ->
+      Γ ⊢< prop > obsrefl l A a : obseq l A a a
+
+| type_J :
+    ∀ Γ l A a P p b e,
+      Γ ⊢< Ax l > A : Sort l ->
+      Γ ⊢< l > a : A ->
+      Γ ,, (l , A) ⊢< Ax prop > P : Sort prop ->
+      Γ ⊢< prop > p : P <[a..] ->
+      Γ ⊢< l > b : A ->
+      Γ ⊢< prop > e : obseq l A a b ->
+      Γ ⊢< prop > J l A a P p b e : P <[b..]
+
 | type_cast : 
   ∀ Γ i A B e a,
     Γ ⊢< Ax i > A : Sort i ->
@@ -320,6 +336,22 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< i > a ≡ a' : A ->
     Γ ⊢< i > b ≡ b' : A ->
     Γ ⊢< Ax prop > obseq i A a b ≡ obseq i A' a' b' : Sort prop 
+
+| conv_obsrefl : 
+  ∀ l Γ A A' a a', 
+    Γ ⊢< Ax l > A ≡ A' : Sort l ->
+    Γ ⊢< l > a ≡ a' : A ->
+    Γ ⊢< prop > obsrefl l A a ≡ obsrefl l A' a' : obseq l A a a
+
+| conv_J :
+    ∀ Γ l A A' a a' P P' p p' b b' e e',
+      Γ ⊢< Ax l > A ≡ A' : Sort l ->
+      Γ ⊢< l > a ≡ a' : A ->
+      Γ ,, (l , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
+      Γ ⊢< prop > p ≡ p' : P <[a..] ->
+      Γ ⊢< l > b ≡ b' : A ->
+      Γ ⊢< prop > e ≡ e' : obseq l A a b ->
+      Γ ⊢< prop > J l A a P p b e ≡ J l A' a' P' p' b' e' : P <[b..]
 
 | conv_cast : 
   ∀ Γ i A A' B B' e e' a a',

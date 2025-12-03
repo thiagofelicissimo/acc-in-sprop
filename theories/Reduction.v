@@ -482,10 +482,10 @@ Proof.
     - simpl. split; eauto. split; eauto.
     - eapply IHred. eauto.
     - destruct A.
-      1,3,5,6,8-18: simpl;left;eexists; split; eauto.
+      1,3,5,6,8-20: simpl;left;eexists; split; eauto.
       1-3:(unshelve eapply (H _ _) in H0); simpl. 1-3:lia. 1-3:inversion H0.
     - destruct B.
-      1,3,5,6,8-18:destruct A; simpl; right; eexists; split; eauto.
+      1,3,5,6,8-20:destruct A; simpl; right; eexists; split; eauto.
       1-3:(unshelve eapply (H _ _) in H2); simpl. 1-3:lia. 1-3:inversion H2.
     - simpl. split; eauto.
     - simpl. split; eauto.
@@ -496,9 +496,8 @@ Lemma val_whnf Γ l t A : val t -> whnf Γ l t A.
 Proof.
     intros. unfold whnf. intros.
     destruct t.
-    all:eapply red_inv in H0.
-    6, 10,14,16:inversion H.
-    all: simpl in H0; dependent destruction H0.
+    all: inversion H.
+    all: eapply red_inv in H0; simpl in H0; dependent destruction H0.
 Qed.
 
 Hint Unfold val.
@@ -512,24 +511,24 @@ Proof.
     intros. 
     generalize v H0. clear v H0. induction H; intros.
     - apply red_inv in H3. destruct t. 
-      5: (apply red_inv in H1; inversion H1).
+      all: (apply red_inv in H1; try inversion H1).
       all: destruct H3 as (t'' & eq & _ & _ & red & _). all: eapply IHred in red. all: subst. all: eauto.
     - apply red_inv in H3 as (_ & _ & eq & _). eauto.
     - apply red_inv in H3. destruct n.
-      8,9 : (apply red_inv in H2; inversion H2).
+      all : (apply red_inv in H2; try inversion H2).
       all: destruct H3 as (n'' & eq & _ & _ & _ & red). all: eapply IHred in red. all: subst. all: eauto.
     - apply red_inv in H2 as (eq & _). eauto.
     - apply red_inv in H3 as (eq & _). eauto.
     - apply red_inv in H5 as (eq & _). eauto.
     - eapply IHred. eapply red_conv; eauto using conv_sym.
-    - destruct A.
-      6,10,14,16:eapply red_inv in H3; simpl in H3; destruct H3 as [ (A_ & eq & red & _) | (A_ & eq & false & red & _)]; 
-        try inversion false; eapply IHred in red; subst; eauto.
-      all: eapply red_inv in H; simpl in H; dependent destruction H.
-    - destruct B.
-      6,10,14,16:destruct A; eapply red_inv in H4; simpl in H4; destruct H4 as [ (A_ & eq & red1 & _) | (A_ & eq & _ & red2 & _)];
+    - eapply red_inv in H3. destruct A.
+      all : (apply red_inv in H; try inversion H).
+      all: destruct H3 as [ (A_ & eq & red & _) | (A_ & eq & false & red & _)]; 
+            [ eapply IHred in red; subst; eauto | inversion false].
+    - eapply red_inv in H4. destruct B.
+      all : (apply red_inv in H1; try inversion H1).
+      all : destruct A; simpl in H4; destruct H4 as [ (A_ & eq & red1 & _) | (A_ & eq & _ & red2 & _)];
         try eapply val_whnf in red1 ; eauto; try inversion red1; try eapply IHred in red2; subst; eauto.
-      all: eapply red_inv in H1; simpl in H1; dependent destruction H1.
     - eapply red_inv in H1. destruct H1. eauto.
     - eapply red_inv in H1. destruct H1. eauto.
     - eapply red_inv in H5. destruct H5. eauto.

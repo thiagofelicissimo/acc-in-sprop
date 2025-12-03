@@ -19,7 +19,10 @@ Proof.
 Qed.
 
 
-(* these are consequences of the standard model *)
+(* These are consequences of the standard model. We do not need to add sort_neq_nat, pi_neq_nat
+  and pi_neq_sort because these are derivable from these axioms, using symmetry of obs_eq, which 
+  can be derived from J and obsrefl. Actually, we only added J and obsrefl to this formalization
+  so that symmetry could be derivable. *)
 Axiom nat_neq_sort : forall e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
 Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
 Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
@@ -28,11 +31,6 @@ Axiom pi_sort_inj : forall i j i' j' A A' B B' e,
     ∙ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A B) (Pi i' j' A' B') -> 
     i = i' /\ j = j'.
 
-(* and the following are definable *)
-Axiom obseq_sym : level -> term -> term -> term -> term -> term.
-Axiom type_obseq_sym : forall Γ l A a b e, 
-    Γ ⊢< prop > e : obseq l A a b -> 
-    Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.    
 
 Lemma nat_neq_sort_red l l' A B e : 
     ∙ ⊢< Ax l' > A -->>! Nat : Sort l' ->
@@ -50,7 +48,6 @@ Proof.
     eapply nat_neq_sort. eapply type_conv. eapply A_eq_B.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
 Qed.
-
 
 
 Lemma nat_neq_pi_red l' A B i j S T e : 
@@ -82,11 +79,6 @@ Proof.
     eapply type_conv; eauto.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
 Qed.
-
-
-
-
-
 
 
 Lemma pi_sort_inj_red l i j i' j' A A' B B' T T' e :
@@ -230,10 +222,6 @@ Proof.
 Qed.
 
 
-
-
-
-
 (* Failed factorization attempt: the following lemma does not work,
     because this would imply that any t u with ϵA t u would have both 
     types A1 and B1. But the fact that A1 and B1 are propositionaly
@@ -269,7 +257,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-18:inversion LR_B12.
+      1,3,5,6,8-20:inversion LR_B12.
       + split; intros; eapply nat_neq_sort_red in A1_red_nat; 
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_nat.
       + split; intros; eapply nat_neq_pi_red in A1_red_nat; 
@@ -294,7 +282,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-18:inversion LR_B12.
+      1,3,5,6,8-20:inversion LR_B12.
       + destruct LR_B12 as (eq' & _ & B2_red & ϵB_iff_ϵsort).
         eapply Ax_inj in eq'. subst.
         split; intros; try rewrite H0 in * ; try rewrite ϵB_iff_ϵsort in *.
@@ -319,7 +307,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-18:inversion LR_B12.
+      1,3,5,6,8-20:inversion LR_B12.
       + split; intros; eapply sort_neq_pi_red in A1_red_pi; 
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_pi.
       + destruct l0. 2:inversion LR_B12.

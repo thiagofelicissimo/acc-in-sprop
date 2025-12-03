@@ -458,6 +458,23 @@ Proof.
 Qed.  
 
 
+
+Lemma type_inv_obseq Γ l T A i a b : 
+  Γ ⊢< l > obseq i A a b : T -> 
+  Γ ⊢< Ax i > A : Sort i /\ 
+  Γ ⊢< i > a : A /\
+  Γ ⊢< i > b : A /\
+  l = Ax prop /\ 
+  Γ ⊢< Ax (Ax prop) > T ≡ Sort prop : Sort (Ax prop).
+Proof.
+  intro H.
+  apply validity_ty_ty in H as T_Wt.
+  dependent induction H. 
+  - repeat split; eauto using refl_ty.
+  - edestruct IHtyping as (H1 & H2 & H3 & H4 & H5); eauto using validity_conv_left.
+    subst. repeat split; eauto using conv_trans, conv_sym.
+Qed.
+
 Lemma type_accinv' Γ i A R a p b r l T :
     Γ ⊢< prop > p : acc i A R a -> 
     Γ ⊢< i > b : A -> 
@@ -573,3 +590,26 @@ Proof.
     eapply lift_subst in H1; eauto using validity_ty_ctx. 
     eauto using validity_conv_left, subst, refl_subst, refl_ty.
 Admitted.
+
+Definition obseq_sym l A a b e : term := 
+  J l A a (obseq l (S ⋅ A) (var 0) (S ⋅ a)) (obsrefl l A a) b e.
+
+Lemma type_obseq_sym : forall Γ l A a b e, 
+    Γ ⊢< prop > e : obseq l A a b -> 
+    Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.
+Proof.
+  intros. eapply validity_ty_ty in H as H'.
+  eapply type_inv_obseq in H' as (H1 & H2 & H3 & _).
+  unfold obseq_sym.
+  eapply meta_conv.
+  eapply type_J; eauto. all: rasimpl. 3:reflexivity.
+  2:eapply type_obsrefl; eauto.
+  eapply type_obseq.
+  2:eapply meta_conv. 2: eapply type_var.
+  2:eauto using validity_ty_ctx, ctx_cons.
+  2:reflexivity.
+  2:reflexivity.
+  1,2:admit. (* consequences of renaming *)
+Admitted.
+  
+      
