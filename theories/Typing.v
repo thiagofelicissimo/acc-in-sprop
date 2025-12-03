@@ -43,10 +43,6 @@ Reserved Notation "Γ ⊢< l > t : T" (at level 50, l, t, T at next level).
 Reserved Notation "Γ ⊢< l > t ≡ u : T" (at level 50, l, t, u, T at next level).
 Reserved Notation "⊢ Γ" (at level 50).
 
-
-(* see AccInv.v for a justification of this axiom *)
-(* Axiom accinv : level -> term -> term -> term -> term -> term -> term -> term. *)
-
 Inductive typing : ctx -> level -> term → term → Prop :=
 
 | type_var :
@@ -227,7 +223,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
       ∙ ⊢< Ax prop > A : Sort prop ->
       Γ ⊢< prop > assm c ≡ assm c : A
 
-      
+
 | conv_pi :
     ∀ Γ i j A B A' B',
       Γ ⊢< Ax i > A ≡ A' : Sort i →
