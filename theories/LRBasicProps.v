@@ -15,7 +15,7 @@ Qed.
 
 (* escape lemma *)
 Lemma LR_escape l A B R : 
-    LR l A B R -> ∙ ⊢< Ax l > A ≡ B : Sort l /\ forall t u, R t u -> ∙ ⊢< l > t ≡ u : A.
+    ⊩< l > A ≡ B ↓ R -> ∙ ⊢< Ax l > A ≡ B : Sort l /\ forall t u, R t u -> ∙ ⊢< l > t ≡ u : A.
 Proof.
     generalize l A B R. clear l A B R.
     refine (LR_ind _ _ _ _ _).
@@ -39,13 +39,13 @@ Qed.
 
 (* we split the result in two, so we can use eauto with it *)
 Corollary LR_escape_ty {l A B R} : 
-    LR l A B R -> ∙ ⊢< Ax l > A ≡ B : Sort l.
+    ⊩< l > A ≡ B ↓ R -> ∙ ⊢< Ax l > A ≡ B : Sort l.
 Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
 
 Corollary LR_escape_tm  {l A B R t u }: 
-    LR l A B R -> R t u -> ∙ ⊢< l > t ≡ u : A.
+    ⊩< l > A ≡ B ↓ R -> R t u -> ∙ ⊢< l > t ≡ u : A.
 Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
@@ -56,11 +56,11 @@ Definition LR_pi' i k l S1 S2 ϵS T1 T2 ϵT R :
     let A1 := Pi i (ty k) S1 T1 in 
     let A2 := Pi i (ty k) S2 T2 in
     ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
-    LR i S1 S2 ϵS -> 
-    (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
+    ⊩< i > S1 ≡ S2 ↓ ϵS -> 
+    (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2) ->
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
     l = Ru i (ty k) ->
-    LR l A1 A2 R.
+    ⊩< l > A1 ≡ A2 ↓ R.
 Proof.
     intros. subst.
     eapply LR_pi; eauto 9 using val_redd_to_whnf, LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv, type_pi.
@@ -68,11 +68,11 @@ Qed.
 
 (* closure under anti-reduction *)
 Lemma LR_irred l A B R : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     (forall A' B', 
         ∙ ⊢< Ax l > A' -->> A : Sort l ->
         ∙ ⊢< Ax l > B' -->> B : Sort l ->
-        LR l A' B' R) 
+        ⊩< l > A' ≡ B' ↓ R) 
     /\
     (forall t u t' u', 
         ∙ ⊢< l > t' -->> t : A -> 
@@ -105,14 +105,14 @@ Qed.
 Lemma LR_irred_ty l A B A' B' R : 
     ∙ ⊢< Ax l > A' -->> A : Sort l ->
     ∙ ⊢< Ax l > B' -->> B : Sort l ->
-    LR l A B R -> 
-    LR l A' B' R.
+    ⊩< l > A ≡ B ↓ R -> 
+    ⊩< l > A' ≡ B' ↓ R.
 Proof.
     intros. eapply LR_irred in H1 as (H1 & H2). eauto.
 Qed.
 
 Lemma LR_irred_tm l A B t u t' u' R : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     ∙ ⊢< l > t' -->> t : A ->
     ∙ ⊢< l > u' -->> u : A ->
     R t u ->
@@ -125,11 +125,11 @@ Qed.
 (* Closure under reduction. Usually now shown, but greatly simplifies 
     the fundamental lemma proofs for beta, rec_zero, rec_succ, ... *)
 Lemma LR_redd l A B R : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     (forall A' B', 
         ∙ ⊢< Ax l > A -->> A' : Sort l ->
         ∙ ⊢< Ax l > B -->> B' : Sort l ->
-        LR l A' B' R) 
+        ⊩< l > A' ≡ B' ↓ R) 
     /\
     (forall t u t' u', 
         ∙ ⊢< l > t -->> t' : A -> 
@@ -162,14 +162,14 @@ Qed.
 Lemma LR_redd_ty l A B A' B' R : 
     ∙ ⊢< Ax l > A -->> A' : Sort l ->
     ∙ ⊢< Ax l > B -->> B' : Sort l ->
-    LR l A B R -> 
-    LR l A' B' R.
+    ⊩< l > A ≡ B ↓ R -> 
+    ⊩< l > A' ≡ B' ↓ R.
 Proof.
     intros. eapply LR_redd in H1 as (H1 & H2). eauto.
 Qed.
 
 Lemma LR_redd_tm l A B t u t' u' R : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     ∙ ⊢< l > t -->> t' : A ->
     ∙ ⊢< l > u -->> u' : A ->
     R t u ->
@@ -198,11 +198,11 @@ Qed.
 
 (* Invariance under conv annotations, needed here because we're using a fully-annotated syntax. *)
 Lemma LR_ann l A B R : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     (forall A' B', 
         ∙ ⊢< Ax l > A ~ A' : Sort l ->
         ∙ ⊢< Ax l > B ~ B' : Sort l ->
-        LR l A' B' R) 
+        ⊩< l > A' ≡ B' ↓ R) 
     /\
     (forall t u t' u', 
         ∙ ⊢< l > t ~ t' : A -> 
@@ -244,7 +244,7 @@ Qed.
 
 
 Lemma LR_app_ann_left l i j A B S1 S2 T1 T2 ϵA t u v: 
-    LR l A B ϵA -> 
+    ⊩< l > A ≡ B ↓ ϵA -> 
     ϵA (app i j S1 T1 t u) v -> 
     ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
     ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
@@ -262,7 +262,7 @@ Proof.
 Qed.
 
 Lemma LR_app_ann_right l i j A B S1 S2 T1 T2 ϵA t u v: 
-    LR l A B ϵA -> 
+    ⊩< l > A ≡ B ↓ ϵA -> 
     ϵA v (app i j S1 T1 t u) -> 
     ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
     ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
@@ -292,20 +292,20 @@ Definition LR_inv_ty_statement l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -
         l = Ax l' /\ 
         ∙ ⊢< Ax (Ax l') > A1 -->>! Sort l' : Sort (Ax l') /\ 
         ∙ ⊢< Ax (Ax l') > A2 -->>! Sort l' : Sort (Ax l') /\ 
-        R <~> (fun B1 B2 => exists R', LR l' B1 B2 R')
+        R <~> (fun B1 B2 => exists R', ⊩< l' > B1 ≡ B2 ↓ R')
     | Pi i (ty k) S1 T1 => exists S2 T2 ϵS ϵT,
         l = Ru i (ty k) /\ 
         ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) /\
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) /\
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) /\
-        LR i S1 S2 ϵS /\
-        (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) /\
+        ⊩< i > S1 ≡ S2 ↓ ϵS /\
+        (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2) /\
         R <~> ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT
     | _ => False
     end.
 
 (* LR inversion for types in ty *)
-Lemma LR_ty_inv {n A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢< Ax (ty n) > A1 -->>! A1' : Sort (ty n)) : LR (ty n) A1 A2 R -> LR_inv_ty_statement (ty n) A1 A2 A1' R A1_redd_A1'.
+Lemma LR_ty_inv {n A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢< Ax (ty n) > A1 -->>! A1' : Sort (ty n)) : ⊩< ty n > A1 ≡ A2 ↓ R -> LR_inv_ty_statement (ty n) A1 A2 A1' R A1_redd_A1'.
 Proof.
     intro lr. remember (ty n) as l.
     generalize l A1 A2 R lr A1' A1_redd_A1' Heql. clear l A1 A2 R lr A1' A1_redd_A1' Heql.
@@ -321,7 +321,7 @@ Proof.
 Qed.
 
 (* LR inversion for types in prop *)
-Lemma LR_prop_inv {A2 A1 R} : LR prop A1 A2 R -> LRΩ A1 A2 R.
+Lemma LR_prop_inv {A2 A1 R} : ⊩< prop > A1 ≡ A2 ↓ R -> LRΩ A1 A2 R.
 Proof.
     intro lr. remember prop as l.
     generalize l A1 A2 R lr Heql. clear l A1 A2 R lr Heql.
@@ -332,8 +332,8 @@ Qed.
 
 (* irrelevance *)
 Lemma LR_irrel l A B B' R1 R2 : 
-    LR l A B R1 -> 
-    LR l A B' R2 -> 
+    ⊩< l > A ≡ B ↓ R1 -> 
+    ⊩< l > A ≡ B' ↓ R2 -> 
     forall t1 t2, R1 t1 t2 <-> R2 t1 t2.
 Proof.
     intro lr1. generalize l A B R1 lr1 B' R2. clear l A B R1 lr1 B' R2.
@@ -371,8 +371,8 @@ Qed.
 (* Invariance under relations which are equivalent *)
 Lemma LR_iff_rel l A B R R' :
     R <~> R' ->
-    LR l A B R -> 
-    LR l A B R'.
+    ⊩< l > A ≡ B ↓ R -> 
+    ⊩< l > A ≡ B ↓ R'.
 Proof.
     intros. generalize l A B R H0 R' H. clear l A B R H0 R' H. 
     refine (LR_ind _ _ _ _ _); intros.
@@ -395,7 +395,7 @@ Qed.
    3) MLTT à la Coq & Jason Hu's MINT: 
         Prove first weaker statements and prove the real statements after.
         For instance, weakened symmetry then becomes 
-          LR l A B R -> exists R', LR l B A R' /\ forall t u, R t u -> R' u t  
+          ⊩< l > A ≡ B ↓ R -> exists R', ⊩< l > B ≡ A ↓ R' /\ forall t u, R t u -> R' u t  
         However, when placing the logical relation in Prop, this seems
         to require eliminating from Prop to Type. 
         Indeed, in the case of Pi, the ih of the codomain T gives 
@@ -411,11 +411,11 @@ Qed.
 
 
 Definition eT j T1 T2 := 
-    fun s1 s2 a1 a2 => forall R, LR j (T1 <[ s1..]) (T2 <[ s2..]) R -> R a1 a2.
+    fun s1 s2 a1 a2 => forall R, ⊩< j > T1 <[ s1..] ≡ T2 <[ s2..] ↓ R -> R a1 a2.
  
 Lemma ϵT_iff_eT i j S1 S2 ϵS T1 T2 ϵT s1 s2 :
-    LR i S1 S2 ϵS ->
-    LR j (T1 <[ s1..]) (T2 <[ s2..]) ϵT-> 
+    ⊩< i > S1 ≡ S2 ↓ ϵS ->
+    ⊩< j > T1 <[ s1..] ≡ T2 <[ s2..] ↓ ϵT-> 
     ϵT <~> eT j T1 T2 s1 s2.
 Proof.
     intros; split; intros.
@@ -465,7 +465,7 @@ Qed.
 
 (* We first need to show a weaker form of symmetry *)
 Lemma LR_sym' l A B R : 
-    LR l A B R -> exists R', LR l B A R' /\ forall t u, R t u <-> R' u t.
+    ⊩< l > A ≡ B ↓ R -> exists R', ⊩< l > B ≡ A ↓ R' /\ forall t u, R t u <-> R' u t.
 Proof.
     generalize l A B R. clear l A B R.
     refine (LR_ind _ _ _ _ _); intros.
@@ -477,7 +477,7 @@ Proof.
     - eexists. split.
       + eapply LR_nat; eauto.
       + setoid_rewrite H. intros. split; eauto using ϵNat_sym.
-    - exists (fun A B => exists R, LR l A B R).
+    - exists (fun A B => exists R, ⊩< l > A ≡ B ↓ R).
       split.
       + eapply LR_U; eauto. split; eauto.
       + intros B1 B2; split; intros LR_B; rewrite H0 in *.
@@ -522,7 +522,7 @@ Qed.
 
 (* And we also first need to show a weaker form of transitivity *)
 Lemma LR_trans' l A B C R R' :
-    LR l A B R -> LR l B C R' -> exists R'', LR l A C R'' /\ forall t v u, R t v -> R' v u -> R'' t u.
+    ⊩< l > A ≡ B ↓ R -> ⊩< l > B ≡ C ↓ R' -> exists R'', ⊩< l > A ≡ C ↓ R'' /\ forall t v u, R t v -> R' v u -> R'' t u.
 Proof.
     intro lr. generalize l A B R lr C R'. clear l A B R lr C R'.
     refine (LR_ind _ _ _ _ _); intros.
@@ -538,7 +538,7 @@ Proof.
       + intros. rewrite H in *. rewrite H' in *. eauto using ϵNat_trans.
     - unshelve eapply LR_ty_inv in H1 as temp. 2:eauto. 
       destruct temp as (_ & _ & C_red & H').
-      exists (fun A B => exists R, LR l A B R).
+      exists (fun A B => exists R, ⊩< l > A ≡ B ↓ R).
       split. 
       + eapply LR_U; eauto. split; eauto.
       + intros. rewrite H0 in H2. rewrite H' in H3.
@@ -591,7 +591,7 @@ Qed.
 
 (* We now derive the real refl, sym and trans *)
 
-Lemma LR_refl_r l A B R : LR l A B R -> LR l B B R.
+Lemma LR_refl_r l A B R : ⊩< l > A ≡ B ↓ R -> ⊩< l > B ≡ B ↓ R.
 Proof.
     intros. eapply LR_sym' in H as temp.
     destruct temp as (R' & H' & X).
@@ -604,7 +604,7 @@ Proof.
 Qed.
 
 Lemma LR_sym l A B R : 
-    LR l A B R -> LR l B A R.
+    ⊩< l > A ≡ B ↓ R -> ⊩< l > B ≡ A ↓ R.
 Proof.
     intros.
     eapply LR_refl_r in H as ϵB_B.
@@ -613,7 +613,7 @@ Proof.
 Qed.
 
 Lemma LR_trans l A B C R R' : 
-    LR l A B R -> LR l B C R' -> LR l A C R.
+    ⊩< l > A ≡ B ↓ R -> ⊩< l > B ≡ C ↓ R' -> ⊩< l > A ≡ C ↓ R.
 Proof.
     intros.
     eapply LR_trans' in H0; eauto.
@@ -621,7 +621,7 @@ Proof.
     eapply LR_iff_rel; eauto using LR_irrel.
 Qed.
 
-Lemma LR_sym_tm {l A B R t u} : LR l A B R -> R t u -> R u t.
+Lemma LR_sym_tm {l A B R t u} : ⊩< l > A ≡ B ↓ R -> R t u -> R u t.
 Proof.
     intros. eapply LR_sym' in H as temp. 
     destruct temp as (R' & lr & equiv).
@@ -631,7 +631,7 @@ Proof.
 Qed.
 
 Lemma LR_trans_tm {l A B R t u v} : 
-    LR l A B R -> 
+    ⊩< l > A ≡ B ↓ R -> 
     R t v -> R v u -> R t u.
 Proof.
     intros. eapply LR_refl_r in H as H'.
@@ -652,14 +652,14 @@ Inductive LR_subst : ctx -> (nat -> term) -> (nat -> term) -> Prop :=
 | LR_sempty (σ τ : nat -> term) : ⊩s σ ≡ τ : ∙
 | LR_scons (σ τ : nat -> term) (Δ : ctx) l A R :
   ⊩s (↑ >> σ) ≡ (↑ >> τ) : Δ -> 
-  LR l (A <[ (↑ >> σ) ]) (A <[ (↑ >> τ)] ) R ->
+  ⊩< l > A <[ (↑ >> σ) ] ≡ A <[ (↑ >> τ)] ↓ R ->
   R (σ var_zero) (τ var_zero) ->
   ⊩s σ ≡ τ : Δ ,, (l , A)
 where "⊩s σ ≡ τ : Δ" := (LR_subst Δ σ τ).
 
 
 (* escape lemma for subst reducibility *)
-Lemma LR_subst_escape σ τ Δ : LR_subst Δ σ τ -> ∙ ⊢s σ ≡ τ : Δ.
+Lemma LR_subst_escape σ τ Δ : ⊩s σ ≡ τ : Δ -> ∙ ⊢s σ ≡ τ : Δ.
 Proof.
     intro. induction H. eauto using ConvSubst.
     eapply LR_escape_tm in H1; eauto. eauto using ConvSubst.
@@ -668,13 +668,13 @@ Qed.
 
 (* subst reducibility is a PER *)
 
-Lemma LR_subst_sym σ τ Δ : LR_subst Δ σ τ -> LR_subst Δ τ σ.
+Lemma LR_subst_sym σ τ Δ : ⊩s σ ≡ τ : Δ -> ⊩s τ ≡ σ : Δ.
 Proof.
     intros. induction H. eauto using LR_subst.
     eapply LR_sym_tm in H1; eauto. eapply LR_sym in H0. eauto using LR_subst.
 Qed.
 
-Lemma LR_subst_trans σ τ θ Δ : LR_subst Δ σ τ -> LR_subst Δ τ θ -> LR_subst Δ σ θ.
+Lemma LR_subst_trans σ τ θ Δ : ⊩s σ ≡ τ : Δ -> ⊩s τ ≡ θ : Δ -> ⊩s σ ≡ θ : Δ.
 Proof.
     intros. generalize θ H0. clear θ H0. induction H. eauto using LR_subst.
     intros. dependent destruction H2. 
@@ -689,14 +689,15 @@ Qed.
 (* validity *)
 Definition LRv Γ l t u A := 
     forall σ1 σ2, 
-        LR_subst Γ σ1 σ2 -> 
-        exists R, LR l (A <[ σ1 ]) (A <[ σ2 ]) R /\ 
-        R (t <[ σ1 ]) (u <[ σ2 ]).
+        ⊩s σ1 ≡ σ2 : Γ -> 
+        exists R, 
+            ⊩< l > A <[ σ1 ] ≡ A <[ σ2 ] ↓ R 
+            /\ R (t <[ σ1 ]) (u <[ σ2 ]).
 Notation "Γ ⊨< l > t ≡ u : A" := (LRv Γ l t u A) (at level 50, l, t, u, A at next level).
 
 (* We prove that validity is a PER *)
 
-Lemma LRv_sym Γ l t u A : LRv Γ l t u A -> LRv Γ l u t A.
+Lemma LRv_sym Γ l t u A : Γ ⊨< l > t ≡ u : A -> Γ ⊨< l > u ≡ t : A.
 Proof.
     intros ϵtu. unfold LRv. intros σ1 σ2 ϵσ12. 
     destruct (ϵtu _ _ ϵσ12) as (R & ϵA & ϵt). exists R. split; auto.
@@ -705,7 +706,7 @@ Proof.
     eapply LR_irrel in ϵA; eauto. eapply ϵA. auto.
 Qed.
 
-Lemma LRv_trans Γ l t u v A : LRv Γ l t v A -> LRv Γ l v u A -> LRv Γ l t u A.
+Lemma LRv_trans Γ l t u v A : Γ ⊨< l > t ≡ v : A -> Γ ⊨< l > v ≡ u : A -> Γ ⊨< l > t ≡ u : A.
 Proof.
     intros ϵtv ϵvu. unfold LRv. intros σ1 σ2 ϵσ12.  
     destruct (ϵtv _ _ ϵσ12) as (R & ϵA & ϵt).

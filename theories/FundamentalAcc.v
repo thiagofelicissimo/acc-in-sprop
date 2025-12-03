@@ -140,12 +140,12 @@ Qed.
 Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1 p2 :
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i -> 
     ∙ ⊢< Ax i > A1 ≡ A3 : Sort i ->
-    LR i A1 A2 ϵA ->
+    ⊩< i > A1 ≡ A2 ↓ ϵA ->
     (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R2 : Sort prop ->
     (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R3 : Sort prop ->    
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P3 : Sort (ty k) ->
-    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (P1<[a1..]) (P2<[a2..]) (ϵP a1 a2)) ->
+    (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > P1<[a1..] ≡ P2<[a2..] ↓ ϵP a1 a2) ->
     let ϵB a1 a2 f1 f2 := forall b1 b2 (ϵb : ϵA b1 b2) r1 r2 (r_Wt : ∙ ⊢< prop > r1 ≡ r2 : R1 <[a1 .:b1 ..]) t1 t2,
         t1 = app prop (ty k) (R1<[a1 .: b1 ..]) (S ⋅ (P1 <[b1..])) 
                 (app i (ty k) A1 (Pi prop (ty k) (R1<[(S ⋅ a1) .: (var 0 .: (S >> var))]) (P1 <[var 1 .: (S >> S >> var)])) f1 b1) 
@@ -325,7 +325,7 @@ Proof.
             all: unfold C, P', R'; rasimpl; reflexivity. }
 
     clear ϵf H. (* removes clutter *)
-    assert (LR (Ru i (ty k)) (B <[a0 .: σ1]) (B <[ a3 .: σ2]) ϵB).
+    assert (⊩< Ru i (ty k) > B <[a0 .: σ1] ≡ B <[ a3 .: σ2] ↓ ϵB).
     {
         unfold B. simpl. unshelve eapply LR_pi'. 
         exact ϵA. exact ϵC.

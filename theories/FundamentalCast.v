@@ -10,9 +10,9 @@ Require Import Stdlib.Program.Equality.
 Import CombineNotations.
 
 
-Lemma LR_to_red k A B R : LR (ty k) A B R -> exists A', ∙ ⊢< Ax (ty k) > A -->>! A' : Sort (ty k).
+Lemma LR_to_red k A B R : ⊩< ty k > A ≡ B ↓ R -> exists A', ∙ ⊢< Ax (ty k) > A -->>! A' : Sort (ty k).
 Proof.
-    intro. assert (exists l, l = ty k /\ LR l A B R) by eauto.
+    intro. assert (exists l, l = ty k /\ ⊩< l > A ≡ B ↓ R) by eauto.
     clear H. destruct H0 as (l & eq & lr).
     generalize l A B R lr k eq. clear l A B R lr k eq.
     refine (LR_ind _ _ _ _ _); intros; dependent destruction eq; eauto.
@@ -227,14 +227,14 @@ Qed.
     types A1 and B1. But the fact that A1 and B1 are propositionaly
     equal does not imply that they are convertible.
 Lemma LR_eq_to_iff_rel k A1 A2 ϵA B1 B2 ϵB e : 
-    LR (ty k) A1 A2 ϵA -> 
-    LR (ty k) B1 B2 ϵB ->
+    ⊩< (ty k) > A1 ≡ A2 ↓ ϵA -> 
+    ⊩< (ty k) > B1 ≡ B2 ↓ ϵB ->
     ∙ ⊢< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
     ϵA <~> ϵB. *)
 
 Lemma prefundamental_cast l A1 A2 ϵA B1 B2 ϵB : 
-    LR l A1 A2 ϵA -> 
-    LR l B1 B2 ϵB ->
+    ⊩< l > A1 ≡ A2 ↓ ϵA -> 
+    ⊩< l > B1 ≡ B2 ↓ ϵB ->
     (forall a1 a2 e1 e2, 
         ϵA a1 a2 -> 
         ∙ ⊢< l > a1 ≡ a2 : A1 -> 
@@ -392,7 +392,7 @@ Proof.
 Qed.
 
 Lemma prefundamental_cast_refl l A B ϵA a e : 
-    LR l A B ϵA -> 
+    ⊩< l > A ≡ B ↓ ϵA -> 
     ϵA a a ->
     ∙ ⊢< prop > e : obseq (Ax l) (Sort l) A B ->
     ϵA (cast l A B e a) a.

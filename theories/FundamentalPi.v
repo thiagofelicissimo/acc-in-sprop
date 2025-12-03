@@ -12,11 +12,11 @@ Import CombineNotations.
 
 Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 : 
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
-    LR i A1 A2 ϵA ->
+    ⊩< i > A1 ≡ A2 ↓ ϵA ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1..]) (B2 <[ a2..]) (ϵB a1 a2)) -> 
+    (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1..] ≡ B2 <[ a2..] ↓ ϵB a1 a2) -> 
     let ϵpi := ϵPi i (ty k) A1 A2 ϵA B1 B2 ϵB in 
-    LR (Ru i (ty k)) (Pi i (ty k) A1 B1) (Pi i (ty k) A2 B2) ϵpi.
+    ⊩< Ru i (ty k) > Pi i (ty k) A1 B1 ≡ Pi i (ty k) A2 B2 ↓ ϵpi.
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵpi.
     eapply LR_pi'; eauto.
@@ -32,9 +32,9 @@ Lemma fundamental_common_pi Γ σ1 σ2 i A1 A2 k B1 B2 :
     exists ϵA ϵB, 
         let ϵpi := ϵPi i (ty k) (A1 <[ σ1]) (A2 <[ σ2]) ϵA
                 (B1 <[ var 0 .: (σ1 >> ren_term S)]) (B2 <[ var 0 .: (σ2 >> ren_term S)]) ϵB in
-        LR i (A1 <[ σ1]) (A2 <[ σ2]) ϵA /\
-        (forall a1 a2 (ϵa : ϵA a1 a2), LR (ty k) (B1 <[ a1 .: σ1]) (B2 <[ a2 .: σ2]) (ϵB a1 a2)) /\
-        LR (Ru i (ty k)) ((Pi i (ty k) A1 B1) <[ σ1]) ((Pi i (ty k) A2 B2) <[ σ2]) ϵpi.
+        ⊩< i > A1 <[ σ1] ≡ A2 <[ σ2] ↓ ϵA /\
+        (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1 .: σ1] ≡ B2 <[ a2 .: σ2] ↓ ϵB a1 a2) /\
+        ⊩< Ru i (ty k) > (Pi i (ty k) A1 B1)<[σ1] ≡ (Pi i (ty k) A2 B2)<[σ2] ↓ ϵpi.
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵσ12. 
 

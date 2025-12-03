@@ -8,7 +8,7 @@ From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
 Import CombineNotations.
 
-Lemma prefundamental_sort l : LR (Ax l) (Sort l) (Sort l) (fun A B => exists R, LR l A B R).
+Lemma prefundamental_sort l : ⊩< Ax l > Sort l ≡ Sort l ↓ (fun A B => exists R, ⊩< l > A ≡ B ↓ R).
 Proof.
     intros. eapply LR_U.
     1,2: eauto using val_redd_to_whnf, typing, ctx_nil.
@@ -16,12 +16,12 @@ Proof.
 Qed.
 
 Lemma helper_LR i A B :
-    (exists R, LR i A B R) <->
-    (exists R, LR (Ax i) (Sort i) (Sort i) R ∧ R A B).
+    (exists R, ⊩< i > A ≡ B ↓ R) <->
+    (exists R, ⊩< Ax i > Sort i ≡ Sort i ↓ R ∧ R A B).
 Proof.
     split.
     - intros ϵAB.
-      exists (fun A B => exists R, LR i A B R).
+      exists (fun A B => exists R, ⊩< i > A ≡ B ↓ R).
       split; eauto using prefundamental_sort.
     - intros ϵsort. destruct ϵsort as (R & ϵsort & ϵAB).
       unshelve eapply LR_ty_inv in ϵsort. 
@@ -31,14 +31,14 @@ Qed.
 
 
 Lemma getLR_of_motive_aux {Γ i k A1 ϵA P1 P2 σ1 σ2} : 
-    LR i (A1 <[σ1]) (A1 <[σ2]) ϵA ->
+    ⊩< i > A1 <[σ1] ≡ A1 <[σ2] ↓ ϵA ->
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) -> 
     ⊩s σ1 ≡ σ2 : Γ -> 
     let eP := eT (ty k) (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) in
     ∀ (b1 b2 : term) (ϵb : ϵA b1 b2), 
-        (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2))
-        /\ (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2))
-        /\ (forall b3 (ϵb' : ϵA b1 b3), LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2)).
+        (⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P1 <[ b2 .: σ2 ] ↓ eP b1 b2)
+        /\ (⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P2 <[ b2 .: σ2 ] ↓ eP b1 b2)
+        /\ (forall b3 (ϵb' : ϵA b1 b3), ⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P1 <[ b3 .: σ2 ] ↓ eP b1 b2).
 Proof.
     intros.
     assert (⊩s (b1 .: σ1) ≡ (b2 .: σ2) : (Γ ,, (i, A1))) as ϵaσ. 
@@ -61,14 +61,14 @@ Proof.
 Qed.
 
 Corollary getLR_of_motive {Γ i k A1 ϵA P1 P2 σ1 σ2} : 
-    LR i (A1 <[σ1]) (A1 <[σ2]) ϵA ->
+    ⊩< i > A1 <[σ1] ≡ A1 <[σ2] ↓ ϵA ->
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) -> 
     ⊩s σ1 ≡ σ2 : Γ -> 
     exists eP, 
         eP = eT (ty k) (P1 <[ (var 0) .: σ1 >> ren_term S]) (P2 <[ (var 0) .: σ2 >> ren_term S]) /\
-        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b2 .: σ2 ]) (eP b1 b2))) /\
-        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P2 <[ b2 .: σ2 ]) (eP b1 b2))) /\
-        (∀ (b1 b2 b3 : term) (ϵb : ϵA b1 b2) (ϵb' : ϵA b1 b3), (LR (ty k) (P1 <[ b1 .: σ1 ]) (P1 <[ b3 .: σ2 ]) (eP b1 b2))).
+        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P1 <[ b2 .: σ2 ] ↓ eP b1 b2)) /\
+        (∀ (b1 b2 : term) (ϵb : ϵA b1 b2), (⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P2 <[ b2 .: σ2 ] ↓ eP b1 b2)) /\
+        (∀ (b1 b2 b3 : term) (ϵb : ϵA b1 b2) (ϵb' : ϵA b1 b3), (⊩< ty k > P1 <[ b1 .: σ1 ] ≡ P1 <[ b3 .: σ2 ] ↓ eP b1 b2)).
 Proof.
     intros. eexists. split. reflexivity. 
     split. 2:split.
@@ -78,7 +78,7 @@ Qed.
 Lemma LRv_to_LR_ty Γ A1 A2 i σ1 σ2 : 
     ⊩s σ1 ≡ σ2 : Γ -> 
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    exists ϵA, LR i (A1<[σ1]) (A2<[σ2]) ϵA.
+    exists ϵA, ⊩< i > A1<[σ1] ≡ A2<[σ2] ↓ ϵA.
 Proof.
     intros ϵσ LRv_A12. 
     eapply LRv_A12 in ϵσ.
@@ -89,9 +89,9 @@ Qed.
 Lemma LRv_to_LR_ty_copy Γ A1 A2 A1' A2' ϵA i σ1 σ2 : 
     ⊩s σ1 ≡ σ2 : Γ -> 
     A1' = A1<[ σ1] ->
-    LR i A1' A2' ϵA ->
+    ⊩< i > A1' ≡ A2' ↓ ϵA ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    LR i (A1<[σ1]) (A2<[σ2]) ϵA.
+    ⊩< i > A1<[σ1] ≡ A2<[σ2] ↓ ϵA.
 Proof.
     intros ϵσ eq LR_A' LRv_A12. subst. 
     eapply LRv_A12 in ϵσ.
@@ -104,7 +104,7 @@ Qed.
 Lemma LRv_to_LR_tm Γ A1 A1' A2 ϵA i t1 t2 σ1 σ2 : 
     ⊩s σ1 ≡ σ2 : Γ -> 
     A1' = A1<[ σ1] ->
-    LR i A1' A2 ϵA -> 
+    ⊩< i > A1' ≡ A2 ↓ ϵA -> 
     Γ ⊨< i > t1 ≡ t2 : A1 ->
     ϵA (t1<[σ1]) (t2<[σ2]).
 Proof.

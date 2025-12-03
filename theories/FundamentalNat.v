@@ -21,7 +21,7 @@ Proof.
 Qed.
 
 Lemma prefundamental_nat : 
-    LR (ty 0) Nat Nat ϵNat.
+    ⊩< ty 0 > Nat ≡ Nat ↓ ϵNat.
 Proof.
     eapply LR_nat; eauto using val_redd_to_whnf, typing, ctx_typing.
     reflexivity.
@@ -89,7 +89,7 @@ Lemma prefundamental_rec k P1 p_zero1 p_succ1 P2 p_zero2 p_succ2 ϵP:
     ∙  ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
     (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (forall n1 n2 (ϵn : ϵNat n1 n2), 
-        LR (ty k) (P1 <[ n1..]) (P2 <[ n2..]) (ϵP n1 n2)) -> 
+        ⊩< ty k > P1 <[ n1..] ≡ P2 <[ n2..] ↓ ϵP n1 n2) -> 
     ϵP zero zero p_zero1 p_zero2 -> 
     (forall n1 n2 (ϵn : ϵNat n1 n2) t1 t2,
         ϵP n1 n2 t1 t2 -> 

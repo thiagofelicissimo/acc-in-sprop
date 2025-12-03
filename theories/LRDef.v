@@ -41,31 +41,34 @@ Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : Tm
 Module Type LogRelM.
     Axiom LR : level -> LogRel.
 
+
+    Notation "⊩< l > A ≡ B ↓ R" :=  (LR l A B R) (at level 50, l, A, B, R at next level).
+
     Axiom LR_prop : forall A1 A2 R,
         ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
         R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->    
-        LR prop A1 A2 R.
+        ⊩< prop > A1 ≡ A2 ↓ R.
 
     Axiom LR_nat : forall A1 A2 R,
         ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) -> 
         ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
-        LR (ty 0) A1 A2 R.
+        ⊩< ty 0 > A1 ≡ A2 ↓ R.
 
     Axiom LR_U : forall l A1 A2 R,
         ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) -> 
         ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
-        R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
-        LR (Ax l) A1 A2 R.
+        R <~> (fun B1 B2 => exists R, ⊩< l > B1 ≡ B2 ↓ R) ->
+        ⊩< Ax l > A1 ≡ A2 ↓ R.
 
     Axiom LR_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R,
         ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) -> 
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
-        LR i S1 S2 ϵS -> 
-        (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
+        ⊩< i > S1 ≡ S2 ↓ ϵS -> 
+        (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< (ty k) > (T1 <[ s1 ..]) ≡ (T2 <[ s2 ..]) ↓ (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
-        LR (Ru i (ty k)) A1 A2 R.
+        ⊩< Ru i (ty k) > A1 ≡ A2 ↓ R.
 
     Axiom LR_ind : forall
         (P : forall l A B R, Prop)
@@ -78,21 +81,21 @@ Module Type LogRelM.
         (p_U : forall l A1 A2 R
             (A1_red_U : ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l))
             (A2_red_U : ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l)),
-            (forall B1 B2 R, LR l B1 B2 R -> P l B1 B2 R) ->
-            R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
+            (forall B1 B2 R, ⊩< l > B1 ≡ B2 ↓ R -> P l B1 B2 R) ->
+            R <~> (fun B1 B2 => exists R, ⊩< l > B1 ≡ B2 ↓ R) ->
             P (Ax l) A1 A2 R)
         (p_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R
             (A1_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)))
             (A2_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
             (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
-            (LR_S : LR i S1 S2 ϵS)
+            (LR_S : ⊩< i > S1 ≡ S2 ↓ ϵS)
             (LR_T : forall s1 s2 (ϵs : ϵS s1 s2), 
-                    LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)),
+                        ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2),
             R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
             P i S1 S2 ϵS -> 
             (forall s1 s2 (ϵs : ϵS s1 s2), P (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
             P (Ru i (ty k)) A1 A2 R)
-        (l : level) (A B : term) (R : TmRel) (x : LR l A B R), P l A B R.
+        (l : level) (A B : term) (R : TmRel) (x : ⊩< l > A ≡ B ↓ R), P l A B R.
 End LogRelM.
 
 
@@ -252,8 +255,6 @@ Module LogRelImpl : LogRelM.
 
 
     Definition LR l := LR' l (wf_lvl_lt l).
-
-    (* Notation "⊩< l > A ≡ B ↓ R" :=  (LR l A B R) (at level 50, A, B, R at next level). *)
 
     Lemma LR_ty_eq i s A B R : 
         LR' (ty i) s A B R <-> LRTy i (fun l x => LR l) A B R.
