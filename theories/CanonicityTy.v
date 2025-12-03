@@ -5,7 +5,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
 From TypedConfluence.autosubst
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Weakenings Contexts Typing BasicMetaTheory Reduction Fundamental.
+From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory Reduction Fundamental.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
 Import CombineNotations.
@@ -28,6 +28,14 @@ Inductive typing' : ctx -> level -> term → term → Type :=
     ∀ Γ l,
       ⊢' Γ -> 
       Γ ⊢'< Ax (Ax l) > Sort l : Sort (Ax l)
+
+| type'_assm : 
+    ∀ Γ c A,
+      ⊢' Γ ->
+      nth_error assm_sig c = Some A ->
+      ∙ ⊢'< Ax prop > A : Sort prop ->
+      Γ ⊢'< prop > assm c : A
+
 
 | type'_pi :
     ∀ Γ i j A B,
@@ -92,6 +100,17 @@ Inductive typing' : ctx -> level -> term → term → Type :=
     let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
     Γ ⊢'< prop > p : Pi i prop A (Pi prop prop R' acc_wk) ->
     Γ ⊢'< prop > accin i A R a p : acc i A R a
+
+
+| type'_accinv :
+    ∀ Γ i A R a p b r,
+    Γ ⊢'< Ax i > A : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R : Sort prop -> 
+    Γ ⊢'< i > a : A -> 
+    Γ ⊢'< prop > p : acc i A R a -> 
+    Γ ⊢'< i > b : A -> 
+    Γ ⊢'< prop > r : R <[a.:b..] -> 
+    Γ ⊢'< prop > accinv i A R a p b r : acc i A R b
   
 | type'_accel : 
     ∀ Γ i l A R a q P p,
@@ -172,6 +191,13 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
       ⊢' Γ ->
       Γ ⊢'< Ax (Ax l) > Sort l ≡ Sort l : Sort (Ax l)
 
+| conv'_assm : 
+    ∀ Γ c A,
+      ⊢' Γ ->
+      nth_error assm_sig c = Some A ->
+      ∙ ⊢'< Ax prop > A : Sort prop ->
+      Γ ⊢'< prop > assm c ≡ assm c : A
+
 | conv'_pi :
     ∀ Γ i j A B A' B',
       Γ ⊢'< Ax i > A ≡ A' : Sort i →
@@ -236,6 +262,17 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
     Γ ⊢'< prop > p ≡ p' : Pi i prop A (Pi prop prop R' acc_wk) ->
     Γ ⊢'< prop > accin i A R a p ≡ accin i A' R' a' p' : acc i A R a
   
+
+| conv'_accinv :
+    ∀ Γ i A A' R R' a a' p p' b b' r r',
+    Γ ⊢'< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R ≡ R' : Sort prop -> 
+    Γ ⊢'< i > a ≡ a' : A -> 
+    Γ ⊢'< prop > p ≡ p' : acc i A R a -> 
+    Γ ⊢'< i > b ≡ b' : A -> 
+    Γ ⊢'< prop > r ≡ r' : R <[a.:b..] -> 
+    Γ ⊢'< prop > accinv i A R a p b r ≡ accinv i A' R' a' p' b' r' : acc i A R b
+
 | conv'_accel : 
     ∀ Γ i l A A' R R' a a' q q' P P' p p',
     Γ ⊢'< Ax i > A ≡ A' : Sort i ->

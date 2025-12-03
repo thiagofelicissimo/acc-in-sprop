@@ -2,7 +2,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence.autosubst
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Weakenings Contexts Typing. (*  Env Inst. *)
+From TypedConfluence Require Import Util BasicAST Contexts Typing. (*  Env Inst. *)
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
 
@@ -10,6 +10,10 @@ Import ListNotations.
 Import CombineNotations.
 
 Open Scope subst_scope.
+
+
+
+
 
 Lemma Ax_inj l l' : Ax l = Ax l' -> l = l'.
 Proof. 

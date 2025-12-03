@@ -5,3 +5,5 @@ Set Primitive Projections.
 (** Universe level *)
 Inductive level := 
 | ty (n : nat) | prop.
+
+Definition aref := nat.

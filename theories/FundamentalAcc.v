@@ -3,7 +3,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
 From TypedConfluence.autosubst
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Weakenings Contexts Typing BasicMetaTheory 
+From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory 
     Reduction LRDef LRBasicProps FundamentalAux.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
@@ -69,8 +69,9 @@ Proof.
     eapply red_to_redd.
     unfold t3, t2, P''; rasimpl. eapply red_beta' ; rasimpl ; eauto 7 using conv_sym, aux_subst_4, refl_ty, subst, type_conv.
     3:{ unfold t1, t0, Awk, Rwk, Pwk, pwk. rasimpl. 
-        rewrite accinv_subst. rasimpl. setoid_rewrite subst_id_reduce2. 
-        setoid_rewrite subst_id_reduce1. rasimpl. reflexivity. }
+        setoid_rewrite subst_id_reduce2.
+        setoid_rewrite subst_id_reduce1. 
+        rasimpl. reflexivity. }
     eapply wk1_conv; eauto using conv_sym, subst, aux_subst_3, refl_ty; ssimpl; eauto.
     eauto  7 using conv_sym, aux_subst_4, refl_ty, subst, type_conv, validity_conv_right.
     admit.
@@ -416,7 +417,5 @@ Proof.
       eapply redd_conv; eauto using conv_sym.
       eapply red_to_redd. simpl. eapply red_accel'; eauto.
       rasimpl. f_equal. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''. 
-      f_equal. f_equal. rasimpl. reflexivity. f_equal; rasimpl.
-      1,2:reflexivity.
-      f_equal. rewrite accinv_subst. rasimpl. reflexivity.
+      f_equal. f_equal. rasimpl. reflexivity. f_equal; rasimpl; reflexivity.
 Qed.
