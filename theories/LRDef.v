@@ -1,6 +1,6 @@
 
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
-From TypedConfluence.autosubst
+From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
 From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory Reduction. (*  Env Inst. *)
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
@@ -19,21 +19,21 @@ Notation "R1 <~> R2" :=  (forall t u, R1 t u <-> R2 t u) (at level 50, R2 at nex
 
 Definition LRΩ : LogRel := fun A B R => ∙ ⊢< Ax prop > A ≡ B : Sort prop /\ forall t u : term, R t u <-> ∙ ⊢< prop > t ≡ u : A.
 
-Inductive ϵNat : TmRel := 
-| ϵzero t1 t2 : 
+Inductive ϵNat : TmRel :=
+| ϵzero t1 t2 :
     ∙ ⊢< ty 0 > t1 -->>! zero : Nat ->
-    ∙ ⊢< ty 0 > t2 -->>! zero : Nat -> 
-    ϵNat t1 t2 
+    ∙ ⊢< ty 0 > t2 -->>! zero : Nat ->
+    ϵNat t1 t2
 | ϵsucc t1 t2 t1' t2' :
     ∙ ⊢< ty 0 > t1 -->>! succ t1' : Nat ->
-    ∙ ⊢< ty 0 > t2 -->>! succ t2' : Nat -> 
-    ϵNat t1' t2' -> 
+    ∙ ⊢< ty 0 > t2 -->>! succ t2' : Nat ->
+    ϵNat t1' t2' ->
     ϵNat t1 t2.
 
 
 
-Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : TmRel 
-    := fun f1 f2 => 
+Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : TmRel
+    := fun f1 f2 =>
         ∙ ⊢< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
         forall s1 s2 (ϵs : ϵS s1 s2), ϵT s1 s2 (app i j S1 T1 f1 s1) (app i j S2 T2 f2 s2).
 
@@ -46,33 +46,33 @@ Module Type LogRelM.
 
     Axiom LR_prop : forall A1 A2 R,
         ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
-        R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->    
+        R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->
         ⊩< prop > A1 ≡ A2 ↓ R.
 
     Axiom LR_nat : forall A1 A2 R,
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) -> 
+        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
         ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         ⊩< ty 0 > A1 ≡ A2 ↓ R.
 
     Axiom LR_U : forall l A1 A2 R,
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) -> 
+        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
         ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, ⊩< l > B1 ≡ B2 ↓ R) ->
         ⊩< Ax l > A1 ≡ A2 ↓ R.
 
     Axiom LR_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R,
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) -> 
+        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
-        ⊩< i > S1 ≡ S2 ↓ ϵS -> 
+        ⊩< i > S1 ≡ S2 ↓ ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< (ty k) > (T1 <[ s1 ..]) ≡ (T2 <[ s2 ..]) ↓ (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         ⊩< Ru i (ty k) > A1 ≡ A2 ↓ R.
 
     Axiom LR_ind : forall
         (P : forall l A B R, Prop)
-        (p_prop : forall A B R (p : LRΩ A B R), P prop A B R) 
+        (p_prop : forall A B R (p : LRΩ A B R), P prop A B R)
         (p_nat : forall A1 A2 R
             (A1_red_nat : ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
             (A2_red_nat : ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
@@ -89,10 +89,10 @@ Module Type LogRelM.
             (A2_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
             (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
             (LR_S : ⊩< i > S1 ≡ S2 ↓ ϵS)
-            (LR_T : forall s1 s2 (ϵs : ϵS s1 s2), 
+            (LR_T : forall s1 s2 (ϵs : ϵS s1 s2),
                         ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2),
             R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
-            P i S1 S2 ϵS -> 
+            P i S1 S2 ϵS ->
             (forall s1 s2 (ϵs : ϵS s1 s2), P (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
             P (Ru i (ty k)) A1 A2 R)
         (l : level) (A B : term) (R : TmRel) (x : ⊩< l > A ≡ B ↓ R), P l A B R.
@@ -102,15 +102,15 @@ End LogRelM.
 Module LogRelImpl : LogRelM.
 
     Definition lvl_to_nat l :=
-        match l with 
+        match l with
         | prop => O
         | ty n => S n
         end.
 
-    Definition nat_to_lvl n := 
-        match n with 
-        | O => prop 
-        | S n => ty n 
+    Definition nat_to_lvl n :=
+        match n with
+        | O => prop
+        | S n => ty n
         end.
 
     Lemma lvl_to_nat_to_lvl l : nat_to_lvl (lvl_to_nat l) = l.
@@ -140,9 +140,9 @@ Module LogRelImpl : LogRelM.
 
     Lemma leq_ru_left {i} {k} : i ⊴ Ru i (ty k).
     Proof.
-        destruct i; simpl; lia. 
+        destruct i; simpl; lia.
     Qed.
-    
+
     Lemma leq_ru_right {i} {k} : ty k ⊴ Ru i (ty k).
     Proof.
         destruct i; simpl; lia.
@@ -161,45 +161,45 @@ Module LogRelImpl : LogRelM.
 
 
     Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogRel :=
-    | LRTy_nat A1 A2 rec R : 
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) -> 
+    | LRTy_nat A1 A2 rec R :
+        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
         ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         LRTy 0 rec A1 A2 R
     | LRTy_pi1 i k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty k -> LogRel)
         (q : i ◃ ty k) :
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) -> 
+        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         rec i q S1 S2 ϵS ->
-        (forall s1 s2 (ϵs : ϵS s1 s2), 
+        (forall s1 s2 (ϵs : ϵS s1 s2),
             LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         LRTy k rec A1 A2 R
     | LRTy_pi2 k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty k -> LogRel) :
-        ∙ ⊢< Ax (Ru (ty k) (ty k)) > A1 -->>! Pi (ty k) (ty k) S1 T1 : Sort (Ru (ty k) (ty k)) -> 
+        ∙ ⊢< Ax (Ru (ty k) (ty k)) > A1 -->>! Pi (ty k) (ty k) S1 T1 : Sort (Ru (ty k) (ty k)) ->
         ∙ ⊢< Ax (Ru (ty k) (ty k)) > A2 -->>! Pi (ty k) (ty k) S2 T2 : Sort (Ru (ty k) (ty k)) ->
         ∙ ,, (ty k, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         LRTy k rec S1 S2 ϵS ->
-        (forall s1 s2 (ϵs : ϵS s1 s2), 
+        (forall s1 s2 (ϵs : ϵS s1 s2),
             LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi (ty k) (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         LRTy k rec A1 A2 R
     | LRTy_pi3 n k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty n -> LogRel)
         (q : k < n) :
-        ∙ ⊢< Ax (Ru (ty n) (ty k)) > A1 -->>! Pi (ty n) (ty k) S1 T1 : Sort (Ru (ty n) (ty k)) -> 
+        ∙ ⊢< Ax (Ru (ty n) (ty k)) > A1 -->>! Pi (ty n) (ty k) S1 T1 : Sort (Ru (ty n) (ty k)) ->
         ∙ ⊢< Ax (Ru (ty n) (ty k)) > A2 -->>! Pi (ty n) (ty k) S2 T2 : Sort (Ru (ty n) (ty k)) ->
         ∙ ,, (ty n, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         LRTy n rec S1 S2 ϵS ->
-        (forall s1 s2 (ϵs : ϵS s1 s2), 
+        (forall s1 s2 (ϵs : ϵS s1 s2),
             rec (ty k) (ltac :(simpl; lia)) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi (ty n) (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         LRTy n rec A1 A2 R
-    | LRTy_U l A1 A2 rec R : 
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) -> 
+    | LRTy_U l A1 A2 rec R :
+        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
         ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, rec l lt_ty_ax B1 B2 R) ->
         LRTy (ax l) rec A1 A2 R.
@@ -209,17 +209,17 @@ Module LogRelImpl : LogRelM.
         - intros. destruct x.
             + apply (LRTy n). apply X.
             + apply LRΩ.
-        - exact s. 
+        - exact s.
     Defined.
 
     Print LR'.
 
 
-    Lemma LRTy_respects_iff_aux n A B R rec rec' : 
+    Lemma LRTy_respects_iff_aux n A B R rec rec' :
         (forall l p A B R, rec l p A B R <-> rec' l p A B R) ->
         LRTy n rec A B R -> LRTy n rec' A B R.
     Proof.
-        intros rec_iff_rec' lr. induction lr; try rewrite rec_iff_rec' in *. 
+        intros rec_iff_rec' lr. induction lr; try rewrite rec_iff_rec' in *.
         - econstructor; eauto.
         - econstructor; eauto.
         - eapply LRTy_pi2; eauto.
@@ -232,7 +232,7 @@ Module LogRelImpl : LogRelM.
     Proof.
         apply wf_inverse_image. apply lt_wf.
     Qed.
-        
+
     Lemma LR_acc_irrel l s s' A B R :
         LR' l s A B R -> LR' l s' A B R.
     Proof.
@@ -256,36 +256,36 @@ Module LogRelImpl : LogRelM.
 
     Definition LR l := LR' l (wf_lvl_lt l).
 
-    Lemma LR_ty_eq i s A B R : 
+    Lemma LR_ty_eq i s A B R :
         LR' (ty i) s A B R <-> LRTy i (fun l x => LR l) A B R.
     Proof.
-        unfold LR'. unfold LR. 
-        
+        unfold LR'. unfold LR.
+
         rewrite <- Fix_F_eq.
         split.
         intros. eapply LRTy_respects_iff_aux in H. eapply H.
         intros. split; intros.
         pose (K := LR_acc_irrel _ (Acc_inv s p) (wf_lvl_lt l)).
-        unfold LR' in K. 
-        eapply K in H0. eauto. 
+        unfold LR' in K.
+        eapply K in H0. eauto.
         pose (K := LR_acc_irrel _ (wf_lvl_lt l) (Acc_inv s p)).
-        unfold LR' in K. 
+        unfold LR' in K.
         eapply K in H0. eauto.
 
         intros. eapply LRTy_respects_iff_aux in H. eapply H.
         intros. split; intros.
         pose (K := LR_acc_irrel _ (wf_lvl_lt l) (Acc_inv s p)).
-        
-        unfold LR' in K. 
-        eapply K in H0. eauto. 
-        pose (K := LR_acc_irrel _ (Acc_inv s p) (wf_lvl_lt l)).      
-        unfold LR' in K. 
+
+        unfold LR' in K.
+        eapply K in H0. eauto.
+        pose (K := LR_acc_irrel _ (Acc_inv s p) (wf_lvl_lt l)).
+        unfold LR' in K.
         eapply K in H0. eauto.
     Qed.
 
 
 
-    Definition LR_prop A1 A2 R : 
+    Definition LR_prop A1 A2 R :
         ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
         R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->
         LR prop A1 A2 R.
@@ -294,8 +294,8 @@ Module LogRelImpl : LogRelM.
         unfold LR. rewrite LR_prop_eq. split; eauto.
     Qed.
 
-    Definition LR_nat A1 A2 R : 
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) -> 
+    Definition LR_nat A1 A2 R :
+        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
         ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         LR (ty 0) A1 A2 R.
@@ -304,8 +304,8 @@ Module LogRelImpl : LogRelM.
         constructor; eauto.
     Qed.
 
-    Definition LR_U l A1 A2 R : 
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) -> 
+    Definition LR_U l A1 A2 R :
+        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
         ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
         LR (Ax l) A1 A2 R.
@@ -315,11 +315,11 @@ Module LogRelImpl : LogRelM.
     Qed.
 
 
-    Definition LR_pi i k A1 A2 S1 S2 ϵS T1 T2 ϵT R : 
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) -> 
+    Definition LR_pi i k A1 A2 S1 S2 ϵS T1 T2 ϵT R :
+        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
         ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
         ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
-        LR i S1 S2 ϵS -> 
+        LR i S1 S2 ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         LR (Ru i (ty k)) A1 A2 R.
@@ -327,26 +327,26 @@ Module LogRelImpl : LogRelM.
         intros. unfold Ru. unfold LR. rewrite LR_ty_eq.
         assert (i ⊴ (ty k) \/ ty k ◃ i) by eauto using Nat.le_gt_cases.
         destruct H5. inversion H5.
-        - pose proof (f_equal nat_to_lvl H7) as H'. rewrite lvl_to_nat_to_lvl in H'. rewrite H' in *. 
-        simpl. assert (max k k = k) by lia. rewrite H6. eapply LRTy_pi2; eauto. 
+        - pose proof (f_equal nat_to_lvl H7) as H'. rewrite lvl_to_nat_to_lvl in H'. rewrite H' in *.
+        simpl. assert (max k k = k) by lia. rewrite H6. eapply LRTy_pi2; eauto.
         unfold LR in H2. simpl in H2. rewrite <- LR_ty_eq.  eauto.
         unfold LR in H3. intros. rewrite <- LR_ty_eq. eauto.
         - assert (ru i k = k). unfold ru. destruct i. simpl in H7. lia. auto.
-        rewrite H8. eapply LRTy_pi1; eauto. 
+        rewrite H8. eapply LRTy_pi1; eauto.
         simpl. lia.
         unfold LR in H3. intros.
         rewrite <- LR_ty_eq. eauto.
         - destruct i. 2:inversion H5.
         simpl in H5. assert (ru (ty n) k = n). unfold ru. lia.
-        rewrite H6. eapply LRTy_pi3; eauto. lia. 
+        rewrite H6. eapply LRTy_pi3; eauto. lia.
         rewrite <- LR_ty_eq. eauto.
     Qed.
 
 
 
-    Definition LR_ind 
+    Definition LR_ind
         (P : forall l A B R, Prop)
-        (p_prop : forall A B R (p : LRΩ A B R), P prop A B R) 
+        (p_prop : forall A B R (p : LRΩ A B R), P prop A B R)
         (p_nat : forall A1 A2 R
             (A1_red_nat : ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
             (A2_red_nat : ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
@@ -363,10 +363,10 @@ Module LogRelImpl : LogRelM.
             (A2_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
             (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
             (LR_S : LR i S1 S2 ϵS)
-            (LR_T : forall s1 s2 (ϵs : ϵS s1 s2), 
+            (LR_T : forall s1 s2 (ϵs : ϵS s1 s2),
                     LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)),
             R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
-            P i S1 S2 ϵS -> 
+            P i S1 S2 ϵS ->
             (forall s1 s2 (ϵs : ϵS s1 s2), P (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
             P (Ru i (ty k)) A1 A2 R)
         (l : level) (A B : term) (R : TmRel) (x : LR l A B R) : P l A B R.
@@ -377,13 +377,13 @@ Module LogRelImpl : LogRelM.
         apply wf_inverse_image. apply lt_wf.
         intros l H A B R x.
         destruct l.
-        - unfold LR in x. rewrite LR_ty_eq in x. 
+        - unfold LR in x. rewrite LR_ty_eq in x.
         set (rec := (λ (l : level) (_ : l ◃ ty n), LR l)).
             assert (rec = (λ (l : level) (_ : l ◃ ty n), LR l)) by reflexivity.
             rewrite <- H0 in x.
             induction x.
             + apply p_nat; auto.
-            + rewrite H0 in H4. rewrite H0 in H5. 
+            + rewrite H0 in H4. rewrite H0 in H5.
             setoid_rewrite <- LR_ty_eq in H5.
             assert (k = ru i k). unfold ru. destruct i. simpl in q. lia. lia.
             rewrite H8 at 1. eapply p_pi; eauto.
@@ -393,7 +393,7 @@ Module LogRelImpl : LogRelM.
             rewrite H7 at 1. eapply p_pi; eauto.
             + rewrite H0 in *. rewrite <- LR_ty_eq in x.
             assert (ty n = Ru (ty n) (ty k)). simpl. f_equal. lia. rewrite H6 at 1.
-            eapply p_pi; eauto. 
+            eapply p_pi; eauto.
             intros. apply H. simpl. lia. auto.
             + rewrite H0 in H3. eapply p_U; eauto.
         - unfold LR in x. rewrite LR_prop_eq in x. apply p_prop. auto.

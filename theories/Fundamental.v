@@ -1,9 +1,9 @@
 
 
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
-From TypedConfluence.autosubst
+From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory 
+From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux FundamentalPi FundamentalNat FundamentalAcc FundamentalCast.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
@@ -29,39 +29,39 @@ Proof.
       eapply IHx in x; eauto. eapply x in H1 as (R' & LR & lr).
       exists R'. split. rasimpl.
       assert (forall σ, (Init.Nat.add (S x0) ⋅ A) <[ ↑ >> σ] = A <[ Init.Nat.add (S (S x0)) >> σ]). intros. rasimpl. eauto.
-      rewrite 2 H1 in LR. eauto. rasimpl. eapply lr. 
+      rewrite 2 H1 in LR. eauto. rasimpl. eapply lr.
 Qed.
 
-Lemma fundamental_prop_ty Γ A B : 
-    Γ ⊢< Ax prop > A ≡ B : Sort prop -> 
+Lemma fundamental_prop_ty Γ A B :
+    Γ ⊢< Ax prop > A ≡ B : Sort prop ->
     Γ ⊨< Ax prop > A ≡ B : Sort prop.
 Proof.
     intros. unfold LRv. intros.
-    rewrite <- helper_LR. 
+    rewrite <- helper_LR.
     eexists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]). eapply LR_prop.
     2: reflexivity.
-    eapply LR_subst_escape in H0. eapply subst in H; eauto. 
+    eapply LR_subst_escape in H0. eapply subst in H; eauto.
 Qed.
 
-Lemma fundamental_prop Γ t u A : 
-    Γ ⊢< prop > t ≡ u : A -> 
+Lemma fundamental_prop Γ t u A :
+    Γ ⊢< prop > t ≡ u : A ->
     Γ ⊨< prop > t ≡ u : A.
 Proof.
     intros. unfold LRv. intros σ1 σ2 ϵσ12.
     exists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]).
     split.
     2:eauto using subst, LR_subst_escape.
-    eapply LR_prop. 
-    2:reflexivity. 
-    eauto 6 using subst, validity_conv_left, validity_ty_ty, 
-        refl_ty, LR_subst_escape.    
+    eapply LR_prop.
+    2:reflexivity.
+    eauto 6 using subst, validity_conv_left, validity_ty_ty,
+        refl_ty, LR_subst_escape.
 Qed.
 
-(* used to eliminate the condition 
+(* used to eliminate the condition
         forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> ...
     from the IHs in the proof of fundamental_ty *)
 Lemma helper_fund Γ l t u A :
-    Γ ⊢< l > t ≡ u : A -> 
+    Γ ⊢< l > t ≡ u : A ->
     (forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
 Proof.
     intros. split. intros.
@@ -70,8 +70,8 @@ Proof.
 Qed.
 
 
-Theorem fundamental_ty : 
-    (forall Γ l t A, Γ ⊢< l > t : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\ 
+Theorem fundamental_ty :
+    (forall Γ l t A, Γ ⊢< l > t : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\
     (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
 Proof.
     apply typing_conversion_mutind; intros.
@@ -88,12 +88,12 @@ Proof.
     - eauto 6 using fundamental_rec, refl_ty.
     - eauto using fundamental_prop_ty.
     - eauto 9 using fundamental_accel, refl_ty.
-    - eauto using fundamental_prop_ty. 
+    - eauto using fundamental_prop_ty.
     - eauto 6 using fundamental_cast, refl_ty.
     - eauto using fundamental_conv, refl_ty.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
-    - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty. 
+    - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty.
     - destruct j; dependent destruction x. eauto using fundamental_lam.
     - eauto using fundamental_app.
     - eauto using fundamental_nat.
@@ -104,11 +104,11 @@ Proof.
     - eauto using fundamental_accel.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
-    - eauto using fundamental_cast_refl. 
-    - destruct j. 2: eauto using fundamental_prop. dependent destruction x. eauto using fundamental_cast_pi. 
+    - eauto using fundamental_cast_refl.
+    - destruct j. 2: eauto using fundamental_prop. dependent destruction x. eauto using fundamental_cast_pi.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
-    - destruct j. eauto using fundamental_eta. eauto using fundamental_prop. 
+    - destruct j. eauto using fundamental_eta. eauto using fundamental_prop.
     - eauto using fundamental_rec_zero.
     - eauto using fundamental_rec_succ.
     - eauto using fundamental_accel_accin.
@@ -123,13 +123,13 @@ Qed.
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
     intros. destruct l.
-    eapply (proj1 fundamental_ty) in H; eauto using refl_ty. 
+    eapply (proj1 fundamental_ty) in H; eauto using refl_ty.
     eapply refl_ty in H. eapply fundamental_prop in H. eauto.
-Qed. 
+Qed.
 
-Fixpoint mk_Nat k := 
-    match k with 
-    | O => zero 
+Fixpoint mk_Nat k :=
+    match k with
+    | O => zero
     | S k => succ (mk_Nat k)
     end.
 
@@ -147,22 +147,22 @@ Proof.
 Qed.
 
 
-(* we use the predicate ϵNat t (mk_Nat k) to encode the fact that 
+(* we use the predicate ϵNat t (mk_Nat k) to encode the fact that
     t reduces in mutiple iterations to mk_Nat k *)
-Corollary canonicity_red t : 
+Corollary canonicity_red t :
     ∙ ⊢< ty 0 > t : Nat -> exists k, ϵNat t (mk_Nat k).
 Proof.
     intros. eapply fundamental in H; eauto. unfold LRv in H.
     destruct (H var var (LR_sempty _ _)) as (ϵnat' & LR_nat & ϵt).
-    simpl in LR_nat. 
+    simpl in LR_nat.
     assert (ϵnat' <~> ϵNat) by eauto using LR_irrel, prefundamental_nat.
-    rewrite H0 in ϵt. rasimpl in ϵt. 
+    rewrite H0 in ϵt. rasimpl in ϵt.
     eauto using canonicity_helper.
 Qed.
 
-Corollary canonicity_conv t : 
+Corollary canonicity_conv t :
     ∙ ⊢< ty 0 > t : Nat -> exists k, ∙ ⊢< ty 0 > t ≡ (mk_Nat k) : Nat.
 Proof.
-    intros. eapply canonicity_red in H as (k & lr). 
+    intros. eapply canonicity_red in H as (k & lr).
     eauto using ϵNat_escape.
 Qed.

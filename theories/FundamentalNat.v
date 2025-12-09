@@ -1,9 +1,9 @@
 
 
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
-From TypedConfluence.autosubst
+From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory 
+From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
@@ -20,31 +20,31 @@ Proof.
     intros. eapply ϵsucc; eauto 7 using val_redd_to_whnf, typing, ctx_typing, ϵNat_escape, validity_conv_left, validity_conv_right.
 Qed.
 
-Lemma prefundamental_nat : 
+Lemma prefundamental_nat :
     ⊩< ty 0 > Nat ≡ Nat ↓ ϵNat.
 Proof.
     eapply LR_nat; eauto using val_redd_to_whnf, typing, ctx_typing.
     reflexivity.
 Qed.
 
-Lemma fundamental_nat Γ : 
-    ⊢ Γ -> 
+Lemma fundamental_nat Γ :
+    ⊢ Γ ->
     Γ ⊨< Ax (ty 0) > Nat ≡ Nat : Sort (ty 0).
 Proof.
     unfold LRv. intros. simpl. rewrite <- helper_LR.
     eexists. eapply prefundamental_nat.
 Qed.
 
-Lemma fundamental_zero Γ : 
-    ⊢ Γ -> 
+Lemma fundamental_zero Γ :
+    ⊢ Γ ->
     Γ ⊨< ty 0 > zero ≡ zero : Nat.
 Proof.
     unfold LRv. intros. simpl.
-    eexists. split. eauto using prefundamental_nat. 
+    eexists. split. eauto using prefundamental_nat.
     eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
 Qed.
 
-Lemma fundamental_succ Γ t1 t2 : 
+Lemma fundamental_succ Γ t1 t2 :
     Γ ⊢< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty 0 > succ t1 ≡ succ t2 : Nat.
@@ -74,41 +74,41 @@ Proof.
 Qed.
 
 Lemma nth_error_succ {X: Type} (x:X) l n a :
-    nth_error (cons x l) (S n) = Some a -> 
+    nth_error (cons x l) (S n) = Some a ->
     nth_error l n = Some a.
 Proof.
     intros. unfold nth_error in H. simpl in H. eauto.
 Qed.
 
 
-    
+
 
 
 Lemma prefundamental_rec k P1 p_zero1 p_succ1 P2 p_zero2 p_succ2 ϵP:
     ∙ ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     ∙  ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
     (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
-    (forall n1 n2 (ϵn : ϵNat n1 n2), 
-        ⊩< ty k > P1 <[ n1..] ≡ P2 <[ n2..] ↓ ϵP n1 n2) -> 
-    ϵP zero zero p_zero1 p_zero2 -> 
+    (forall n1 n2 (ϵn : ϵNat n1 n2),
+        ⊩< ty k > P1 <[ n1..] ≡ P2 <[ n2..] ↓ ϵP n1 n2) ->
+    ϵP zero zero p_zero1 p_zero2 ->
     (forall n1 n2 (ϵn : ϵNat n1 n2) t1 t2,
-        ϵP n1 n2 t1 t2 -> 
-        ϵP (succ n1) (succ n2) (p_succ1 <[t1 .: n1 ..]) (p_succ2 <[t2 .: n2 ..])) -> 
+        ϵP n1 n2 t1 t2 ->
+        ϵP (succ n1) (succ n2) (p_succ1 <[t1 .: n1 ..]) (p_succ2 <[t2 .: n2 ..])) ->
     forall n1 n2 (ϵn : ϵNat n1 n2), ϵP n1 n2 (rec (ty k) P1 p_zero1 p_succ1 n1) (rec (ty k) P2 p_zero2 p_succ2 n2).
 Proof.
-    intros. generalize n1 n2 ϵn. clear n1 n2 ϵn. 
+    intros. generalize n1 n2 ϵn. clear n1 n2 ϵn.
     apply ϵNat_ind; intros.
-    - pose (LR' := H2 _ _ ϵzero'). 
+    - pose (LR' := H2 _ _ ϵzero').
       pose (LR'' := H2 _ _ (ϵzero _ _ H5 H6)).
       assert (ϵNat t1 zero) as ϵt1zero. eapply ϵzero; eauto using val_redd_to_whnf, typing, ctx_typing.
       pose (LR''' := H4 _ _ ϵt1zero).
       assert (ϵP zero zero <~> ϵP t1 zero) by eauto using LR_sym, LR_irrel.
       assert (ϵP t1 t2 <~> ϵP t1 zero) by eauto using LR_sym, LR_irrel.
-      rewrite H8. rewrite <- H7. 
+      rewrite H8. rewrite <- H7.
       destruct H5, H6.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_zero; eauto using validity_conv_left.
-      eapply redd_conv. eapply redd_rec_zero; 
+      eapply redd_conv. eapply redd_rec_zero;
       eauto 8 using validity_conv_right, subst, aux_subst, type_zero, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, refl_ty.
       eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm, prefundamental_nat, ϵzero'.
 
@@ -130,7 +130,7 @@ Qed.
 
 
 
-Lemma fundamental_rec Γ k P1 p_zero1 p_succ1 t1 P2 p_zero2 p_succ2 t2 : 
+Lemma fundamental_rec Γ k P1 p_zero1 p_succ1 t1 P2 p_zero2 p_succ2 t2 :
     Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     Γ ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
@@ -149,10 +149,10 @@ Proof.
     eapply LRv_to_LR_tm in LRv_t12 as ϵt12; eauto using prefundamental_nat.
     eapply LRv_to_LR_tm in LRv_t11 as ϵt11; eauto using prefundamental_nat.
 
-    eapply getLR_of_motive in ϵσ12 as temp; eauto. 2: simpl;eauto using prefundamental_nat.  
+    eapply getLR_of_motive in ϵσ12 as temp; eauto. 2: simpl;eauto using prefundamental_nat.
     destruct temp as (eP & eP_eq & LR_P11 & LR_P12 & LR_P11').
-    
-    exists (eP (t1 <[ σ1]) (t2 <[ σ2])). 
+
+    exists (eP (t1 <[ σ1]) (t2 <[ σ2])).
     (* exists eP. *)
     split; rasimpl. eauto.
 
@@ -162,9 +162,9 @@ Proof.
     - eapply subst; eauto using lift_subst2, LR_subst_escape, validity_ty_ctx, validity_conv_left. substify. rasimpl. reflexivity.
     - intros. rasimpl. eapply LR_P12. eauto.
     - pose (LR_Pzero := LR_P11 _ _ ϵzero'). eapply LRv_to_LR_tm in LRv_pzero12 as LR_pzero; eauto. rasimpl. eauto.
-    - intros. rasimpl. 
+    - intros. rasimpl.
       pose (LR_Psucc := LR_P11 _ _ ϵn).
-      assert (⊩s (t0 .: (n1 .: σ1)) ≡ (t3 .: (n2 .: σ2)) : (Γ ,, (ty 0, Nat)),, (ty k, P1)) 
+      assert (⊩s (t0 .: (n1 .: σ1)) ≡ (t3 .: (n2 .: σ2)) : (Γ ,, (ty 0, Nat)),, (ty k, P1))
         as ϵtnσ by eauto using LR_subst, prefundamental_nat.
       eapply LRv_to_LR_tm in LRv_psucc12; eauto. simpl. rasimpl. eauto using ϵsucc'.
 Qed.

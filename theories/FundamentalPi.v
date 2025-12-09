@@ -1,21 +1,21 @@
 
 
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
-From TypedConfluence.autosubst
+From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory 
+From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Stdlib.Program.Equality.
 Import CombineNotations.
 
 
-Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 : 
+Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 :
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     ⊩< i > A1 ≡ A2 ↓ ϵA ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1..] ≡ B2 <[ a2..] ↓ ϵB a1 a2) -> 
-    let ϵpi := ϵPi i (ty k) A1 A2 ϵA B1 B2 ϵB in 
+    (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1..] ≡ B2 <[ a2..] ↓ ϵB a1 a2) ->
+    let ϵpi := ϵPi i (ty k) A1 A2 ϵA B1 B2 ϵB in
     ⊩< Ru i (ty k) > Pi i (ty k) A1 B1 ≡ Pi i (ty k) A2 B2 ↓ ϵpi.
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵpi.
@@ -23,20 +23,20 @@ Proof.
     split; eauto.
 Qed.
 
-Lemma fundamental_common_pi Γ σ1 σ2 i A1 A2 k B1 B2 : 
+Lemma fundamental_common_pi Γ σ1 σ2 i A1 A2 k B1 B2 :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
     Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    ⊩s σ1 ≡ σ2 : Γ -> 
-    exists ϵA ϵB, 
+    ⊩s σ1 ≡ σ2 : Γ ->
+    exists ϵA ϵB,
         let ϵpi := ϵPi i (ty k) (A1 <[ σ1]) (A2 <[ σ2]) ϵA
                 (B1 <[ var 0 .: (σ1 >> ren_term S)]) (B2 <[ var 0 .: (σ2 >> ren_term S)]) ϵB in
         ⊩< i > A1 <[ σ1] ≡ A2 <[ σ2] ↓ ϵA /\
         (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1 .: σ1] ≡ B2 <[ a2 .: σ2] ↓ ϵB a1 a2) /\
         ⊩< Ru i (ty k) > (Pi i (ty k) A1 B1)<[σ1] ≡ (Pi i (ty k) A2 B2)<[σ2] ↓ ϵpi.
 Proof.
-    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵσ12. 
+    intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 ϵσ12.
 
     assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 by eauto using LRv_sym, LRv_trans.
     eapply LRv_to_LR_ty in LRv_A12 as temp; eauto. destruct temp as (ϵA & LR_A12).
@@ -45,17 +45,17 @@ Proof.
     eapply getLR_of_motive in LRv_B12 as temp; eauto.
     destruct temp as (eB & eB_eq & LR_B11 & LR_B12 & LR_B11').
 
-    exists ϵA. exists eB. 
+    exists ϵA. exists eB.
     split. eauto.
     split. eauto.
     unshelve eapply prefundamental_pi; eauto.
     - eauto using subst, LR_subst_escape.
-    - eapply subst; eauto. eapply lift_subst; 
+    - eapply subst; eauto. eapply lift_subst;
         eauto using validity_conv_left, validity_ty_ctx, LR_subst_escape.
     - intros. rasimpl. eauto.
 Qed.
 
-Lemma fundamental_pi B1 B2 {Γ i k A1 A2} : 
+Lemma fundamental_pi B1 B2 {Γ i k A1 A2} :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
     Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
@@ -81,33 +81,33 @@ Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12 t1_conv_t2 LRv_t12.
     intros σ1 σ2 ϵσ12.
 
-    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 
+    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11
         by eauto using LRv_sym, LRv_trans.
     assert (Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B1 : Sort (ty k)) as LRv_B11
         by eauto using LRv_sym, LRv_trans.
 
-    eapply fundamental_common_pi in ϵσ12 as temp. 
+    eapply fundamental_common_pi in ϵσ12 as temp.
     3:eapply LRv_A11. 4:eapply LRv_B11. 2,3: eauto using validity_conv_left, refl_ty.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split. eauto. split.
     - eapply conv_lam; eauto 7 using subst, subst, LR_subst_escape, lift_subst, validity_conv_left, validity_ty_ctx.
-    - intros. 
+    - intros.
       assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A1))) as ϵsσ by eauto using LR_subst, LR_iff_rel.
       eapply LRv_to_LR_tm in ϵsσ as ϵt'; eauto.
       eapply LR_irred_tm; eauto.
         (* from this point on, it's just technical manipulations to show that the beta redex reduces *)
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. eapply red_beta'; fold subst_term; eauto ; rasimpl.
-        all:eauto 9 using refl_ty, subst, LR_subst_escape, 
+        all:eauto 9 using refl_ty, subst, LR_subst_escape,
             validity_subst_conv_left, validity_conv_left, lift_subst, validity_ty_ctx, LR_escape_tm.
         rasimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
         rasimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
-        
+
       + eapply redd_step; eauto using redd_refl.
-        eapply red_conv. simpl. eapply red_beta; fold subst_term; rasimpl. 
+        eapply red_conv. simpl. eapply red_beta; fold subst_term; rasimpl.
         all:eauto 9 using  subst, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
             validity_subst_conv_right, validity_conv_right, LR_escape_tm, refl_subst.
-        
+
         rasimpl. eauto 6 using subst, refl_ty, validity_conv_left, subst_conv_sym, LR_subst_escape.
         rasimpl. eapply redd_refl. eauto using validity_conv_right, subst, LR_subst_escape.
 Qed.
@@ -126,8 +126,8 @@ Lemma fundamental_app Γ i k A1 B1 t1 u1 A2 B2 t2 u2 :
 Proof.
     intros A1_conv_A2 LRv_A12 B1_conv_B2 LRv_B12
         t1_conv_t2 LRv_t12 u1_conv_u2 LRv_u12 σ1 σ2 ϵσ.
-    
-    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11 
+
+    assert (Γ ⊨< Ax i > A1 ≡ A1 : Sort i) as LRv_A11
         by eauto using LRv_sym, LRv_trans.
     assert (Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B1 : Sort (ty k)) as LRv_B11
         by eauto using LRv_sym, LRv_trans.
@@ -144,9 +144,9 @@ Proof.
     eapply LRv_t12 in ϵσ as temp. destruct temp as (ϵpi' & LR_pi' & ϵt).
     eassert (ϵpi' <~> ϵPi _ _ _ _ _ _ _ _) by eauto using LR_irrel.
     rewrite H in ϵt. destruct ϵt. rasimpl.
-    assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) <~> ϵB (u1 <[ σ1]) (u2 <[ σ2])) 
+    assert (ϵB (u1 <[ σ1]) (u1 <[ σ2]) <~> ϵB (u1 <[ σ1]) (u2 <[ σ2]))
         as Hiff by eauto using LR_irrel.
-    rewrite Hiff. 
+    rewrite Hiff.
 
     eapply LR_app_ann_right; eauto.
     eapply subst; eauto. eapply lift_subst; eauto using LR_subst_escape, validity_subst_conv_right, validity_conv_left, validity_ty_ctx, refl_subst.
@@ -205,9 +205,9 @@ Proof.
     eapply fundamental_common_pi in ϵσ as temp; eauto using refl_ty.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split;eauto.
-    unfold ϵPi. split. 
+    unfold ϵPi. split.
     - eapply subst; eauto using LR_subst_escape.
-    - intros. 
+    - intros.
       assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A))) as ϵsσ by eauto using LR_subst.
       eapply LRv_to_LR_tm in LRv_tx_ux as ϵtx_ux; eauto.
       unfold tx, ux in ϵtx_ux. rasimpl in ϵtx_ux.
