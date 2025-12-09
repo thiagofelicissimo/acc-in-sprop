@@ -500,7 +500,7 @@ Proof.
     all: eapply red_inv in H0; simpl in H0; dependent destruction H0.
 Qed.
 
-Hint Unfold val.
+Hint Unfold val : core.
 
 
 Lemma red_det Γ l t u v A :

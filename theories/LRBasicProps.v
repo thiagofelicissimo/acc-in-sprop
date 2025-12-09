@@ -50,7 +50,7 @@ Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
 
-Hint Unfold val.
+Hint Unfold val : core.
 
 Definition LR_pi' i k l S1 S2 ϵS T1 T2 ϵT R :
     let A1 := Pi i (ty k) S1 T1 in

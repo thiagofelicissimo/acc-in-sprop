@@ -429,7 +429,11 @@ Proof.
       eapply conv_conv; eauto  using conv_cast_refl, LR_escape_tm, validity_conv_left, redd_whnf_to_conv, conv_sym, conv_trans.
 
       intros s1 s2 ϵs.
-      assert (ϵS s1 s1) as ϵs11 by eauto using (LR_sym_tm LR_S), (LR_trans_tm LR_S).
+      assert (ϵS s1 s1) as ϵs11.
+      { pose proof (λ t u, LR_sym_tm LR_S (t := t) (u := u)).
+        epose proof (λ t u v, LR_trans_tm LR_S (t := t) (u := u) (v := v)).
+        eauto.
+      }
       destruct H2. eapply H4 in ϵs as ϵs'. eapply LR_trans_tm; eauto.
       assert (ϵT s1 s2 <~> ϵT s1 s1) by eauto using LR_irrel.
       rewrite H5. clear ϵs ϵs' H5 s2.
