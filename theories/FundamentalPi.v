@@ -87,7 +87,7 @@ Proof.
         by eauto using LRv_sym, LRv_trans.
 
     eapply fundamental_common_pi in ϵσ12 as temp.
-    3:eapply LRv_A11. 4:eapply LRv_B11. 2,3: eauto using validity_conv_left, refl_ty.
+    3:eapply LRv_A11. 4:eapply LRv_B11. 2,3: eauto using validity_conv_left, conv_refl.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split. eauto. split.
     - eapply conv_lam; eauto 7 using subst, subst, LR_subst_escape, lift_subst, validity_conv_left, validity_ty_ctx.
@@ -98,17 +98,17 @@ Proof.
         (* from this point on, it's just technical manipulations to show that the beta redex reduces *)
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. eapply red_beta'; fold subst_term; eauto ; rasimpl.
-        all:eauto 9 using refl_ty, subst, LR_subst_escape,
+        all:eauto 9 using conv_refl, subst, LR_subst_escape,
             validity_subst_conv_left, validity_conv_left, lift_subst, validity_ty_ctx, LR_escape_tm.
-        rasimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
-        rasimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, refl_ty, subst.
+        rasimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst.
+        rasimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst.
 
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. simpl. eapply red_beta; fold subst_term; rasimpl.
         all:eauto 9 using  subst, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
             validity_subst_conv_right, validity_conv_right, LR_escape_tm, refl_subst.
 
-        rasimpl. eauto 6 using subst, refl_ty, validity_conv_left, subst_conv_sym, LR_subst_escape.
+        rasimpl. eauto 6 using subst, conv_refl, validity_conv_left, subst_conv_sym, LR_subst_escape.
         rasimpl. eapply redd_refl. eauto using validity_conv_right, subst, LR_subst_escape.
 Qed.
 
@@ -132,7 +132,7 @@ Proof.
     assert (Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B1 : Sort (ty k)) as LRv_B11
         by eauto using LRv_sym, LRv_trans.
 
-    eapply fundamental_common_pi in LRv_B11 as temp. 3:exact LRv_A11. 2-4: eauto using validity_conv_left, refl_ty.
+    eapply fundamental_common_pi in LRv_B11 as temp. 3:exact LRv_A11. 2-4: eauto using validity_conv_left, conv_refl.
     destruct temp as (ϵA & ϵB & LR_A11 & LR_B11 & LR_pi).
 
     assert (Γ ⊨< i > u1 ≡ u1 : A1) as LRv_u11 by eauto using LRv_sym, LRv_trans.
@@ -167,8 +167,8 @@ Lemma fundamental_beta Γ i k A B t u :
 Proof.
     intros WtA LR_A WtB LR_B Wtt LR_t Wtu LR_u.
     unfold LRv. intros σ1 σ2 ϵσ.
-    eapply fundamental_lam in LR_t; eauto using refl_ty.
-    eapply fundamental_app in LR_u; eauto using refl_ty, conv_lam.
+    eapply fundamental_lam in LR_t; eauto using conv_refl.
+    eapply fundamental_app in LR_u; eauto using conv_refl, conv_lam.
     eapply LR_u in ϵσ as (ϵBu & LR_Bu & ϵbeta).
     exists ϵBu. split; eauto.
     eapply LR_redd_tm; eauto.
@@ -179,7 +179,7 @@ Proof.
     eapply type_inv_lam' in lam_Wt as (_ & _ & _ & t_Wt & _).
     eapply red_to_redd. rasimpl. rasimpl in typeconv. eapply red_conv.
     2:eapply conv_sym;eauto.
-    eapply red_beta'; eauto using refl_ty; rasimpl; reflexivity.
+    eapply red_beta'; eauto using conv_refl; rasimpl; reflexivity.
 Qed.
 
 
@@ -202,7 +202,7 @@ Lemma fundamental_eta Γ i n A B t u :
 Proof.
     intros AWt LRv_A BWt LRv_B tWt LRv_t uWt LRv_u tx ux tx_conv_ux LRv_tx_ux t_conv_u.
     unfold LRv. intros σ1 σ2 ϵσ.
-    eapply fundamental_common_pi in ϵσ as temp; eauto using refl_ty.
+    eapply fundamental_common_pi in ϵσ as temp; eauto using conv_refl.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split;eauto.
     unfold ϵPi. split.

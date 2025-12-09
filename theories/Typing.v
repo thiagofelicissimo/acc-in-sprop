@@ -39,17 +39,24 @@ Definition Ru (l1 l2 : level) : level :=
 
 Parameter assm_sig : list term.
 
+Reserved Notation "Γ ∋< l > x : T" (at level 50, l, x, T at next level).
 Reserved Notation "Γ ⊢< l > t : T" (at level 50, l, t, T at next level).
 Reserved Notation "Γ ⊢< l > t ≡ u : T" (at level 50, l, t, u, T at next level).
 Reserved Notation "⊢ Γ" (at level 50).
+
+Inductive varty : ctx → nat → level → term → Prop :=
+| vartyO Γ l A : Γ ,, (l , A) ∋< l > 0 : S ⋅ A
+| vartyS Γ i j A B x : Γ ∋< i > x : A → Γ ,, (j, B) ∋< i > S x : S ⋅ A
+
+where "Γ ∋< l > x : T" := (varty Γ x l T).
 
 Inductive typing : ctx -> level -> term → term → Prop :=
 
 | type_var :
     ∀ Γ x l A,
       ⊢ Γ ->
-      nth_error Γ x = Some (l , A) →
-      (Γ ⊢< l > (var x) : ((plus (S x)) ⋅ A))
+      Γ ∋< l > x : A →
+      Γ ⊢< l > (var x) : A
 
 | type_sort :
     ∀ Γ l,
@@ -223,9 +230,9 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_var :
     ∀ Γ x l A,
-      nth_error Γ x = Some (l , A) →
+      Γ ∋< l > x : A →
       ⊢ Γ ->
-      (Γ ⊢< l > (var x) ≡ (var x) : ((plus (S x)) ⋅ A))
+      Γ ⊢< l > var x ≡ var x : A
 
 | conv_sort :
     ∀ Γ l,
@@ -301,8 +308,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let A_wk := (S >> S) ⋅ A in
     let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
-    let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
-    Γ ⊢< prop > p ≡ p' : Pi i prop A (Pi prop prop R' acc_wk) ->
+    let RR := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
+    Γ ⊢< prop > p ≡ p' : Pi i prop A (Pi prop prop RR acc_wk) ->
     Γ ⊢< prop > accin i A R a p ≡ accin i A' R' a' p' : acc i A R a
 
 | conv_accinv :
@@ -495,19 +502,29 @@ and   "Γ ⊢< l > t ≡ u : A" := (conversion Γ l t u A).
 
 Scheme typing_mut := Induction for typing Sort Prop
 with conversion_mut := Induction for conversion Sort Prop.
-Combined Scheme typing_conversion_mutind from typing_mut, conversion_mut.
+Combined Scheme typing_mutind from typing_mut, conversion_mut.
+
+Reserved Notation "Γ ⊢r ρ : Δ" (at level 50, ρ, Δ at next level).
+
+Inductive WellRen (Γ : ctx) (ρ : nat → nat) : ctx → Prop :=
+| well_rempty : Γ ⊢r ρ : ∙
+| well_rcons Δ l A :
+  Γ ⊢r (↑ >> ρ) : Δ →
+  Γ ∋< l > ρ 0 : (S >> ρ) ⋅ A →
+  Γ ⊢r ρ : Δ ,, (l , A)
+where "Γ ⊢r ρ : Δ" := (WellRen Γ ρ Δ).
 
 Reserved Notation "Γ ⊢s σ : Δ" (at level 50, σ, Δ at next level).
 
 Reserved Notation "Γ ⊢s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).
 
 Inductive WellSubst (Γ : ctx) : ctx -> (nat -> term) -> Prop :=
-  | well_sempty (σ : nat -> term) :
-    Γ ⊢s σ : ∙
-  | well_scons (σ : nat -> term) (Δ : ctx) l (A : term) :
-    Γ ⊢s (↑ >> σ) : Δ ->
-    Γ ⊢< l > σ var_zero : A <[↑ >> σ] ->
-    Γ ⊢s σ : (Δ ,, (l , A))
+| well_sempty (σ : nat -> term) :
+  Γ ⊢s σ : ∙
+| well_scons (σ : nat -> term) (Δ : ctx) l (A : term) :
+  Γ ⊢s (↑ >> σ) : Δ ->
+  Γ ⊢< l > σ 0 : A <[↑ >> σ] ->
+  Γ ⊢s σ : (Δ ,, (l , A))
 where "Γ ⊢s σ : Δ" := (WellSubst Γ Δ σ).
 
 Inductive ConvSubst (Γ : ctx) : ctx -> (nat -> term) -> (nat -> term) -> Prop :=
@@ -520,7 +537,7 @@ where "Γ ⊢s σ ≡ τ : Δ" := (ConvSubst Γ Δ σ τ).
 
 Reserved Notation "⊢ Γ ≡ Δ" (at level 50, Δ at next level).
 
-Inductive ConvCtx : ctx -> ctx -> Type :=
+Inductive ConvCtx : ctx -> ctx -> Prop :=
 | conv_cempty : ⊢ ∙ ≡ ∙
 | conv_ccons Γ A Δ B l :
   ⊢ Γ ≡ Δ ->

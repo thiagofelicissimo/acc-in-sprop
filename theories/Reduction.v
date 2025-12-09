@@ -179,11 +179,11 @@ Qed.
 Lemma red_to_conv Γ l t u A :
     Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
 Proof.
-    intros. induction H; eauto using conversion, refl_ty.
+    intros. induction H; eauto using conversion, conv_refl.
     - eapply conv_trans. eapply conv_app.
-      1,2:(eapply refl_ty; eauto using validity_conv_left).
-      2: eauto using refl_ty.
-      eapply conv_conv. eapply conv_lam; eauto using refl_ty, conv_sym, conv_ty_in_ctx_conv, type_conv.
+      1,2:(eapply conv_refl; eauto using validity_conv_left).
+      2: eauto using conv_refl.
+      eapply conv_conv. eapply conv_lam; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv.
       eapply conv_pi; eauto using conv_ty_in_ctx_conv, conv_sym.
       eauto using conv_beta, validity_conv_left.
     - eapply conv_cast_refl; eauto using conv_nat, validity_ty_ctx.
@@ -233,7 +233,7 @@ Notation "Γ ⊢< l > t -->>! u : T" := (redd_whnf Γ l t u T) (at level 50, l, 
 Lemma redd_to_conv Γ l t u A :
     Γ ⊢< l > t -->> u : A -> Γ ⊢< l > t ≡ u : A.
 Proof.
-    intros. induction H; eauto using refl_ty, conv_trans, red_to_conv.
+    intros. induction H; eauto using conv_refl, conv_trans, red_to_conv.
 Qed.
 
 Lemma redd_whnf_to_conv Γ l t u A :
@@ -304,7 +304,7 @@ Proof.
     - eapply redd_refl. eauto using type_rec.
     - eapply redd_step; eauto using red_rec.
       eapply redd_conv. eapply IHredd; eauto.
-      eauto 6 using subst, refl_ty, red_to_conv, conv_sym, aux_subst.
+      eauto 6 using subst, conv_refl, red_to_conv, conv_sym, aux_subst.
 Qed.
 
 
@@ -319,7 +319,7 @@ Proof.
     dependent induction H2.
     - eapply red_to_redd. eapply red_rec_zero; eauto.
     - eapply redd_step. eapply red_conv. eapply red_rec; eauto.
-      eauto 7 using subst, refl_ty, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
+      eauto 7 using subst, conv_refl, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
       eapply IHredd; eauto.
 Qed.
 
@@ -334,7 +334,7 @@ Proof.
     dependent induction H2.
     - eapply red_to_redd. eapply type_inv_succ' in H2 as (_ & nWt & _). eapply red_rec_succ; eauto.
     - eapply redd_step. eapply red_conv. eapply red_rec; eauto.
-      eauto 7 using subst, refl_ty, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
+      eauto 7 using subst, conv_refl, redd_to_conv, red_to_conv, conv_trans, aux_subst, conv_sym.
       eapply IHredd; eauto.
 Qed.
 
@@ -598,7 +598,7 @@ Lemma sim_to_conv Γ l t u A :
     Γ ⊢< l > t ~ u : A ->
     Γ ⊢< l > t ≡ u : A.
 Proof.
-    intros. induction H; eauto using conversion, refl_ty.
+    intros. induction H; eauto using conversion, conv_refl.
 Qed.
 
 Lemma aconv_conv Γ l t u T T' :
@@ -619,7 +619,7 @@ Proof.
     intros. induction H; eauto using ann_conv.
     eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
     eapply aconv_conv; eauto using conv_pi.
-    eauto using conv_trans, subst, aux_subst, refl_ty.
+    eauto using conv_trans, subst, aux_subst, conv_refl.
 Qed.
 
 Lemma sim_left_red Γ l t t' u A :
@@ -635,15 +635,15 @@ Proof.
       + eapply IHann_conv in H4 as (u' & red & sim).
         eexists. split.
         eapply red_conv. eapply red_app'; eauto using type_conv, red_conv, conv_pi, conv_sym, conv_ty_in_ctx_conv.
-        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+        eapply subst; eauto using aux_subst, conv_refl, conv_sym.
         eapply aconv_app; eauto.
       + dependent destruction H1. eexists.
         split. eapply red_conv.
         eapply red_beta'; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
-        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+        eapply subst; eauto using aux_subst, conv_refl, conv_sym.
         eapply aconv_refl.
         eapply validity_conv_left.
-        eapply subst; eauto using aux_subst, refl_ty, conv_sym.
+        eapply subst; eauto using aux_subst, conv_refl, conv_sym.
       + eapply IHred in H1 as (v & red & sim); eauto using conv_trans.
         eexists. split; eauto using red_conv, aconv_conv.
 Qed.

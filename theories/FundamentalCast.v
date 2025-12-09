@@ -112,7 +112,7 @@ Proof.
     - eapply redd_refl; eauto using type_cast.
     - eapply redd_step. eapply red_cast1; eauto.
       eapply IHA_redd_A';
-      eauto 7 using type_conv, red_to_conv, refl_ty,
+      eauto 7 using type_conv, red_to_conv, conv_refl,
       conv_obseq, conv_sym, conv_sort, validity_ty_ctx.
 Qed.
 
@@ -130,7 +130,7 @@ Proof.
     - eapply redd_step. eapply red_cast2; eauto.
       eapply redd_conv; eauto using red_to_conv, conv_sym.
       eapply IHB_redd_B';
-      eauto 7 using type_conv, red_to_conv, refl_ty,
+      eauto 7 using type_conv, red_to_conv, conv_refl,
       conv_obseq, conv_sym, conv_sort, validity_ty_ctx.
 Qed.
 
@@ -148,7 +148,7 @@ Proof.
     eapply redd_trans.
     eapply redd_cast2;
     eauto 9 using type_conv, redd_to_conv, conv_obseq, validity_ty_ctx,
-    conv_sort, refl_ty, validity_conv_left, type_nat.
+    conv_sort, conv_refl, validity_conv_left, type_nat.
     eapply red_to_redd. eapply red_conv; eauto using redd_to_conv, conv_sym.
     eapply red_cast_nat;
     eauto 7 using type_conv, redd_to_conv,
@@ -169,7 +169,7 @@ Proof.
     eapply redd_trans.
     eapply redd_cast2;
     eauto 9 using type_conv, redd_to_conv, conv_obseq, validity_ty_ctx,
-    conv_sort, refl_ty, validity_conv_left, type_nat.
+    conv_sort, conv_refl, validity_conv_left, type_nat.
     eapply red_to_redd. eapply red_conv; eauto using redd_to_conv, conv_sym.
     eapply red_cast_sort;
     eauto 7 using type_conv, redd_to_conv,
@@ -203,7 +203,7 @@ Proof.
       eapply redd_trans.
       eapply redd_cast2;
       eauto 9 using validity_conv_right, redd_to_conv, type_conv, conv_obseq,
-        validity_ty_ctx, conv_sort, refl_ty, validity_conv_left.
+        validity_ty_ctx, conv_sort, conv_refl, validity_conv_left.
       eapply red_to_redd.
       eapply red_conv.
       eapply red_cast_pi; eauto 7 using type_conv, redd_to_conv, conv_obseq, validity_ty_ctx, conv_sort.
@@ -213,7 +213,7 @@ Proof.
     eapply red_to_redd.
     eapply redd_to_conv, validity_conv_right, type_inv_app' in H as (_ & _ & _ & H & _).
     eapply type_inv_lam' in H as (_ & _ & _ & H & _).
-    eapply red_beta'; eauto using refl_ty.
+    eapply red_beta'; eauto using conv_refl.
 
     unfold res', app', s.
     simpl. f_equal.
@@ -452,7 +452,7 @@ Proof.
       assert (ϵS (cast i S2 S1 (injpi1 i (ty k) S1 S2 T1 T2 e) s1) s1).
       { eapply LR_trans_tm  in ϵs11'; eauto.
         eapply LR_sym_tm; eauto.
-        eapply prefundamental_cast; eauto using LR_escape_tm, LR_sym, refl_ty. }
+        eapply prefundamental_cast; eauto using LR_escape_tm, LR_sym, conv_refl. }
       clear ϵs11'. rename H5 into ϵs11'.
 
       eapply H4 in ϵs11' as ϵs11''.
@@ -503,7 +503,7 @@ Proof.
     rasimpl. eapply LR_trans_tm; eauto.
     unshelve eapply prefundamental_cast_refl; eauto.
     eapply LR_sym_tm in LR_a as temp; eauto. eapply LR_trans_tm in temp; eauto.
-    eapply validity_conv_left, subst; eauto using refl_ty, LR_subst_escape.
+    eapply validity_conv_left, subst; eauto using conv_refl, LR_subst_escape.
 Qed.
 
 
@@ -545,7 +545,7 @@ Proof.
   apply validity_ty_ty in H as T_Wt.
   split. auto.
   dependent induction H; eauto.
-  - repeat split; eauto using refl_ty.
+  - repeat split; eauto using conv_refl.
   - edestruct IHtyping as (AWt & BWt & eWt & aWt & l_eq & conv); eauto using validity_conv_left.
     rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
 Qed.
@@ -577,8 +577,8 @@ Proof.
     unfold LRv. intros σ1 σ2 ϵσ.
     assert (Γ ⊨< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f
             ≡ cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f : (Pi i (ty n) A2 B2)).
-    eapply fundamental_cast; eauto using refl_ty, conv_pi'.
-    1,2:eapply fundamental_pi; eauto using refl_ty.
+    eapply fundamental_cast; eauto using conv_refl, conv_pi'.
+    1,2:eapply fundamental_pi; eauto using conv_refl.
     eapply H in ϵσ as temp.
     destruct temp as (LR_pi & lr & ϵcast).
     eexists. split. eauto.
@@ -598,5 +598,5 @@ Proof.
         all:reflexivity. }
     assert (Pi i (ty n) (A2 <[ σ2]) (B2 <[ up_term_term σ2]) = (Pi i (ty n) A2 B2) <[ σ2]) by (rasimpl; reflexivity).
     rewrite H0.
-    eapply subst; eauto using conv_pi, refl_ty, LR_subst_escape, LR_subst_sym.
+    eapply subst; eauto using conv_pi, conv_refl, LR_subst_escape, LR_subst_sym.
 Qed.

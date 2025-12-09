@@ -109,7 +109,7 @@ Proof.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_zero; eauto using validity_conv_left.
       eapply redd_conv. eapply redd_rec_zero;
-      eauto 8 using validity_conv_right, subst, aux_subst, type_zero, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, refl_ty.
+      eauto 8 using validity_conv_right, subst, aux_subst, type_zero, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, conv_refl.
       eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm, prefundamental_nat, ϵzero'.
 
     - pose (LR' := H2 _ _ (ϵsucc' H7)).
@@ -123,7 +123,7 @@ Proof.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_succ; eauto using validity_conv_left.
       eapply redd_conv.
-      eapply redd_rec_succ; eauto 8 using validity_conv_right, subst, aux_subst, type_zero, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, refl_ty.
+      eapply redd_rec_succ; eauto 8 using validity_conv_right, subst, aux_subst, type_zero, type_conv, ctx_typing, aux_subst_2, conv_ty_in_ctx_conv, refl_subst, conv_refl.
       eapply subst; eauto using conv_sym, aux_subst, ϵsucc', prefundamental_nat, LR_escape_tm.
 Qed.
 
@@ -181,7 +181,7 @@ Lemma fundamental_rec_zero Γ k P p_zero p_succ :
 Proof.
     intros WtP LR_P Wtpzero LR_pzero Wtpsucc LR_psucc.
     unfold LRv. intros σ1 σ2 ϵσ.
-    eapply fundamental_rec in ϵσ as temp; eauto using refl_ty, fundamental_zero, conv_zero, validity_ty_ctx.
+    eapply fundamental_rec in ϵσ as temp; eauto using conv_refl, fundamental_zero, conv_zero, validity_ty_ctx.
     destruct temp as (ϵPzero & LR_Pzero & ϵpzero). exists ϵPzero. split; eauto.
     eapply LR_redd_tm; eauto.
     eauto using LR_escape_tm, validity_conv_left, redd_refl.
@@ -189,7 +189,7 @@ Proof.
     asimpl in ϵpzero. eapply type_inv_rec' in ϵpzero as (_ & PWt & pzeroWt & psuccWt & _ & _ & typeconv).
     eapply red_to_redd.
     eapply red_conv. 2:eapply conv_sym; eauto.
-    eapply red_rec_zero; eauto using refl_ty.
+    eapply red_rec_zero; eauto using conv_refl.
 Qed.
 
 Lemma fundamental_rec_succ Γ k P p_zero p_succ t :
@@ -205,8 +205,8 @@ Lemma fundamental_rec_succ Γ k P p_zero p_succ t :
 Proof.
     intros WtP LR_P Wtpzero LR_pzero Wtpsucc LR_psucc Wtt LR_t.
     unfold LRv. intros σ1 σ2 ϵσ.
-    assert (Γ ⊨< ty 0 > succ t ≡ succ t : Nat) as LR_succt by eauto using fundamental_succ, refl_ty.
-    eapply fundamental_rec in LR_succt as temp; eauto using refl_ty, conv_succ.
+    assert (Γ ⊨< ty 0 > succ t ≡ succ t : Nat) as LR_succt by eauto using fundamental_succ, conv_refl.
+    eapply fundamental_rec in LR_succt as temp; eauto using conv_refl, conv_succ.
     eapply temp in ϵσ as temp2. clear temp.
     destruct temp2 as (ϵPSt & LR_PSt & ϵst).
     eexists. split; eauto.
@@ -218,6 +218,6 @@ Proof.
     eapply red_to_redd. eapply red_conv. 2:eapply conv_sym;eauto.
     eapply type_inv_succ in tWt.
     eapply red_meta_conv.
-    eapply red_rec_succ; eauto using refl_ty.
+    eapply red_rec_succ; eauto using conv_refl.
     all:rasimpl; reflexivity.
 Qed.

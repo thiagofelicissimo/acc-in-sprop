@@ -236,9 +236,9 @@ Proof.
                eauto using conv_sym, conv_trans.
             ++ intros.
                destruct (H1 s1 s2 ϵs). eapply H7; eauto.
-               +++ eapply aconv_app; eauto 7 using validity_conv_left, refl_ty, LR_escape_tm, redd_whnf_to_conv, aconv_conv, LR_escape_ty.
+               +++ eapply aconv_app; eauto 7 using validity_conv_left, conv_refl, LR_escape_tm, redd_whnf_to_conv, aconv_conv, LR_escape_ty.
                +++ eapply aconv_conv; eauto using LR_escape_tm, subst, aux_subst, conv_sym.
-                   eapply aconv_app; eauto 9 using validity_conv_right, refl_ty, conv_ty_in_ctx_ty, LR_escape_tm, LR_escape_ty, type_conv.
+                   eapply aconv_app; eauto 9 using validity_conv_right, conv_refl, conv_ty_in_ctx_ty, LR_escape_tm, LR_escape_ty, type_conv.
                    eauto using aconv_conv, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi, LR_escape_ty.
 Qed.
 
@@ -350,13 +350,13 @@ Proof.
             { intros. eapply H1. rewrite H2. eauto. eauto. }
         eapply H5; eauto. eapply H2 in ϵs.
         eapply LR_app_ann_left. 2:eapply LR_app_ann_right.
-        all:eauto using validity_conv_left, refl_ty, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
+        all:eauto using validity_conv_left, conv_refl, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
       + intros. destruct H3. split. eauto. intros.
         assert (forall s1 s2, ϵS s1 s2 -> ϵT' s1 s2 <~> ϵT s1 s2).
             { intros. symmetry. eapply H1. eauto. eapply LR_T'. rewrite <- H2. eauto. }
         eapply H5; eauto.  eapply H2 in ϵs.
         eapply LR_app_ann_left. 2:eapply LR_app_ann_right.
-        all:eauto using validity_conv_left, refl_ty, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
+        all:eauto using validity_conv_left, conv_refl, LR_escape_ty, conv_sym, conv_trans, conv_ty_in_ctx_conv.
 Qed.
 
 

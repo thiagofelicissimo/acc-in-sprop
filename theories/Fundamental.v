@@ -54,7 +54,7 @@ Proof.
     eapply LR_prop.
     2:reflexivity.
     eauto 6 using subst, validity_conv_left, validity_ty_ty,
-        refl_ty, LR_subst_escape.
+        conv_refl, LR_subst_escape.
 Qed.
 
 (* used to eliminate the condition
@@ -76,21 +76,21 @@ Theorem fundamental_ty :
 Proof.
     apply typing_conversion_mutind; intros.
     all: dependent destruction _temp.
-    all: try erewrite helper_fund in *; eauto using refl_ty.
+    all: try erewrite helper_fund in *; eauto using conv_refl.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
-    - destruct j. eauto using fundamental_pi, refl_ty. eauto using fundamental_prop_ty.
-    - destruct j; dependent destruction x. eauto using fundamental_lam, refl_ty.
-    - eauto 6 using fundamental_app, refl_ty.
+    - destruct j. eauto using fundamental_pi, conv_refl. eauto using fundamental_prop_ty.
+    - destruct j; dependent destruction x. eauto using fundamental_lam, conv_refl.
+    - eauto 6 using fundamental_app, conv_refl.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
-    - eauto using fundamental_succ, refl_ty.
-    - eauto 6 using fundamental_rec, refl_ty.
+    - eauto using fundamental_succ, conv_refl.
+    - eauto 6 using fundamental_rec, conv_refl.
     - eauto using fundamental_prop_ty.
-    - eauto 9 using fundamental_accel, refl_ty.
+    - eauto 9 using fundamental_accel, conv_refl.
     - eauto using fundamental_prop_ty.
-    - eauto 6 using fundamental_cast, refl_ty.
-    - eauto using fundamental_conv, refl_ty.
+    - eauto 6 using fundamental_cast, conv_refl.
+    - eauto using fundamental_conv, conv_refl.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty.
@@ -99,7 +99,7 @@ Proof.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
     - eauto using fundamental_succ.
-    - eauto 6 using fundamental_rec, refl_ty.
+    - eauto 6 using fundamental_rec, conv_refl.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_accel.
     - eauto using fundamental_prop_ty.
@@ -123,8 +123,8 @@ Qed.
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
     intros. destruct l.
-    eapply (proj1 fundamental_ty) in H; eauto using refl_ty.
-    eapply refl_ty in H. eapply fundamental_prop in H. eauto.
+    eapply (proj1 fundamental_ty) in H; eauto using conv_refl.
+    eapply conv_refl in H. eapply fundamental_prop in H. eauto.
 Qed.
 
 Fixpoint mk_Nat k :=
