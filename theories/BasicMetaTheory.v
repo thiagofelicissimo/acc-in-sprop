@@ -34,37 +34,28 @@ Proof.
   - cbn - ["<?"] in *. rewrite Nat.ltb_lt in *. lia.
 Qed.
 
-Lemma typing_conversion_scoped :
-  (∀ Γ l t A,
-    Γ ⊢< l > t : A →
-    scoped (length Γ) t = true
-  ) ∧
-  (∀ Γ l u v A,
-    Γ ⊢< l > u ≡ v : A →
-    scoped (length Γ) u = true ∧ scoped (length Γ) v = true).
+Lemma typing_scoped Γ l t A :
+  Γ ⊢< l > t : A →
+  scoped (length Γ) t = true.
 Proof.
-  apply typing_mutind.
+  induction 1.
   all: try solve [ intros ; cbn - ["<?"] in * ; eauto using varty_scoped ].
-  all: try solve [
+  all: solve [
     intros ;
     cbn in * ;
     rewrite ?Bool.andb_true_iff in * ;
     intuition eauto
   ].
-  - intros. cbn in *.
-    rewrite ?Bool.andb_true_iff in *.
-    intuition eauto.
-Admitted.
+Qed.
 
 Lemma typing_closed l t A :
   ∙ ⊢< l > t : A →
   closed t = true.
 Proof.
   intros h.
-  (* eapply typing_scoped with (Γ := ∙).
+  eapply typing_scoped with (Γ := ∙).
   eassumption.
-Qed. *)
-Admitted.
+Qed.
 
 Lemma conv_refl Γ t l A :
   Γ ⊢< l > t : A →
