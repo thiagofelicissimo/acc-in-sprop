@@ -269,6 +269,12 @@ Ltac meta_conv :=
   | |- _ ⊢< _ > _ ≡ _ : _  => eapply meta_conv_conv
   end.
 
+Create HintDb wellren.
+
+Hint Resolve WellRen_up WellRen_comp WellRen_S : wellren.
+
+Hint Extern 100 (_ = _) => rasimpl ; reflexivity : wellren.
+
 Ltac ren_ih :=
   lazymatch goal with
   | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : ?Γ → Δ ⊢< _ > ρ ⋅ ?t : _ |- _ ⊢< _ > _ ⋅ ?t : _ =>
@@ -276,7 +282,7 @@ Ltac ren_ih :=
       eapply ih ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         ren_ih
-      | eauto using WellRen_up
+      | eauto with wellren
       ]
     | rasimpl ; reflexivity
     ]
@@ -327,12 +333,7 @@ Proof.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    + rasimpl. ren_ih.
-      eauto using WellRen_up, WellRen_comp, WellRen_S.
-    + change upRen_term_term with up_ren.
-      eauto using WellRen_up, WellRen_comp, WellRen_S.
-      eapply WellRen_up. 2: rasimpl. 2: reflexivity.
-      eauto using WellRen_up, WellRen_comp, WellRen_S.
+    rasimpl. ren_ih.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
