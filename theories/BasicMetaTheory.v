@@ -263,6 +263,35 @@ Proof.
   intros. eapply validity_ctx in H; eauto.
 Qed.
 
+Ltac meta_conv :=
+  lazymatch goal with
+  | |- _ ⊢< _ > _ : _  => eapply meta_conv
+  | |- _ ⊢< _ > _ ≡ _ : _  => eapply meta_conv_conv
+  end.
+
+Ltac ren_ih :=
+  lazymatch goal with
+  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : ?Γ → Δ ⊢< _ > ρ ⋅ ?t : _ |- _ ⊢< _ > _ ⋅ ?t : _ =>
+    eapply meta_conv ; [
+      eapply ih ; [
+        repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
+        ren_ih
+      | eauto using WellRen_up
+      ]
+    | rasimpl ; reflexivity
+    ]
+  | |- _ => eauto
+  end.
+
+Ltac typing_ren_tac :=
+  intros ; cbn in * ;
+  meta_conv ; [
+    econstructor ;
+    ren_ih
+  | rasimpl ; reflexivity
+  ].
+
+
 Lemma typing_conversion_ren :
   (∀ Γ l t A,
     Γ ⊢< l > t : A →
@@ -283,7 +312,8 @@ Proof.
   all: try solve [
     intros ; try econstructor ; eauto using WellRen_up, ctx_cons
   ].
-  all: try solve [
+  all: try solve [ typing_ren_tac ].
+  (* all: try solve [
     intros ; cbn in * ; (eapply meta_conv_conv + eapply meta_conv) ; [
       econstructor ; solve [
         (eapply meta_conv_conv + eapply meta_conv) ;
@@ -292,16 +322,17 @@ Proof.
       ]
     | rasimpl; reflexivity
     ]
-  ].
+  ]. *)
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
-  - intros. cbn in *.
-    eapply meta_conv.
-    { econstructor. all: eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons, type_nat, type_zero.
-      all: admit.
-    }
-    rasimpl. reflexivity.
+  - typing_ren_tac.
+    + rasimpl. ren_ih.
+      eauto using WellRen_up, WellRen_comp, WellRen_S.
+    + change upRen_term_term with up_ren.
+      eauto using WellRen_up, WellRen_comp, WellRen_S.
+      eapply WellRen_up. 2: rasimpl. 2: reflexivity.
+      eauto using WellRen_up, WellRen_comp, WellRen_S.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
