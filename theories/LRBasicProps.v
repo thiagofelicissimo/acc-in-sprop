@@ -32,7 +32,7 @@ Proof.
     - intros. destruct H0 as (H0 & H0'). split; auto.
       intros. eapply redd_whnf_to_conv in A1_red_pi, A2_red_pi.
       eapply conv_trans. eapply A1_red_pi. eapply conv_trans. 2:(eapply conv_sym; eapply A2_red_pi).
-      eapply conv_pi; eauto.
+      eapply conv_pi'; eauto.
       intros. apply H in H2. destruct H2. eauto using conv_conv, redd_whnf_to_conv, conv_sym.
 Qed.
 
@@ -98,7 +98,7 @@ Proof.
       intros. eapply (proj2 (H1 _ _ ϵs)); eauto.
       eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left.
       eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv, LR_escape_ty.
-      eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv, LR_escape_ty.
+      eapply redd_conv; eauto. eauto using conv_trans, conv_pi', redd_whnf_to_conv, LR_escape_ty.
       eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
 Qed.
 
@@ -155,7 +155,7 @@ Proof.
       intros. eapply (proj2 (H1 _ _ ϵs)); eauto.
       eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left.
       eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv, LR_escape_ty.
-      eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv, LR_escape_ty.
+      eapply redd_conv; eauto. eauto using conv_trans, conv_pi', redd_whnf_to_conv, LR_escape_ty.
       eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
 Qed.
 
@@ -239,7 +239,7 @@ Proof.
                +++ eapply aconv_app; eauto 7 using validity_conv_left, conv_refl, LR_escape_tm, redd_whnf_to_conv, aconv_conv, LR_escape_ty.
                +++ eapply aconv_conv; eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
                    eapply aconv_app; eauto 9 using validity_conv_right, conv_refl, conv_ty_in_ctx_ty, LR_escape_tm, LR_escape_ty, type_conv.
-                   eauto using aconv_conv, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi, LR_escape_ty.
+                   eauto using aconv_conv, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi', LR_escape_ty.
 Qed.
 
 
@@ -492,11 +492,11 @@ Proof.
         eapply LR_iff_rel; eauto using ϵT_iff_eT.
         split; eauto.
       + intros; split; intros; rewrite H in *.
-        ++  destruct H0. split; eauto using conv_pi, conv_sym, conv_conv, LR_escape_ty.
+        ++  destruct H0. split; eauto using conv_pi', conv_sym, conv_conv, LR_escape_ty.
             intros.  apply ϵS'_to_ϵS in ϵs as ϵs'.
             destruct (H1 _ _ ϵs') as (ϵT' & LR_T' & ϵT_iff_ϵT').
             rewrite <- ϵT_iff_eT; eauto. rewrite <- ϵT_iff_ϵT'. eauto.
-        ++  destruct H0. split; eauto 6 using conv_pi, conv_sym, conv_conv, LR_escape_ty.
+        ++  destruct H0. split; eauto 6 using conv_pi', conv_sym, conv_conv, LR_escape_ty.
             intros.
             destruct (H1 _ _ ϵs) as (ϵT' & LR_T' & ϵT_iff_ϵT').
             eapply H2 in LR_T'; eauto. rewrite ϵT_iff_ϵT'. eauto.
@@ -580,7 +580,7 @@ Proof.
         split; eauto.
       + intros. rewrite H, R'_iff in *.
         destruct H0, H2.
-        split; eauto 6 using conv_trans, conv_conv, conv_sym, conv_pi, conv_ty_in_ctx_conv, LR_escape_ty.
+        split; eauto 6 using conv_trans, conv_conv, conv_sym, conv_pi', conv_ty_in_ctx_conv, LR_escape_ty.
         intros.
         assert (ϵS s1 s2) as ϵs' by eauto. pose (LR_T_1 := LR_T _ _ ϵs').
         assert (ϵS' s2 s2) as ϵs'' by eauto. pose (LR_T_2 := LR_T' _ _ ϵs'').

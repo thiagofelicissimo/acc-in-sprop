@@ -187,14 +187,14 @@ Proof.
     generalize q1 q2 a2 ϵa H9 H10. clear q1 q2 a2 ϵa H9 H10.
     induction H11. rename x into a1. intros.
 
-    assert (∙ ⊢< ty k> accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp
-        by eauto using conv_accel, validity_conv_right.
+    assert (∙ ⊢< ty k> accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp.
+    { eauto using conv_accel, validity_conv_right. admit. (* Nedd conv_accel' *) }
     eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
 
     eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
     - eauto 6 using red_to_redd, red_accel', validity_conv_left.
     - eapply red_to_redd; eapply red_conv; eauto 7 using red_accel', validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
-      admit.
+      all: admit.
     - unfold ϵB. all:clear ϵB. intros; subst.
       eapply LR_irred_tm; eauto.
       1,2:shelve.
@@ -208,8 +208,10 @@ Proof.
         - eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
         - eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, substs_one_4, subst_conv.
         1: admit.
-        eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm. }
+        eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm. admit. }
       Unshelve.
+      + shelve.
+      + shelve.
       + rasimpl. eapply (aaux A1 R1 P1); eauto using validity_conv_left, LR_escape_tm, conv_refl. substify. rasimpl. reflexivity.
 
       + eapply redd_conv.

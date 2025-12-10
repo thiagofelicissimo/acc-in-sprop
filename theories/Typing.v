@@ -249,12 +249,14 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_pi :
     ∀ Γ i j A B A' B',
+      Γ ⊢< Ax i > A : Sort i →
       Γ ⊢< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j →
       Γ ⊢< Ax (Ru i j) > Pi i j A B ≡ Pi i j A' B' : Sort (Ru i j)
 
 | conv_lam :
     ∀ Γ i j A B t A' B' t',
+      Γ ⊢< Ax i > A : Sort i →
       Γ ⊢< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
       Γ ,, (i , A) ⊢< j > t ≡ t' : B →
@@ -262,6 +264,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_app :
     ∀ Γ i j A B t u A' B' t' u',
+      Γ ⊢< Ax i > A : Sort i →
       Γ ⊢< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
       Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
@@ -286,6 +289,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_rec :
     ∀ Γ l P p_zero p_succ t P' p_zero' p_succ' t',
+      Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
       Γ ,, (ty 0 , Nat) ⊢< Ax l > P ≡ P' : Sort l ->
       Γ ⊢< l > p_zero ≡ p_zero' : P <[ zero .. ] ->
       Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ ≡ p_succ' : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
@@ -295,6 +299,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_acc :
     ∀ Γ i A A' R R' a a',
+    Γ ⊢< Ax i > A : Sort i ->
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢< i > a ≡ a' : A ->
@@ -302,6 +307,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_accin :
     ∀ Γ i A A' R R' a a' p p',
+    Γ ⊢< Ax i > A : Sort i ->
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢< i > a ≡ a' : A ->
@@ -314,6 +320,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_accinv :
     ∀ Γ i A A' R R' a a' p p' b b' r r',
+    Γ ⊢< Ax i > A : Sort i ->
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢< i > a ≡ a' : A ->
@@ -324,6 +331,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_accel :
     ∀ Γ i l A A' R R' a a' q q' P P' p p',
+    Γ ⊢< Ax i > A : Sort i ->
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
@@ -352,6 +360,7 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_J :
     ∀ Γ l A A' a a' P P' p p' b b' e e',
+      Γ ⊢< Ax l > A : Sort l ->
       Γ ⊢< Ax l > A ≡ A' : Sort l ->
       Γ ⊢< l > a ≡ a' : A ->
       Γ ,, (l , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
@@ -370,8 +379,10 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_injpi1 :
   ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e',
+    Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
     Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
     Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
     Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
@@ -379,8 +390,10 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_injpi2 :
   ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
+    Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
     Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
     Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
     Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->

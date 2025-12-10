@@ -229,12 +229,12 @@ Proof.
   intros ? ->. auto.
 Qed.
 
-Lemma meta_lvl Γ t l l' A :
-  Γ ⊢< l > t : A →
-  l = l' →
-  Γ ⊢< l' > t : A.
+Lemma meta_lvl Γ t A i j :
+  Γ ⊢< i > t : A →
+  i = j →
+  Γ ⊢< j > t : A.
 Proof.
-  intros ? ->. auto.
+  intros ? ->. assumption.
 Qed.
 
 Lemma meta_conv_conv Γ u v l A B :
@@ -363,22 +363,13 @@ Proof.
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
-  - typing_ren_tac. admit. (* Missing hyp *)
-  - typing_ren_tac. all: admit.
-  - typing_ren_tac. admit.
-  - typing_ren_tac. admit.
-  - typing_ren_tac. all: admit.
-  - typing_ren_tac. 1,2: admit.
+  - typing_ren_tac.
     subst A_wk R_wk RR. rasimpl. reflexivity.
-  - typing_ren_tac. all: admit.
-  - typing_ren_tac. 1-4: admit.
+  - typing_ren_tac.
     + admit.
     + eapply WellRen_up. 1: eauto with wellren.
       subst R_ P_ B P''. rasimpl. reflexivity.
     + subst P''. rasimpl. reflexivity.
-  - typing_ren_tac. admit.
-  - typing_ren_tac. all: admit.
-  - typing_ren_tac. all: admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
@@ -571,14 +562,6 @@ Proof.
   apply well_scons_alt.
   - apply subst_id; eauto using validity_ty_ctx.
   - rasimpl. assumption.
-Qed.
-
-Lemma meta_lvl Γ t A i j :
-  Γ ⊢< i > t : A →
-  i = j →
-  Γ ⊢< j > t : A.
-Proof.
-  intros ? ->. assumption.
 Qed.
 
 Lemma WellSubst_conv Γ Δ Ξ σ :
@@ -1314,23 +1297,25 @@ Proof.
 Qed.
 
 Lemma conv_app' Γ i j A B_ B t u A' B' t' u' :
-      Γ ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
-      Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
-      Γ ⊢< i > u ≡ u' : A →
-      B_ = B <[ u .. ] →
-      Γ ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B_.
+  Γ ⊢< Ax i > A ≡ A' : Sort i →
+  Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
+  Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
+  Γ ⊢< i > u ≡ u' : A →
+  B_ = B <[ u .. ] →
+  Γ ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B_.
 Proof.
-  intros. subst. eauto using conv_app.
+  intros. subst. eapply conv_app. all: eauto.
+  eapply validity_conv_left. all: eassumption.
 Qed.
 
 Lemma conv_pi' Γ i j l A B A' B' :
-      Γ ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j →
-      l = Ru i j →
-      Γ ⊢< Ax l > Pi i j A B ≡ Pi i j A' B' : Sort l.
+  Γ ⊢< Ax i > A ≡ A' : Sort i →
+  Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j →
+  l = Ru i j →
+  Γ ⊢< Ax l > Pi i j A B ≡ Pi i j A' B' : Sort l.
 Proof.
-  intros. subst. eauto using conv_pi.
+  intros. subst. eapply conv_pi. all: eauto.
+  eapply validity_conv_left. all: eassumption.
 Qed.
 
 Lemma conv_var' Γ x l A T :
@@ -1351,7 +1336,8 @@ Lemma conv_lam' Γ i j A B t A' B' t' l T:
       T = Pi i j A B →
       Γ ⊢< l > lam i j A B t ≡ lam i j A' B' t' : T.
 Proof.
-  intros. subst. eauto using conv_lam.
+  intros. subst. eapply conv_lam. all: eauto.
+  eapply validity_conv_left. all: eassumption.
 Qed.
 
 Lemma conv_sort' l l' Γ T :
