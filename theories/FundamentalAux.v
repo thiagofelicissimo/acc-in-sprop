@@ -117,7 +117,7 @@ Proof.
 Qed.
 
 
-Lemma aux_subst_3 Γ l t u A :
+Lemma substs_one_3 Γ l t u A :
   Γ ⊢< l > t ≡ u : A ->
   Γ ⊢s t .. ≡ u .. : (Γ ,, (l, A)).
 Proof.
@@ -125,7 +125,7 @@ Proof.
   econstructor; rasimpl; eauto using refl_subst, subst_id, validity_ty_ctx, validity_conv_left.
 Qed.
 
-Lemma aux_subst_4 Γ l l' t t' u u' A B :
+Lemma substs_one_4 Γ l l' t t' u u' A B :
   Γ ⊢< l > t ≡ u : A ->
   Γ ⊢< l' > t' ≡ u' : B ->
   Γ ⊢s (t' .: t ..) ≡ (u' .: u ..) : (Γ ,, (l, A) ,, (l', S ⋅ B)).

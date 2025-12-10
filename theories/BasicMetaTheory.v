@@ -675,7 +675,7 @@ Admitted.
 
 
 Theorem pre_subst_conv Γ l t u A Δ σ τ A' :
-  ⊢ Δ ->
+  ⊢ Δ →
   Δ ⊢s σ : Γ ->
   Δ ⊢s σ ≡ τ : Γ ->
   Γ ⊢< l > t : A ->
@@ -684,10 +684,10 @@ Theorem pre_subst_conv Γ l t u A Δ σ τ A' :
   A' = A <[ σ ] ->
   Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : A'.
 Proof.
-  intros. subst.
+  intros hΔ hσ hστ ht hu htu ->.
   eapply conv_trans.
-  1:eapply typing_conversion_subst in H4; eauto.
-  eapply conv_substs; eauto.
+  - eapply typing_conversion_subst in htu. all: eauto.
+  - eapply conv_substs; eauto.
 Qed.
 
 Lemma validity_gen :
@@ -768,7 +768,8 @@ Theorem subst_conv Γ l t u A Δ σ τ A' :
   A' = A <[ σ ] ->
   Δ ⊢< l > t <[ σ ] ≡ u <[ τ ] : A'.
 Proof.
-  intros. eauto using pre_subst_conv, validity_conv_left, validity_conv_right, validity_subst_conv_left.
+  intros.
+  eauto using pre_subst_conv, validity_conv_left, validity_conv_right, validity_subst_conv_left.
 Qed.
 
 

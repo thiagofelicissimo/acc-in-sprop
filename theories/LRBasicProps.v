@@ -99,7 +99,7 @@ Proof.
       eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left.
       eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv, LR_escape_ty.
       eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv, LR_escape_ty.
-      eauto using LR_escape_tm, subst, aux_subst, conv_sym.
+      eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
 Qed.
 
 Lemma LR_irred_ty l A B A' B' R :
@@ -156,7 +156,7 @@ Proof.
       eauto 6 using redd_app, redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left.
       eapply redd_conv. eapply redd_app; eauto 8 using redd_whnf_to_conv, redd_conv, LR_escape_tm, validity_conv_left, validity_conv_right, type_conv, LR_escape_ty.
       eapply redd_conv; eauto. eauto using conv_trans, conv_pi, redd_whnf_to_conv, LR_escape_ty.
-      eauto using LR_escape_tm, subst, aux_subst, conv_sym.
+      eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
 Qed.
 
 Lemma LR_redd_ty l A B A' B' R :
@@ -237,7 +237,7 @@ Proof.
             ++ intros.
                destruct (H1 s1 s2 ϵs). eapply H7; eauto.
                +++ eapply aconv_app; eauto 7 using validity_conv_left, conv_refl, LR_escape_tm, redd_whnf_to_conv, aconv_conv, LR_escape_ty.
-               +++ eapply aconv_conv; eauto using LR_escape_tm, subst, aux_subst, conv_sym.
+               +++ eapply aconv_conv; eauto using LR_escape_tm, subst_conv, substs_one, conv_sym, ctx_nil.
                    eapply aconv_app; eauto 9 using validity_conv_right, conv_refl, conv_ty_in_ctx_ty, LR_escape_tm, LR_escape_ty, type_conv.
                    eauto using aconv_conv, redd_whnf_to_conv, conv_sym, conv_trans, conv_pi, LR_escape_ty.
 Qed.

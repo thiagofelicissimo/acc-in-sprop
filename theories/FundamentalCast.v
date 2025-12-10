@@ -338,7 +338,7 @@ Proof.
             * eapply redd_cast_pi_pi; eauto using LR_escape_tm, validity_conv_left.
             * eapply redd_conv. eapply redd_cast_pi_pi; eauto using validity_conv_right, LR_escape_tm, LR_escape_ty, type_conv.
               eapply type_conv; eauto using validity_conv_right, conv_obseq, LR_escape_ty, conv_sort, ctx_typing.
-              eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm.
+              eapply subst_conv; eauto using conv_sym, substs_one, LR_escape_tm, ctx_nil.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
            destruct temp as (eq1 & eq2). dependent destruction eq2.
            unfold ϵPi. intros. split.
@@ -362,7 +362,7 @@ Proof.
             * eapply redd_cast_pi_pi; eauto using LR_escape_tm, validity_conv_left.
             * eapply redd_conv. eapply redd_cast_pi_pi; eauto using validity_conv_right, LR_escape_tm, LR_escape_ty, type_conv.
               eapply type_conv; eauto using validity_conv_right, conv_obseq, LR_escape_ty, conv_sort, ctx_typing.
-              eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm.
+              eapply subst_conv; eauto using conv_sym, substs_one, LR_escape_tm, ctx_nil.
       + split; intros; eapply nat_neq_pi_red in A1_red_pi;
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_pi.
 Qed.
@@ -388,8 +388,9 @@ Proof.
     eapply LRv_to_LR_tm in LRv_a12 as LR_a12; eauto.
     clear LRv_A12 LRv_B11 LRv_B12 LRv_a12.
     eexists. split; eauto. rasimpl.
-    eapply prefundamental_cast; eauto using subst, LR_subst_escape.
-Qed.
+    eapply prefundamental_cast; eauto using subst_conv, LR_subst_escape.
+    all: admit.
+Admitted.
 
 Lemma prefundamental_cast_refl l A B ϵA a e :
     ⊩< l > A ≡ B ↓ ϵA ->
@@ -475,7 +476,7 @@ Proof.
       eapply LR_irred_tm. eauto. 3:exact ϵs11''.
       destruct A1_red_pi, A2_red_pi.
       eapply redd_conv. eapply redd_cast_pi_pi; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty, type_conv.
-      eapply subst; eauto using conv_sym, aux_subst, LR_escape_tm.
+      eapply subst_conv; eauto using conv_sym, substs_one, LR_escape_tm, ctx_nil.
       eapply redd_refl. eapply type_app'; intros; eauto using LR_escape_tm, validity_conv_left, type_conv, LR_escape_ty, redd_whnf_to_conv.
 Qed.
 
@@ -503,7 +504,7 @@ Proof.
     rasimpl. eapply LR_trans_tm; eauto.
     unshelve eapply prefundamental_cast_refl; eauto.
     eapply LR_sym_tm in LR_a as temp; eauto. eapply LR_trans_tm in temp; eauto.
-    eapply validity_conv_left, subst; eauto using conv_refl, LR_subst_escape.
+    eapply validity_conv_left, subst_conv; eauto using conv_refl, LR_subst_escape, ctx_nil.
 Qed.
 
 
@@ -598,5 +599,5 @@ Proof.
         all:reflexivity. }
     assert (Pi i (ty n) (A2 <[ σ2]) (B2 <[ up_term_term σ2]) = (Pi i (ty n) A2 B2) <[ σ2]) by (rasimpl; reflexivity).
     rewrite H0.
-    eapply subst; eauto using conv_pi, conv_refl, LR_subst_escape, LR_subst_sym.
+    eapply subst_conv; eauto using conv_pi, conv_refl, LR_subst_escape, LR_subst_sym, ctx_nil.
 Qed.

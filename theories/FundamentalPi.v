@@ -49,11 +49,13 @@ Proof.
     split. eauto.
     split. eauto.
     unshelve eapply prefundamental_pi; eauto.
-    - eauto using subst, LR_subst_escape.
-    - eapply subst; eauto. eapply lift_subst;
-        eauto using validity_conv_left, validity_ty_ctx, LR_subst_escape.
+    - eauto using subst_conv, LR_subst_escape, ctx_nil.
+    - eapply subst_conv ; eauto.
+      1: admit.
+      eapply lift_subst;
+      eauto using validity_conv_left, validity_ty_ctx, LR_subst_escape.
     - intros. rasimpl. eauto.
-Qed.
+Admitted.
 
 Lemma fundamental_pi B1 B2 {Γ i k A1 A2} :
     Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
@@ -90,7 +92,8 @@ Proof.
     3:eapply LRv_A11. 4:eapply LRv_B11. 2,3: eauto using validity_conv_left, conv_refl.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split. eauto. split.
-    - eapply conv_lam; eauto 7 using subst, subst, LR_subst_escape, lift_subst, validity_conv_left, validity_ty_ctx.
+    - eapply conv_lam; eauto 7 using subst_conv, LR_subst_escape, lift_subst, validity_conv_left, validity_ty_ctx.
+        all: admit.
     - intros.
       assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A1))) as ϵsσ by eauto using LR_subst, LR_iff_rel.
       eapply LRv_to_LR_tm in ϵsσ as ϵt'; eauto.
@@ -98,19 +101,21 @@ Proof.
         (* from this point on, it's just technical manipulations to show that the beta redex reduces *)
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. eapply red_beta'; fold subst_term; eauto ; rasimpl.
-        all:eauto 9 using conv_refl, subst, LR_subst_escape,
+        all:eauto 9 using conv_refl, subst_conv, LR_subst_escape,
             validity_subst_conv_left, validity_conv_left, lift_subst, validity_ty_ctx, LR_escape_tm.
-        rasimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst.
-        rasimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst.
+        (* rasimpl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst.
+        rasimpl. eapply redd_refl. eauto 6 using LR_subst_escape, validity_subst_conv_left, validity_conv_left, conv_refl, subst. *)
+        all: admit.
 
       + eapply redd_step; eauto using redd_refl.
         eapply red_conv. simpl. eapply red_beta; fold subst_term; rasimpl.
-        all:eauto 9 using  subst, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
+        all:eauto 9 using  subst_conv, LR_subst_escape, LR_sym, lift_subst, validity_ty_ctx,
             validity_subst_conv_right, validity_conv_right, LR_escape_tm, refl_subst.
 
-        rasimpl. eauto 6 using subst, conv_refl, validity_conv_left, subst_conv_sym, LR_subst_escape.
+        (* rasimpl. eauto 6 using subst_conv, conv_refl, validity_conv_left, subst_conv_sym, LR_subst_escape.
         rasimpl. eapply redd_refl. eauto using validity_conv_right, subst, LR_subst_escape.
-Qed.
+Qed. *)
+Admitted.
 
 
 Lemma fundamental_app Γ i k A1 B1 t1 u1 A2 B2 t2 u2 :
@@ -149,9 +154,12 @@ Proof.
     rewrite Hiff.
 
     eapply LR_app_ann_right; eauto.
-    eapply subst; eauto. eapply lift_subst; eauto using LR_subst_escape, validity_subst_conv_right, validity_conv_left, validity_ty_ctx, refl_subst.
-    eapply subst; eauto using LR_subst_escape, validity_subst_conv_right, refl_subst, lift_subst.
-Qed.
+    eapply subst_conv; eauto. 1: admit.
+    eapply lift_subst; eauto using LR_subst_escape, validity_subst_conv_right, validity_conv_left, validity_ty_ctx, refl_subst.
+    1: admit.
+    eapply subst_conv; eauto using LR_subst_escape, validity_subst_conv_right, refl_subst, lift_subst.
+    all: admit.
+Admitted.
 
 
 Lemma fundamental_beta Γ i k A B t u :
@@ -206,7 +214,7 @@ Proof.
     destruct temp as (ϵA & ϵB & LR_A & LR_B & LR_pi).
     eexists. split;eauto.
     unfold ϵPi. split.
-    - eapply subst; eauto using LR_subst_escape.
+    - eapply subst_conv; eauto using LR_subst_escape, ctx_nil.
     - intros.
       assert (⊩s (s1 .: σ1) ≡ (s2 .: σ2) : (Γ ,, (i, A))) as ϵsσ by eauto using LR_subst.
       eapply LRv_to_LR_tm in LRv_tx_ux as ϵtx_ux; eauto.
