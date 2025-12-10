@@ -23,6 +23,49 @@ Proof.
   intro H. destruct l; destruct l'; inversion H; auto.
 Qed.
 
+(** Typing implies scoping *)
+
+Lemma varty_scoped Γ l x A :
+  Γ ∋< l > x : A →
+  scoped (length Γ) (var x) = true.
+Proof.
+  induction 1.
+  - reflexivity.
+  - cbn - ["<?"] in *. rewrite Nat.ltb_lt in *. lia.
+Qed.
+
+Lemma typing_conversion_scoped :
+  (∀ Γ l t A,
+    Γ ⊢< l > t : A →
+    scoped (length Γ) t = true
+  ) ∧
+  (∀ Γ l u v A,
+    Γ ⊢< l > u ≡ v : A →
+    scoped (length Γ) u = true ∧ scoped (length Γ) v = true).
+Proof.
+  apply typing_mutind.
+  all: try solve [ intros ; cbn - ["<?"] in * ; eauto using varty_scoped ].
+  all: try solve [
+    intros ;
+    cbn in * ;
+    rewrite ?Bool.andb_true_iff in * ;
+    intuition eauto
+  ].
+  - intros. cbn in *.
+    rewrite ?Bool.andb_true_iff in *.
+    intuition eauto.
+Admitted.
+
+Lemma typing_closed l t A :
+  ∙ ⊢< l > t : A →
+  closed t = true.
+Proof.
+  intros h.
+  (* eapply typing_scoped with (Γ := ∙).
+  eassumption.
+Qed. *)
+Admitted.
+
 Lemma conv_refl Γ t l A :
   Γ ⊢< l > t : A →
   Γ ⊢< l > t ≡ t : A.
@@ -214,30 +257,23 @@ Lemma typing_conversion_ren :
       Δ ⊢< l > ρ ⋅ u ≡ ρ ⋅ v : ρ ⋅ A).
 Proof.
   apply typing_mutind.
+  1, 22: solve [ intro ; cbn ; econstructor ; eauto using varty_ren ].
   all: try solve [
     intros ; try econstructor ; eauto using WellRen_up, ctx_cons
   ].
-  (* all: try solve [
+  all: try solve [
     intros ; cbn in * ; (eapply meta_conv_conv + eapply meta_conv) ; [
       (econstructor ; try solve [
         (eapply meta_conv_conv + eapply meta_conv) ;
-        [ eauto 11 using WellRen_up, WellRen_meta, ctx_typing, typing, ctx_cons
+        [ eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons
       | rasimpl ; reflexivity]
       ])
     | rasimpl; reflexivity
     ]
-  ]. *)
-(*   all: try solve [
-    intros ; cbn ; eapply meta_conv_conv ; [
-      eapply meta_rhs_conv ; [
-        ((eapply conv_beta + eapply conv_rec_zero + eapply conv_rec_succ + eapply conv_J_refl) ;
-          eauto using ctx_typing, typing, WellRen_up; try (eapply meta_conv;
-        [ eauto 12 using ctx_typing, typing, WellRen_up
-        | rasimpl; reflexivity]))
-        | ssimpl; reflexivity]
-    | ssimpl; reflexivity] ]. *)
-  all: try solve [ intro ; cbn ; econstructor ; eauto using varty_ren ].
-  all: admit.
+  ].
+  - intros. cbn in *.
+    econstructor.
+    Search assm_sig.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :

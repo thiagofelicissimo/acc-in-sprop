@@ -544,3 +544,43 @@ Inductive ConvCtx : ctx -> ctx -> Prop :=
   Γ ⊢< Ax l > A ≡ B : Sort l ->
   ⊢ (Γ ,, ( l , A)) ≡ (Δ ,, (l , B))
 where "⊢ Γ ≡ Δ" := (ConvCtx Γ Δ).
+
+(* Scoping *)
+
+Fixpoint scoped n t :=
+  match t with
+  | var m => m <? n
+  | Sort _ => true
+  | assm c => true
+  | Pi i j A B => scoped n A && scoped (S n) B
+  | lam i j A B t => scoped n A && scoped (S n) B && scoped (S n) t
+  | app i j A B u v => scoped n A && scoped (S n) B && scoped n u && scoped n v
+  | Nat => true
+  | zero => true
+  | succ k => scoped n k
+  | rec _ P pz ps t =>
+    scoped (S n) P && scoped n pz && scoped (S (S n)) ps && scoped n t
+  | acc _ A R a => scoped n A && scoped (S (S n)) R && scoped n a
+  | accin i A R a p  =>
+    scoped n A && scoped (S (S n)) R && scoped n a && scoped n p
+  | accinv i A R a p b r =>
+    scoped n A && scoped (S (S n)) R && scoped n a && scoped n p &&
+    scoped n b && scoped n r
+  | accel _ _ A R a q P p =>
+    scoped n A && scoped (S (S n)) R && scoped (S n) a && scoped (S ( S n)) q &&
+    scoped n P && scoped n p
+  | obseq _ A a b => scoped n A && scoped n a && scoped n b
+  | obsrefl l A a => scoped n A && scoped n a
+  | J l A a P p b e =>
+    scoped n A && scoped n a && scoped (S n) P && scoped n p && scoped n b &&
+    scoped n e
+  | cast _ A B e t => scoped n A && scoped n B && scoped n e && scoped n t
+  | injpi1 i j A1 A2 B1 B2 e =>
+    scoped n A1 && scoped n A2 && scoped (S n) B1 && scoped (S n) B2 &&
+    scoped n e
+  | injpi2 i j A1 A2 B1 B2 e a2 =>
+    scoped n A1 && scoped n A2 && scoped (S n) B1 && scoped (S n) B2 &&
+    scoped n e && scoped n a2
+  end.
+
+Notation closed t := (scoped 0 t).
