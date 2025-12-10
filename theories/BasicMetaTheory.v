@@ -303,6 +303,15 @@ Ltac ren_ih :=
       ]
     | rasimpl ; try reflexivity
     ]
+  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : _ → Δ ⊢< _ > ρ ⋅ ?u ≡ ρ ⋅ ?v : _ |- _ ⊢< _ > _ ⋅ ?u ≡ _ ⋅ ?v : _ =>
+    eapply meta_conv_conv ; [
+      eapply ih ; [
+        repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
+        ren_ih
+      | eauto with wellren
+      ]
+    | rasimpl ; try reflexivity
+    ]
   | |- _ => eauto
   end.
 
@@ -354,7 +363,27 @@ Proof.
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
-  - typing_ren_tac.
+  - typing_ren_tac. admit. (* Missing hyp *)
+  - typing_ren_tac. all: admit.
+  - typing_ren_tac. admit.
+  - typing_ren_tac. admit.
+  - typing_ren_tac. all: admit.
+  - typing_ren_tac. 1,2: admit.
+    subst A_wk R_wk RR. rasimpl. reflexivity.
+  - typing_ren_tac. all: admit.
+  - typing_ren_tac. 1-4: admit.
+    + admit.
+    + eapply WellRen_up. 1: eauto with wellren.
+      subst R_ P_ B P''. rasimpl. reflexivity.
+    + subst P''. rasimpl. reflexivity.
+  - typing_ren_tac. admit.
+  - typing_ren_tac. all: admit.
+  - typing_ren_tac. all: admit.
+  - (* Computation rule *) admit.
+  - (* Computation rule *) admit.
+  - (* Computation rule *) admit.
+  - (* Computation rule *) admit.
+  - (* Computation rule *) admit.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
