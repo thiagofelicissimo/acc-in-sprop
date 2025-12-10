@@ -229,10 +229,26 @@ Proof.
   intros ? ->. auto.
 Qed.
 
+Lemma meta_lvl Γ t l l' A :
+  Γ ⊢< l > t : A →
+  l = l' →
+  Γ ⊢< l' > t : A.
+Proof.
+  intros ? ->. auto.
+Qed.
+
 Lemma meta_conv_conv Γ u v l A B :
   Γ ⊢< l > u ≡ v : A →
   A = B →
   Γ ⊢< l > u ≡ v : B.
+Proof.
+  intros ? ->. auto.
+Qed.
+
+Lemma meta_lvl_conv Γ u v l l' A :
+  Γ ⊢< l > u ≡ v : A →
+  l = l' →
+  Γ ⊢< l' > u ≡ v : A.
 Proof.
   intros ? ->. auto.
 Qed.
@@ -277,6 +293,7 @@ Hint Extern 100 (_ = _) => rasimpl ; reflexivity : wellren.
 
 Ltac ren_ih :=
   lazymatch goal with
+  | |- _ ⊢< _ > _ ⋅ _ ⋅ _ : _ => rasimpl ; ren_ih
   | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : ?Γ → Δ ⊢< _ > ρ ⋅ ?t : _ |- _ ⊢< _ > _ ⋅ ?t : _ =>
     eapply meta_conv ; [
       eapply ih ; [
@@ -284,7 +301,7 @@ Ltac ren_ih :=
         ren_ih
       | eauto with wellren
       ]
-    | rasimpl ; reflexivity
+    | rasimpl ; try reflexivity
     ]
   | |- _ => eauto
   end.
@@ -294,9 +311,8 @@ Ltac typing_ren_tac :=
   meta_conv ; [
     econstructor ;
     ren_ih
-  | rasimpl ; reflexivity
+  | rasimpl ; try reflexivity
   ].
-
 
 Lemma typing_conversion_ren :
   (∀ Γ l t A,
@@ -319,21 +335,26 @@ Proof.
     intros ; try econstructor ; eauto using WellRen_up, ctx_cons
   ].
   all: try solve [ typing_ren_tac ].
-  (* all: try solve [
-    intros ; cbn in * ; (eapply meta_conv_conv + eapply meta_conv) ; [
-      econstructor ; solve [
-        (eapply meta_conv_conv + eapply meta_conv) ;
-        [ eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons, type_nat
-      | rasimpl ; reflexivity]
-      ]
-    | rasimpl; reflexivity
-    ]
-  ]. *)
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    rasimpl. ren_ih.
+    subst R' A_wk R_wk. rasimpl. reflexivity.
+  - typing_ren_tac.
+    + econstructor. 1: ren_ih.
+      meta_conv.
+      { rasimpl. eapply meta_lvl.
+        - econstructor. all: admit. (* We need the info somehow *)
+        - cbv. destruct l. all: reflexivity.
+      }
+      destruct l. all: reflexivity.
+    + eapply WellRen_up. 1: eauto with wellren.
+      subst B P' R'. rasimpl. reflexivity.
+    + subst P''. rasimpl. reflexivity.
+  - intros. cbn in *. rewrite closed_ren.
+    2:{ eapply typing_closed. eassumption. }
+    econstructor. all: eassumption.
+  - typing_ren_tac.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
