@@ -57,6 +57,37 @@ Proof.
   eassumption.
 Qed.
 
+Lemma scoped_ren ρ k t :
+  scoped k t = true →
+  (Nat.iter k up_ren ρ) ⋅ t = t.
+Proof.
+  intros h.
+  induction t in k, h |- *.
+  all: try solve [ cbn ; eauto ].
+  all: try solve [
+    cbn in * ;
+    rewrite ?Bool.andb_true_iff in * ;
+    repeat change (upRen_term_term (Nat.iter ?k up_ren ?ρ)) with (Nat.iter (S k) up_ren ρ) ;
+    intuition (f_equal ; eauto)
+  ].
+  cbn - ["<?"] in *. f_equal.
+  apply Nat.ltb_lt in h.
+  induction n as [| n ih] in k, h |- *.
+  - destruct k. 1: lia.
+    reflexivity.
+  - destruct k. 1: lia.
+    cbn. unfold ">>". f_equal.
+    apply ih. lia.
+Qed.
+
+Corollary closed_ren ρ t :
+  closed t = true →
+  ρ ⋅ t = t.
+Proof.
+  intros h.
+  eapply scoped_ren in h. eauto.
+Qed.
+
 Lemma conv_refl Γ t l A :
   Γ ⊢< l > t : A →
   Γ ⊢< l > t ≡ t : A.
