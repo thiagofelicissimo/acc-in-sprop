@@ -285,17 +285,23 @@ Proof.
   ].
   all: try solve [
     intros ; cbn in * ; (eapply meta_conv_conv + eapply meta_conv) ; [
-      (econstructor ; try solve [
+      econstructor ; solve [
         (eapply meta_conv_conv + eapply meta_conv) ;
-        [ eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons
+        [ eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons, type_nat
       | rasimpl ; reflexivity]
-      ])
+      ]
     | rasimpl; reflexivity
     ]
   ].
+  - intros. cbn in *. rewrite closed_ren.
+    2:{ eapply typing_closed. eassumption. }
+    econstructor. all: eassumption.
   - intros. cbn in *.
-    econstructor.
-    Search assm_sig.
+    eapply meta_conv.
+    { econstructor. all: eauto using WellRen_up, WellRen_meta, ctx_typing, ctx_cons, type_nat, type_zero.
+      all: admit.
+    }
+    rasimpl. reflexivity.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
