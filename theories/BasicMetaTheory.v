@@ -1375,10 +1375,10 @@ Proof.
   intros.
   apply validity_ty_ty in H as T_Wt.
   split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
+  (* dependent induction H; eauto.
+  - intuition eauto using conv_refl.
   - edestruct IHtyping as (AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
+    rewrite l_eq in *. intuition eauto using conv_trans, conv_sym. *)
 Admitted.
 
 

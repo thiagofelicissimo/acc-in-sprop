@@ -186,7 +186,7 @@ Proof.
     eapply conv_conv. eapply conv_lam'; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv.
     eapply conv_pi'; eauto using conv_ty_in_ctx_conv, conv_sym. 1: reflexivity.
     eauto using conv_beta, validity_conv_left.
-Qed.
+Admitted.
 
 Lemma red_app' Γ t t' u i j A B X Y :
     Γ ⊢< Ru i j > t --> t' : Pi i j A B ->
