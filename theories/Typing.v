@@ -333,7 +333,9 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     ∀ Γ i l A A' R R' a a' q q' P P' p p',
     Γ ⊢< Ax i > A : Sort i ->
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
     Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
     let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
     let P_ := (1 .: (S >> S >> S)) ⋅ P in

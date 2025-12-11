@@ -460,10 +460,10 @@ Proof.
   - typing_ren_tac.
     econstructor. 1: ren_ih.
     meta_conv. 1: eapply meta_lvl.
-    { econstructor.
-      all: rasimpl.
-      (* None of them can come from IH, so we have a problem *)
-      all: admit.
+    { econstructor. all: ren_ih.
+      - eauto 6 with wellren.
+      - eauto 6 with wellren.
+      - eauto 7 with wellren.
     }
     all: destruct l ; reflexivity.
   - typing_ren_comp_tac.
@@ -491,8 +491,14 @@ Proof.
     + rasimpl. apply ext_term. intros [].
     all: cbn. all: rasimpl. all: reflexivity.
   - typing_ren_comp_tac.
-    + rasimpl. (* Same problem again *)
-      admit.
+    + econstructor. 1: ren_ih.
+      meta_conv. 1: eapply meta_lvl.
+      { econstructor. all: ren_ih.
+        - eauto 6 with wellren.
+        - eauto 6 with wellren.
+        - eauto 7 with wellren.
+      }
+      all: destruct l ; reflexivity.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
       all: f_equal.
