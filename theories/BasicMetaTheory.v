@@ -318,6 +318,35 @@ Proof.
     + apply conv_sym. assumption.
 Qed.
 
+Lemma well_rcons_alt Γ Δ x ρ l A :
+  Γ ⊢r ρ : Δ →
+  Γ ∋< l > x : ρ ⋅ A →
+  Γ ⊢r (x .: ρ) : Δ ,, (l , A).
+Proof.
+  intros hr hx.
+  constructor.
+  - erewrite autosubst_simpl_WellRen. 2: exact _.
+    assumption.
+  - cbn. rasimpl. assumption.
+Qed.
+
+Lemma varty0_eq Γ l A B :
+  S ⋅ A = B →
+  Γ ,, (l , A) ∋< l > 0 : B.
+Proof.
+  intros <-.
+  constructor.
+Qed.
+
+Lemma vartyS_eq Γ i j A B C x :
+  Γ ∋< i > x : A →
+  S ⋅ A = C →
+  Γ ,, (j, B) ∋< i > S x : C.
+Proof.
+  intros h <-.
+  constructor. assumption.
+Qed.
+
 Ltac meta_conv :=
   lazymatch goal with
   | |- _ ⊢< _ > _ : _ => eapply meta_conv
@@ -331,7 +360,7 @@ Ltac subst_def :=
 
 Create HintDb wellren.
 
-Hint Resolve WellRen_up WellRen_comp WellRen_S : wellren.
+Hint Resolve WellRen_up WellRen_comp WellRen_S well_rcons_alt varty0_eq vartyS_eq : wellren.
 
 Hint Extern 100 (_ = _) => rasimpl ; reflexivity : wellren.
 
@@ -417,12 +446,14 @@ Proof.
     econstructor. all: eassumption.
   - typing_ren_tac.
     econstructor. 1: ren_ih.
-    meta_conv.
-    { rasimpl. eapply meta_lvl.
-      - econstructor. all: admit. (* We need the info somehow *)
-      - cbv. destruct l. all: reflexivity.
+    meta_conv. 1: eapply meta_lvl.
+    { rasimpl. econstructor.
+      all: ren_ih.
+      - eauto 6 with wellren.
+      - eauto 6 with wellren.
+      - eauto 7 with wellren.
     }
-    destruct l. all: reflexivity.
+    all: destruct l. all: reflexivity.
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
