@@ -96,6 +96,15 @@ Proof.
   all: solve [ econstructor ; eauto ].
 Qed.
 
+Lemma conv_refl_conv Γ u v l A :
+  Γ ⊢< l > u ≡ v : A →
+  Γ ⊢< l > u ≡ u : A.
+Proof.
+  intros h.
+  eapply conv_trans. 1: eassumption.
+  apply conv_sym. assumption.
+Qed.
+
 Theorem refl_subst Γ σ Δ :
   Γ ⊢s σ : Δ →
   Γ ⊢s σ ≡ σ : Δ.
@@ -287,6 +296,28 @@ Proof.
   intros. eapply validity_ctx in H; eauto.
 Qed.
 
+Lemma conv_cast_refl' Γ i A B e a :
+  Γ ⊢< Ax i > A ≡ B : Sort i ->
+  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+  Γ ⊢< i > a : A ->
+  Γ ⊢< i > cast i A B e a ≡ a : B.
+Proof.
+  intros hAB he ha.
+  eapply conv_trans.
+  - econstructor.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. eassumption.
+    + apply conv_refl. assumption.
+    + apply conv_refl. assumption.
+  - econstructor. 2: eassumption.
+    econstructor. 2: auto.
+    econstructor. 1: eassumption.
+    constructor.
+    + constructor. eapply validity_ty_ctx. eassumption.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. assumption.
+Qed.
+
 Ltac meta_conv :=
   lazymatch goal with
   | |- _ ⊢< _ > _ : _ => eapply meta_conv
@@ -398,17 +429,10 @@ Proof.
     econstructor. all: eassumption.
   - typing_ren_tac.
     admit.
-  - (* typing_ren_comp_tac. *)
-    (* Argh, it uses conv_cast_refl, because it's kinda wrong *)
-    intros. cbn in *.
-    meta_conv.
-    { eapply meta_rhs_conv.
-      - comp_rule. all: ren_ih.
-        econstructor. all: ren_ih.
-        all: admit.
-      - admit.
-    }
-    reflexivity.
+  - typing_ren_comp_tac.
+    repeat subst_def. rasimpl. f_equal. f_equal. f_equal. f_equal. f_equal.
+    all: rasimpl. 1,2: reflexivity.
+    f_equal. all: admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.

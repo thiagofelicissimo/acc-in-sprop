@@ -180,14 +180,12 @@ Lemma red_to_conv Γ l t u A :
     Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
 Proof.
     intros. induction H; eauto using conversion, conv_refl.
-    - eapply conv_trans. eapply conv_app'.
-      1,2:(eapply conv_refl; eauto using validity_conv_left).
-      2: eauto using conv_refl.
-      eapply conv_conv. eapply conv_lam'; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv.
-      eapply conv_pi'; eauto using conv_ty_in_ctx_conv, conv_sym. 1: reflexivity.
-      eauto using conv_beta, validity_conv_left.
-    - eapply conv_cast_refl; eauto using conv_nat, validity_ty_ctx.
-    - eapply conv_cast_refl; eauto using conv_sort, validity_ty_ctx.
+    eapply conv_trans. eapply conv_app'.
+    1,2:(eapply conv_refl; eauto using validity_conv_left).
+    2: eauto using conv_refl.
+    eapply conv_conv. eapply conv_lam'; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv.
+    eapply conv_pi'; eauto using conv_ty_in_ctx_conv, conv_sym. 1: reflexivity.
+    eauto using conv_beta, validity_conv_left.
 Qed.
 
 Lemma red_app' Γ t t' u i j A B X Y :

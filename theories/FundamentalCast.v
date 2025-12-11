@@ -405,7 +405,7 @@ Proof.
     refine (LR_ind _ _ _ _ _); intros.
     - destruct p. rewrite H2 in *.
       eapply conv_conv; eauto using conv_sym.
-      eapply conv_cast_refl; eauto using validity_conv_left.
+      eapply conv_cast_refl'; eauto using validity_conv_left.
     - rewrite H in *.
       eapply LR_irred_tm; eauto using prefundamental_nat.
       2:eapply redd_refl; eauto using LR_escape_tm, prefundamental_nat, validity_conv_right.
@@ -427,7 +427,7 @@ Proof.
     - eapply LR_escape_tm in H2 as a1_conv_a2; eauto.
       eapply LR_escape_ty in LR_AB' as A1_conv_A2.
       rewrite H in *. unfold ϵPi. split.
-      eapply conv_conv; eauto  using conv_cast_refl, LR_escape_tm, validity_conv_left, redd_whnf_to_conv, conv_sym, conv_trans.
+      eapply conv_conv; eauto  using conv_cast_refl', LR_escape_tm, validity_conv_left, redd_whnf_to_conv, conv_sym, conv_trans.
 
       intros s1 s2 ϵs.
       assert (ϵS s1 s1) as ϵs11.

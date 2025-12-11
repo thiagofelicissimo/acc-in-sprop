@@ -402,11 +402,10 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< prop > injpi2 i j A1 A2 B1 B2 e a2 ≡ injpi2 i j A1' A2' B1' B2' e' a2' : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
 
 | conv_cast_refl :
-    ∀ Γ i A B e a,
-      Γ ⊢< Ax i > A ≡ B : Sort i ->
-      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+    ∀ Γ i A e a,
+      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A A ->
       Γ ⊢< i > a : A ->
-      Γ ⊢< i > cast i A B e a ≡ a : B
+      Γ ⊢< i > cast i A A e a ≡ a : A
 
 | conv_cast_pi :
   ∀ Γ i j A1 A2 B1 B2 e f,
