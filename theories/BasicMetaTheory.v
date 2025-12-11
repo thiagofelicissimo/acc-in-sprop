@@ -474,9 +474,9 @@ Proof.
     all: apply ext_term.
     all: intros []. all: reflexivity.
   - (* eta *)
-    intros. cbn in *.
-    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in H3.
-    eapply (H3 _ (0 .: (ρ >> S))).
+    intros ?????????????????? ih ? ρ **. cbn in *.
+    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in ih.
+    eapply (ih _ (0 .: (ρ >> S))).
     1: econstructor; eauto.
     eauto with wellren.
   - typing_ren_comp_tac.
@@ -510,7 +510,7 @@ Lemma type_ren Γ l t A Δ ρ A' :
   A' = ρ ⋅ A →
   Δ ⊢< l > ρ ⋅ t : A'.
 Proof.
-  intros. subst. eapply typing_conversion_ren in H; eauto.
+  intros h **. subst. eapply typing_conversion_ren in h. all: eauto.
 Qed.
 
 Lemma conv_ren Γ l t u A Δ ρ A' :
@@ -520,7 +520,7 @@ Lemma conv_ren Γ l t u A Δ ρ A' :
   A' = ρ ⋅ A →
   Δ ⊢< l > ρ ⋅ t ≡ ρ ⋅ u : A'.
 Proof.
-  intros. subst. eapply typing_conversion_ren in H; eauto.
+  intros h **. subst. eapply typing_conversion_ren in h ; eauto.
 Qed.
 
 #[export] Instance WellSubst_morphism :
