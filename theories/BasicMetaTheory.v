@@ -374,7 +374,6 @@ Ltac comp_rule :=
     eapply conv_cast_refl
   | eapply conv_cast_pi
   | eapply conv_beta
-  | eapply conv_eta
   | eapply conv_rec_zero
   | eapply conv_rec_succ
   | eapply conv_accel_accin
@@ -432,10 +431,34 @@ Proof.
   - typing_ren_comp_tac.
     repeat subst_def. rasimpl. f_equal. f_equal. f_equal. f_equal. f_equal.
     all: rasimpl. 1,2: reflexivity.
-    f_equal. all: admit.
-  - (* Computation rule *) admit.
-  - (* Computation rule *) admit.
-  - (* Computation rule *) admit.
+    f_equal.
+    all: substify.
+    all: apply ext_term.
+    all: intros []. all: reflexivity.
+  - (* eta *)
+    intros. cbn in *.
+    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih.
+    typing_ren_tac. all: try apply conv_refl. all: rasimpl. all: ren_ih.
+    + admit. (* We don't have a good IH because we are back on t and u *)
+    + constructor.
+      * constructor. 1: eassumption.
+        ren_ih.
+      * eapply varty_meta. 1: econstructor.
+        rasimpl. reflexivity.
+    + substify. apply ext_term. intros []. all: reflexivity.
+  - typing_ren_comp_tac.
+    + rasimpl. f_equal. f_equal. f_equal.
+      all: rasimpl. all: try reflexivity.
+      all: substify. all: apply ext_term. all: intros [| []]. all: reflexivity.
+    + rasimpl. apply ext_term. intros [].
+    all: cbn. all: rasimpl. all: reflexivity.
+  - typing_ren_comp_tac.
+    + admit.
+    + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
+      all: rasimpl. all: try reflexivity.
+      f_equal. f_equal. 1-3: substify. 1-3: apply ext_term.
+      1-3: intros [| []] ; reflexivity.
+      f_equal. substify. apply ext_term. intros [| []] ; reflexivity.
 Admitted.
 
 Lemma type_ren Γ l t A Δ ρ A' :
