@@ -475,15 +475,14 @@ Proof.
     all: intros []. all: reflexivity.
   - (* eta *)
     intros. cbn in *.
-    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih.
-    typing_ren_tac. all: try apply conv_refl. all: rasimpl. all: ren_ih.
-    + admit. (* We don't have a good IH because we are back on t and u *)
-    + constructor.
-      * constructor. 1: eassumption.
-        ren_ih.
-      * eapply varty_meta. 1: econstructor.
-        rasimpl. reflexivity.
-    + substify. apply ext_term. intros []. all: reflexivity.
+    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in H3. 
+    pose (ρ' := (0 .: (ρ >> S))).
+    eapply (H3 _ ρ').
+    1:econstructor; eauto.
+    econstructor; eauto.
+    1:eapply WellRen_weak; eauto.
+    eapply varty_meta.
+    1:econstructor. rasimpl. reflexivity.
   - typing_ren_comp_tac.
     + rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
@@ -506,7 +505,7 @@ Proof.
       f_equal. 1-3: substify. 1-3: apply ext_term.
       1-3: intros [| []] ; reflexivity.
       f_equal. substify. apply ext_term. intros [| []] ; reflexivity.
-Admitted.
+Qed.
 
 Lemma type_ren Γ l t A Δ ρ A' :
   Γ ⊢< l > t : A →
