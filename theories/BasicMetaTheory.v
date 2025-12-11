@@ -461,9 +461,12 @@ Proof.
     all: cbn. all: rasimpl. all: reflexivity.
   - typing_ren_comp_tac.
     + rasimpl. (* Same problem again *)
+      admit.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
-      f_equal. f_equal. 1-3: substify. 1-3: apply ext_term.
+      all: f_equal.
+      1,2: substify. 1,2: apply ext_term. 1,2: intros [] ; reflexivity.
+      f_equal. 1-3: substify. 1-3: apply ext_term.
       1-3: intros [| []] ; reflexivity.
       f_equal. substify. apply ext_term. intros [| []] ; reflexivity.
 Admitted.

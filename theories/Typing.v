@@ -149,10 +149,10 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A ->
     Γ ⊢< prop > q : acc i A R a ->
@@ -335,10 +335,10 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
-    let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P_ := P <[var 1 .: (S >> S >> S >> var)] in
+    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P_ := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
     Γ ⊢< i > a ≡ a': A ->
     Γ ⊢< prop > q ≡ q' : acc i A R a ->
@@ -478,10 +478,10 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A ->
     Γ ⊢< prop > q : acc i A R a ->
