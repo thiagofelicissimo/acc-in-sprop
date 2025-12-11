@@ -427,7 +427,14 @@ Proof.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    admit.
+    econstructor. 1: ren_ih.
+    meta_conv. 1: eapply meta_lvl.
+    { econstructor.
+      all: rasimpl.
+      (* None of them can come from IH, so we have a problem *)
+      all: admit.
+    }
+    all: destruct l ; reflexivity.
   - typing_ren_comp_tac.
     repeat subst_def. rasimpl. f_equal. f_equal. f_equal. f_equal. f_equal.
     all: rasimpl. 1,2: reflexivity.
@@ -453,7 +460,7 @@ Proof.
     + rasimpl. apply ext_term. intros [].
     all: cbn. all: rasimpl. all: reflexivity.
   - typing_ren_comp_tac.
-    + admit.
+    + rasimpl. (* Same problem again *)
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
       f_equal. f_equal. 1-3: substify. 1-3: apply ext_term.
