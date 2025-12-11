@@ -62,14 +62,28 @@ Proof.
   pose proof (setAppArr_typing (cwfSubEmpty_typing Γ) Hγ) as H2. apply inSetSingl in H2. exact (sym H2).
 Qed.
 
+(* Universes (the CwF comes from the higher-order model given by these universes) *)
+
+Definition 𝕌 (n : nat) := 𝕍 n × (ω × 𝕍 n).
+Definition 𝕌el (n : nat) (A : ZFSet) := setFstPair (𝕍 n) (ω × 𝕍 n) A.
+Definition 𝕌lbl (n : nat) (A : ZFSet) := setSndPair (𝕍 n) (ω × 𝕍 n) A.
+
+Lemma 𝕌el_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌el n A ∈ 𝕍 n.
+Proof.
+  intro HA. now apply setFstPair_typing. 
+Qed.
+
 (* Presheaf of types *)
 
-Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕍 n × (ω × 𝕍 n)).
+Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕌 n).
 
-Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕍 n × (ω × 𝕍 n)) σ A.
+Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕌 n) σ A.
+
+Definition cwfTy_to_HO (n : nat) (Γ A : ZFSet) :=
+  fun γ => setAppArr Γ (𝕌 n) A γ.
 
 Definition cwfTy_to_depSet (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
-  fun γ => setFstPair (𝕍 n) (ω × 𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A γ).
+  fun γ => 𝕌el n (cwfTy_to_HO n Γ A γ).
 
 Lemma cwfTy_reindex_typing {n : nat} {Γ A Δ σ : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) :
   cwfTy_reindex n Γ A Δ σ ∈ cwfTy n Δ.
@@ -89,7 +103,7 @@ Proof.
 Qed.
 
 Lemma app_cwfTy_reindex {n : nat} {Γ A Δ σ δ} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) (Hδ : δ ∈ Δ) :
-  setAppArr Δ (𝕍 n × (ω × 𝕍 n)) (cwfTy_reindex n Γ A Δ σ) δ ≡ setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A (setAppArr Δ Γ σ δ).
+  setAppArr Δ (𝕌 n) (cwfTy_reindex n Γ A Δ σ) δ ≡ setAppArr Γ (𝕌 n) A (setAppArr Δ Γ σ δ).
 Proof.
   now apply (setCompArr_app Hσ HA).
 Qed.
@@ -105,6 +119,12 @@ Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (�
 Proof.
   unfold cwfTy_to_depSet. apply setFstPair_typing.
   apply setAppArr_typing ; assumption.
+Qed.
+
+Lemma cwfTy_to_HO_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) :
+  ∀ γ ∈ Γ, cwfTy_to_HO n Γ A γ ∈ 𝕌 n.
+Proof.
+  intros γ Hγ. now apply setAppArr_typing.
 Qed.
 
 (* Dependent presheaf of terms *)
@@ -128,7 +148,7 @@ Proof.
     specialize (Ht2 γ Hγ). unfold cwfTy_reindex.
     refine (transpS (fun x => setAppArr Δ (𝕍 n) (cwfTm_reindex n Γ t Δ σ) δ ∈ setFstPair (𝕍 n) (𝕍 n) x)
                     (sym (setCompArr_app Hσ HA Hδ)) _).
-    refine (transpS (fun x => x ∈ setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A (setAppArr Δ Γ σ δ)))
+    refine (transpS (fun x => x ∈ setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕌 n) A (setAppArr Δ Γ σ δ)))
                     (sym (setCompArr_app Hσ Ht1 Hδ)) _).
     exact Ht2.
 Qed.
@@ -232,7 +252,7 @@ Proof.
     + symmetry. apply setAppArr_HO ; try assumption. now apply ctxVar0_HO_pretyping.
     + symmetry. refine (trans _ _).
       * refine (cwfTy_reindex_to_depSet HA _ Hγa). now apply ctxWk_typing.
-      * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕍 n × (ω × 𝕍 n)) A X)) _).
+      * refine (fequal (fun X => setFstPair (𝕍 n) (𝕍 n) (setAppArr Γ (𝕌 n) A X)) _).
         apply setAppArr_HO ; try assumption. intros x Hx. now apply ctxWk_HO_typing.
 Qed.
 

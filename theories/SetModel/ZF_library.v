@@ -4,6 +4,23 @@ Require Import ZF_axioms.
 (* In this file, we replicate the basic set theoretic constructions (cartesian products, function
    types, dependent sums, dependent products, etc). *)
 
+Lemma subset_trans {A B C : ZFSet} : A ⊂ B -> B ⊂ C -> A ⊂ C.
+Proof.
+  intros H1 H2 a Ha. apply H2. apply H1. exact Ha.
+Qed.
+
+Lemma setComp_sorting (n : nat) {A : ZFSet} {P : ZFSet -> SProp} (HA : A ∈ 𝕍 n) : { x ϵ A ∣ P x } ∈ 𝕍 n.
+Proof.
+  assert ({ x ϵ A ∣ P x } ∈ 𝒫 A) as H.
+  { apply ZFinpower. intros a Ha. apply ZFincomp in Ha. now destruct Ha. }
+  apply (ZFuniv_trans _ _ _ H). now apply ZFuniv_power.
+Qed.
+
+Lemma setSingl_sorting {n : nat} {x : ZFSet} : x ∈ 𝕍 n -> setSingl x ∈ 𝕍 n.
+Proof.
+  intro H. now apply ZFuniv_pair.
+Qed.
+
 (* Empty set *)
 
 Lemma empty_in_univ (n : nat) : ∅ ∈ 𝕍 n.
@@ -122,6 +139,7 @@ Qed.
 
 Definition setUnion (A B : ZFSet) : ZFSet := ⋃ { A ; B }.
 Notation "A ∪ B" := (setUnion A B) (at level 35, right associativity).
+
 Lemma inSetUnion (A B : ZFSet) : forall x, x ∈ A ∪ B ↔ x ∈ A ∨ x ∈ B.
 Proof.
   intro x. split.
@@ -136,6 +154,24 @@ Proof.
     + apply ZFinunion. exists B. split.
       * apply ZFinpairing. now right.
       * assumption.
+Qed.
+
+Lemma setUnion_typing (n : nat) {A B : ZFSet} (HA : A ∈ 𝕍 n) (HB : B ∈ 𝕍 n) : A ∪ B ∈ 𝕍 n.
+Proof.
+  assert (⋃ { x ϵ 𝕍 n ∣ ∃ i ∈ { A ; B }, i ≡ x } ∈ 𝕍 n).
+  { apply ZFuniv_union. now apply ZFuniv_pair. intros x Hx. exists x. split.
+    - split. apply (ZFuniv_trans _ _ _ Hx). now apply ZFuniv_pair. easy.
+    - intros y [ _ Hy ]. exact Hy. }
+  refine (transpS (fun X => X ∈ 𝕍 n) _ H). clear H. apply ZFext.
+  - intros x Hx. apply ZFinunion in Hx. destruct Hx as [ y [ Hy Hxy ] ].
+    apply ZFincomp in Hy. destruct Hy as [ Hy1 [ z [ Hz Hyz ] ] ]. destruct Hyz.
+    apply ZFinpairing in Hz. destruct Hz as [ Hz | Hz ] ; destruct Hz ; apply inSetUnion.
+    now left. now right.
+  - intros x Hx. apply inSetUnion in Hx. apply ZFinunion. destruct Hx as [ Hx | Hx ].
+    + exists A. split ; [ | assumption ]. apply ZFincomp. split ; [ assumption | ].
+      exists A. split ; [ | easy ]. apply ZFinpairing. now left.
+    + exists B. split ; [ | assumption ]. apply ZFincomp. split ; [ assumption | ].
+      exists B. split ; [ | easy ]. apply ZFinpairing. now right.
 Qed.
 
 (* Intersection of two sets *)
@@ -163,6 +199,12 @@ Definition setFstPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ι { a ϵ A ∣
 Definition isSetSnd (a x : ZFSet) : SProp := exU ZFSet (fun y => y ∈ x ∧ a ∈ y).
 Definition setSndPair (A B : ZFSet) : ZFSet -> ZFSet := fun x => ι { b ϵ B ∣ isSetSnd b x }.
 
+Lemma setProd_typing (n : nat) {A B : ZFSet} (HA : A ∈ 𝕍 n) (HB : B ∈ 𝕍 n) : A × B ∈ 𝕍 n.
+Proof.
+  unfold setProd. apply setComp_sorting. apply ZFuniv_power. apply ZFuniv_power.
+  now apply setUnion_typing.
+Qed.
+
 Lemma setMkPair_pretyping {A B a b : ZFSet} (Ha : a ∈ A) (Hb : b ∈ B) : ⟨ a ; b ⟩ ∈ 𝒫 (𝒫 (A ∪ B)).
 Proof.
   apply ZFinpower. intros x Hx. apply ZFinpower. intros y Hy. apply inSetUnion.
@@ -173,13 +215,20 @@ Proof.
     + right. apply (transpS (fun y => y ∈ B) (sym Hy)). assumption.
 Qed.
 
-Lemma setMkPair_typing {A B a b : ZFSet} : a ∈ A -> b ∈ B -> setMkPair a b ∈ A × B.
+Lemma setMkPair_typing {A B a b : ZFSet} : a ∈ A -> b ∈ B -> ⟨ a ; b ⟩ ∈ A × B.
 Proof.
   intros Ha Hb. apply ZFincomp. split.
   - apply setMkPair_pretyping. exact Ha. exact Hb.
   - exists a. split.
     + exact Ha.
     + exists b. split. exact Hb. reflexivity.
+Qed.
+
+Lemma setMkPair_sorting {n : nat} {x y : ZFSet} (Hx : x ∈ 𝕍 n) (Hy : y ∈ 𝕍 n) : ⟨ x ; y ⟩ ∈ 𝕍 n.
+Proof.
+  apply ZFuniv_pair.
+  - now apply ZFuniv_pair.
+  - now apply ZFuniv_pair.
 Qed.
 
 Lemma setFstPair_pretyping {A B x : ZFSet} (Hx : x ∈ A × B) : setFstPair A B x ∈ { a ϵ A ∣ isSetFst a x }.
@@ -290,6 +339,26 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma setMkPair_detyping {A B a b : ZFSet} : ⟨ a ; b ⟩ ∈ A × B -> a ∈ A ∧ b ∈ B.
+Proof.
+  intro H. split.
+  - assert (setFstPair A B ⟨ a ; b ⟩ ≡ a) as Ha.
+    { now apply setPairβ1'. }
+    refine (transpS (fun X => X ∈ A) Ha _). now apply setFstPair_typing.
+  - assert (setSndPair A B ⟨ a ; b ⟩ ≡ b) as Hb.
+    { now apply setPairβ2'. }
+    refine (transpS (fun X => X ∈ B) Hb _). now apply setSndPair_typing.
+Qed.
+
+Lemma setProd_incl {A B C D : ZFSet} : A ⊂ C -> B ⊂ D -> A × B ⊂ C × D.
+Proof.
+  intros H1 H2 x Hx. pose proof (setPairη Hx).
+  refine (transpS (fun X => X ∈ C × D) (sym H) _). clear H.
+  apply setMkPair_typing.
+  - assert (setFstPair A B x ∈ A) as H. { now apply setFstPair_typing. } now apply H1. 
+  - assert (setSndPair A B x ∈ B) as H. { now apply setSndPair_typing. } now apply H2. 
+Qed.  
+
 (* Image of a higher-order function (without replacement) *)
 
 Definition setRelIm (A B : ZFSet) (f : setRel) : ZFSet :=
@@ -310,12 +379,18 @@ Qed.
 Definition setFamUnion (n : nat) (A : ZFSet) (f : ZFSet -> ZFSet) : ZFSet :=
   ⋃ (setIm A (𝕍 n) f).
 
-Lemma setFamUnion_typing {n : nat} {A a b : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ f a) :
+Lemma inSetFamUnion {n : nat} {A a b : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ f a) :
   b ∈ setFamUnion n A f.
 Proof.
   apply ZFinunion. exists (f a). split.
   - exact (setIm_typing Hf Ha).
   - exact Hb.
+Qed.
+
+Lemma setFamUnion_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  setFamUnion n A B ∈ 𝕍 n.
+Proof.
+  apply ZFuniv_union. assumption. now apply HO_rel_typing.
 Qed.
 
 (* Sigma types *)
@@ -333,10 +408,10 @@ Lemma setMkSigma_typing {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀
   : ⟨ a ; b ⟩ ∈ setSigma n A B.
 Proof.
   apply ZFincomp. split.
-  - apply (setMkPair_typing Ha). apply (setFamUnion_typing HB Ha Hb).
+  - apply (setMkPair_typing Ha). apply (inSetFamUnion HB Ha Hb).
   - apply (transpS (fun x => x ∈ B (setFstPair A (setFamUnion n A B) ⟨ a; b ⟩))
-                   (sym (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)))).
-    apply (transpS (fun x => b ∈ B x) (sym (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)))).
+                   (sym (setPairβ2 Ha (inSetFamUnion HB Ha Hb)))).
+    apply (transpS (fun x => b ∈ B x) (sym (setPairβ1 Ha (inSetFamUnion HB Ha Hb)))).
     exact Hb.
 Qed.
 
@@ -357,13 +432,13 @@ Qed.
 Lemma setSigmaβ1 {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : setFstSigma n A B ⟨ a ; b ⟩ ≡ a.
 Proof.
-  exact (setPairβ1 Ha (setFamUnion_typing HB Ha Hb)).
+  exact (setPairβ1 Ha (inSetFamUnion HB Ha Hb)).
 Qed.
 
 Lemma setSigmaβ2 {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : setSndSigma n A B ⟨ a ; b ⟩ ≡ b.
 Proof.
-  exact (setPairβ2 Ha (setFamUnion_typing HB Ha Hb)).
+  exact (setPairβ2 Ha (inSetFamUnion HB Ha Hb)).
 Qed.
 
 Lemma setSigmaη {n : nat} {A x : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Hx : x ∈ setSigma n A B)
@@ -371,6 +446,37 @@ Lemma setSigmaη {n : nat} {A x : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A,
 Proof.
   apply ZFincomp in Hx. apply fstS in Hx.
   exact (setPairη Hx).
+Qed.
+
+Lemma setMkSigma_detyping {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  ⟨ a ; b ⟩ ∈ setSigma n A B -> a ∈ A ∧ b ∈ B a.
+Proof.
+  intro H0. pose proof H0 as H. apply ZFincomp in H. destruct H as [ H _ ].
+  assert (a ∈ A) as Ha.
+  { apply setMkPair_detyping in H. now destruct H. }
+  split. exact Ha.
+  assert (setFstSigma n A B ⟨ a ; b ⟩ ≡ a) as Ha2.
+  { now apply setPairβ1'. }
+  assert (setSndSigma n A B ⟨ a ; b ⟩ ≡ b) as Hb.
+  { now apply setPairβ2'. }
+  refine (transp2S (fun X Y => X ∈ B Y) Hb Ha2 _).
+  now apply setSndSigma_typing. 
+Qed.
+
+Lemma setSigma_pretyping (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  setSigma n A B ⊂ A × 𝕍 n.
+Proof.
+  intros x Hx. apply ZFincomp in Hx.
+  destruct Hx as [ Hx _ ]. unshelve eapply (setProd_incl _ _ x Hx).
+  - easy.
+  - intros y Hy. apply (ZFuniv_trans _ _ _ Hy). now apply setFamUnion_typing.
+Qed.
+
+Lemma setSigma_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  setSigma n A B ∈ 𝕍 n.
+Proof.
+  unfold setSigma. apply setComp_sorting. apply setProd_typing.
+  assumption. now apply setFamUnion_typing.
 Qed.
 
 (* Function types (exponentials) as sets of graphs *)
@@ -467,22 +573,60 @@ Proof.
   apply (funRel_unique Hf Ha (funRelApp_typing Hf'' Ha) (funRelApp_typing Hf Ha) H2 H1).
 Qed.
 
-Lemma inSetArr {A B f x : ZFSet} (Hf : f ∈ A ⇒ B) (Hx : x ∈ A × B) :
-  x ∈ f ↔ setSndPair A B x ≡ setAppArr A B f (setFstPair A B x).
+Lemma inSetArr_l {A B f x : ZFSet} (Hf : f ∈ A ⇒ B) :
+  x ∈ f -> setSndPair A B x ≡ setAppArr A B f (setFstPair A B x).
 Proof.
-  split.
-  - intro H. apply (transpS (fun f => x ∈ f) (sym (graphToRelToGraph Hf))) in H.
-    apply ZFincomp in H. destruct H as [ _ H ].
-    apply (funRel_unique (graphToRel_typing Hf) (setFstPair_typing Hx) (setSndPair_typing Hx) (setAppArr_typing Hf (setFstPair_typing Hx)) H).
-    exact (setAppArr_inRel Hf (setFstPair_typing Hx)).
-  - intro H. apply (transpS (fun f => x ∈ f) (graphToRelToGraph Hf)).
-    apply ZFincomp. split. exact Hx.
-    pose proof Hf as Hf0. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. specialize (Hf2 (setFstPair A B x) (setFstPair_typing Hx)).
-    destruct Hf2 as [ b [ [ Hb Hab ] _ ] ].
-    assert (b ≡ setSndPair A B x). { refine (trans _ (sym H)).
-      apply (funRel_unique (graphToRel_typing Hf0) (setFstPair_typing Hx) Hb (setAppArr_typing Hf0 (setFstPair_typing Hx)) Hab).
-      exact (setAppArr_inRel Hf0 (setFstPair_typing Hx)). }
-    apply (transpS (fun y => graphToRel f (setFstPair A B x) y) H0). exact Hab.
+  intro H. apply (transpS (fun f => x ∈ f) (sym (graphToRelToGraph Hf))) in H.
+  apply ZFincomp in H. destruct H as [ Hx H ].
+  apply (funRel_unique (graphToRel_typing Hf) (setFstPair_typing Hx) (setSndPair_typing Hx) (setAppArr_typing Hf (setFstPair_typing Hx)) H).
+  exact (setAppArr_inRel Hf (setFstPair_typing Hx)).
+Qed.
+
+Lemma inSetArr_r {A B f x : ZFSet} (Hf : f ∈ A ⇒ B) (Hx : x ∈ A × B) :
+  setSndPair A B x ≡ setAppArr A B f (setFstPair A B x) -> x ∈ f.
+Proof.
+  intro H. apply (transpS (fun f => x ∈ f) (graphToRelToGraph Hf)).
+  apply ZFincomp. split. exact Hx.
+  pose proof Hf as Hf0. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. specialize (Hf2 (setFstPair A B x) (setFstPair_typing Hx)).
+  destruct Hf2 as [ b [ [ Hb Hab ] _ ] ].
+  assert (b ≡ setSndPair A B x). { refine (trans _ (sym H)).
+    apply (funRel_unique (graphToRel_typing Hf0) (setFstPair_typing Hx) Hb (setAppArr_typing Hf0 (setFstPair_typing Hx)) Hab).
+    exact (setAppArr_inRel Hf0 (setFstPair_typing Hx)). }
+  apply (transpS (fun y => graphToRel f (setFstPair A B x) y) H0). exact Hab.
+Qed.
+
+Lemma setArr_typing {n : nat} {A B : ZFSet} (HA : A ∈ 𝕍 n) (HB : B ∈ 𝕍 n) : A ⇒ B ∈ 𝕍 n.
+Proof.
+  apply setComp_sorting. apply ZFuniv_power. now apply setProd_typing.
+Qed.
+
+Lemma setArr_big_typing {n : nat} {A B : ZFSet} (HA : A ∈ 𝕍 n) (HB : B ⊂ 𝕍 n) : A ⇒ B ⊂ 𝕍 n.
+Proof.
+  intros f Hf. assert (f ≡ ⋃ { x ϵ 𝕍 n ∣ ∃ a ∈ A, x ≡ setSingl ⟨ a ; setAppArr A B f a ⟩ }) as H.
+  { apply ZFext.
+    - intros x Hx. pose proof Hf as H. apply ZFincomp in H. destruct H as [ H _ ].
+      apply ZFinpower in H. specialize (H _ Hx). apply (inSetArr_l Hf) in Hx.
+      apply ZFinunion. exists (setSingl x). split ; [ | now apply inSetSingl ]. apply ZFincomp. split.
+      + apply setSingl_sorting. refine (transpS (fun X => X ∈ 𝕍 n) (sym (setPairη H)) _).
+        apply setMkPair_sorting. eapply ZFuniv_trans. now apply setFstPair_typing. assumption.
+        apply HB. now apply setSndPair_typing.
+      + exists (setFstPair A B x). split. now apply setFstPair_typing. apply fequal.
+        refine (transpS (fun X => x ≡ ⟨ _ ; X ⟩) Hx _). now apply setPairη.
+    - intros x Hx. apply ZFinunion in Hx. destruct Hx as [ y [ Hy Hxy ] ].
+      apply ZFincomp in Hy. destruct Hy as [ _ [ a [ Ha Hy ] ] ]. assert (x ≡ ⟨ a ; setAppArr A B f a ⟩).
+      { apply inSetSingl. exact (transpS (fun X => x ∈ X) Hy Hxy). } apply (inSetArr_r Hf).
+      + refine (transpS (fun X => X ∈ A × B) (sym H) _).
+        apply setMkPair_typing. assumption. now apply setAppArr_typing.
+      + refine (transpS (fun X => setSndPair A B X ≡ setAppArr A B f (setFstPair A B X)) (sym H) _).
+        refine (trans _ _). apply setPairβ2. assumption. now apply setAppArr_typing.
+        refine (fequal (setAppArr A B f) _). refine (sym _). apply setPairβ1.
+        assumption. now apply setAppArr_typing. }
+  refine (transpS (fun X => X ∈ 𝕍 n) (sym H) _). apply ZFuniv_union.
+  assumption. intros a Ha. exists (setSingl ⟨ a; setAppArr A B f a ⟩). split.
+  - split ; [ | reflexivity ]. apply setSingl_sorting. apply setMkPair_sorting.
+    + eapply ZFuniv_trans. exact Ha. exact HA.
+    + apply HB. now apply setAppArr_typing.
+  - intros y [ _ Hy ]. exact (sym Hy).
 Qed.
 
 Lemma setArr_funext {A B f g : ZFSet} (Hf : f ∈ A ⇒ B) (Hg : g ∈ A ⇒ B) :
@@ -492,10 +636,10 @@ Proof.
   apply ZFincomp in Hf. destruct Hf as [ Hf _ ]. apply ZFinpower in Hf.
   apply ZFincomp in Hg. destruct Hg as [ Hg _ ]. apply ZFinpower in Hg.
   apply ZFext.
-  - intros x Hx. pose proof (trans (fstS (inSetArr Hf0 (Hf x Hx)) Hx) (H (setFstPair A B x) (setFstPair_typing (Hf x Hx)))) as H1.
-    exact (sndS (inSetArr Hg0 (Hf x Hx)) H1).
-  - intros x Hx. pose proof (trans (fstS (inSetArr Hg0 (Hg x Hx)) Hx) (sym (H (setFstPair A B x) (setFstPair_typing (Hg x Hx))))) as H1.
-    exact (sndS (inSetArr Hf0 (Hg x Hx)) H1).
+  - intros x Hx. pose proof (trans (inSetArr_l Hf0 Hx) (H (setFstPair A B x) (setFstPair_typing (Hf x Hx)))) as H1.
+    exact (inSetArr_r Hg0 (Hf x Hx) H1).
+  - intros x Hx. pose proof (trans (inSetArr_l Hg0 Hx) (sym (H (setFstPair A B x) (setFstPair_typing (Hg x Hx))))) as H1.
+    exact (inSetArr_r Hf0 (Hg x Hx) H1).
 Qed.
 
 Lemma setIdArr_typing (A : ZFSet) : setIdArr A ∈ A ⇒ A.
@@ -551,6 +695,69 @@ Proof.
   reflexivity.
 Qed.
 
+(* Dependent products *)
+
+Definition setPi (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
+  { f ϵ A ⇒ 𝕍 n ∣ ∀ a ∈ A, setAppArr A (𝕍 n) f a ∈ B a }.
+
+Definition setPi' (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
+  { R ϵ 𝒫 (setSigma n A B) ∣ isFunRel A (𝕍 n) (graphToRel R) }.
+
+Lemma setPi_in_setPi' (n : nat) {A f : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  f ∈ setPi n A B -> f ∈ setPi' n A B.
+Proof.
+  intro Hf. apply ZFincomp in Hf. destruct Hf as [ Hf Hf3 ].
+  pose proof Hf as Hf0. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFinpower in Hf1.
+  apply ZFincomp. split.
+  - apply ZFinpower. intros p Hp. pose proof (Hf1 _ Hp) as Hp2. pose proof (setPairη Hp2) as Hp3.
+    refine (transpS (fun X => X ∈ setSigma n A B) (sym Hp3) _).
+    apply setMkSigma_typing. exact HB. now apply setFstPair_typing.
+    specialize (Hf3 (setFstPair A (𝕍 n) p) (setFstPair_typing Hp2)).
+    refine (transpS (fun X => X ∈ B (setFstPair A (𝕍 n) p)) (sym _) Hf3).
+    apply (inSetArr_l Hf0). exact Hp.
+  - exact Hf2.
+Qed.
+
+Lemma setPi'_in_setPi (n : nat) {A f : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  f ∈ setPi' n A B -> f ∈ setPi n A B.
+Proof.
+  intro Hf. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFinpower in Hf1.
+  assert (f ∈ A ⇒ 𝕍 n) as Hf3.
+  { apply ZFincomp. split. apply ZFinpower. eapply subset_trans. exact Hf1.
+    now apply setSigma_pretyping. exact Hf2. }
+  apply ZFincomp. split. exact Hf3.
+  intros a Ha. assert (⟨ a ; setAppArr A (𝕍 n) f a ⟩ ∈ f) as Hp.
+  { apply (@inSetArr_r A (𝕍 n) f).
+    - exact Hf3.
+    - apply setMkPair_typing. exact Ha. now apply setAppArr_typing.
+    - refine (transp2S (fun X Y => X ≡ setAppArr A (𝕍 n) f Y) _ _ (eqS_refl _)).
+      + apply sym. apply setPairβ2. exact Ha. now apply setAppArr_typing.
+      + apply sym. apply setPairβ1. exact Ha. now apply setAppArr_typing. }
+  apply Hf1 in Hp. apply (setMkSigma_detyping HB) in Hp. now destruct Hp as [ _ Hp ].
+Qed.
+
+Lemma setPi_coincide (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
+  setPi n A B ≡ setPi' n A B.
+Proof.
+  apply ZFext.
+  - intros f Hf. now apply setPi_in_setPi'.
+  - intros f Hf. now apply setPi'_in_setPi.
+Qed.
+
+Lemma setPi'_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet}
+  (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) : setPi' n A B ∈ 𝕍 n.
+Proof.
+  unfold setPi'. apply setComp_sorting. apply ZFuniv_power.
+  now apply setSigma_typing.
+Qed.
+
+Lemma setPi_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet}
+  (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) : setPi n A B ∈ 𝕍 n.
+Proof.
+  refine (transpS (fun X => X ∈ 𝕍 n) (sym (setPi_coincide n HA HB)) _).
+  apply (setPi'_typing n HA HB).
+Qed.
+
 (* Natural numbers *)
 
 Lemma zero_typing : ∅ ∈ ω.
@@ -562,4 +769,11 @@ Lemma suc_typing {n : ZFSet} (Hn : n ∈ ω) : ZFsuc n ∈ ω.
 Proof.
   apply ZFininfinity. intros P Pz Ps.
   apply Ps. now eapply ZFininfinity.
+Qed.
+
+Definition ZFone := ZFsuc ∅.
+
+Lemma one_typing : ZFone ∈ ω.
+Proof.
+  apply suc_typing. apply zero_typing.
 Qed.
