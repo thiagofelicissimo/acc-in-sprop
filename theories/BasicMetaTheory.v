@@ -253,6 +253,14 @@ Proof.
   intros ? ->. auto.
 Qed.
 
+Lemma meta_rhs_conv Γ u v w l A :
+  Γ ⊢< l > u ≡ v : A →
+  v = w →
+  Γ ⊢< l > u ≡ w : A.
+Proof.
+  intros ? ->. auto.
+Qed.
+
 Lemma validity_ctx :
   (∀ Γ l t A,
     Γ ⊢< l > t : A →
@@ -281,8 +289,8 @@ Qed.
 
 Ltac meta_conv :=
   lazymatch goal with
-  | |- _ ⊢< _ > _ : _  => eapply meta_conv
-  | |- _ ⊢< _ > _ ≡ _ : _  => eapply meta_conv_conv
+  | |- _ ⊢< _ > _ : _ => eapply meta_conv
+  | |- _ ⊢< _ > _ ≡ _ : _ => eapply meta_conv_conv
   end.
 
 Ltac subst_def :=
@@ -330,6 +338,28 @@ Ltac typing_ren_tac :=
   | eauto with wellren
   ].
 
+Ltac comp_rule :=
+  first [
+    eapply conv_cast_refl
+  | eapply conv_cast_pi
+  | eapply conv_beta
+  | eapply conv_eta
+  | eapply conv_rec_zero
+  | eapply conv_rec_succ
+  | eapply conv_accel_accin
+  ].
+
+Ltac typing_ren_comp_tac :=
+  intros ; cbn in * ;
+  meta_conv ; [
+    eapply meta_rhs_conv ; [
+      comp_rule ;
+      ren_ih
+    | eauto with wellren
+    ]
+  | eauto with wellren
+  ].
+
 Lemma typing_conversion_ren :
   (∀ Γ l t A,
     Γ ⊢< l > t : A →
@@ -351,6 +381,7 @@ Proof.
     intros ; try econstructor ; eauto using WellRen_up, ctx_cons
   ].
   all: try solve [ typing_ren_tac ].
+  all: try solve [ typing_ren_comp_tac ].
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
@@ -367,8 +398,17 @@ Proof.
     econstructor. all: eassumption.
   - typing_ren_tac.
     admit.
-  - (* Computation rule *) admit.
-  - (* Computation rule *) admit.
+  - (* typing_ren_comp_tac. *)
+    (* Argh, it uses conv_cast_refl, because it's kinda wrong *)
+    intros. cbn in *.
+    meta_conv.
+    { eapply meta_rhs_conv.
+      - comp_rule. all: ren_ih.
+        econstructor. all: ren_ih.
+        all: admit.
+      - admit.
+    }
+    reflexivity.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
