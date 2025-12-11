@@ -308,7 +308,7 @@ Ltac ren_ih :=
         ren_ih
       | eauto with wellren
       ]
-    | rasimpl ; try reflexivity
+    | eauto with wellren
     ]
   | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : _ → Δ ⊢< _ > ρ ⋅ ?u ≡ ρ ⋅ ?v : _ |- _ ⊢< _ > _ ⋅ ?u ≡ _ ⋅ ?v : _ =>
     eapply meta_conv_conv ; [
@@ -317,7 +317,7 @@ Ltac ren_ih :=
         ren_ih
       | eauto with wellren
       ]
-    | rasimpl ; try reflexivity
+    | eauto with wellren
     ]
   | |- _ => eauto
   end.
@@ -327,7 +327,7 @@ Ltac typing_ren_tac :=
   meta_conv ; [
     econstructor ;
     ren_ih
-  | rasimpl ; try reflexivity
+  | eauto with wellren
   ].
 
 Lemma typing_conversion_ren :
@@ -355,24 +355,18 @@ Proof.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    eauto with wellren.
-  - typing_ren_tac.
-    + econstructor. 1: ren_ih.
-      meta_conv.
-      { rasimpl. eapply meta_lvl.
-        - econstructor. all: admit. (* We need the info somehow *)
-        - cbv. destruct l. all: reflexivity.
-      }
-      destruct l. all: reflexivity.
-    + eauto with wellren.
+    econstructor. 1: ren_ih.
+    meta_conv.
+    { rasimpl. eapply meta_lvl.
+      - econstructor. all: admit. (* We need the info somehow *)
+      - cbv. destruct l. all: reflexivity.
+    }
+    destruct l. all: reflexivity.
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    eauto with wellren.
-  - typing_ren_tac.
-    + admit.
-    + eauto with wellren.
+    admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
