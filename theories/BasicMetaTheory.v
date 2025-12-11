@@ -285,11 +285,18 @@ Ltac meta_conv :=
   | |- _ ⊢< _ > _ ≡ _ : _  => eapply meta_conv_conv
   end.
 
+Ltac subst_def :=
+  lazymatch goal with
+  | u := _ |- _ => subst u
+  end.
+
 Create HintDb wellren.
 
 Hint Resolve WellRen_up WellRen_comp WellRen_S : wellren.
 
 Hint Extern 100 (_ = _) => rasimpl ; reflexivity : wellren.
+
+Hint Extern 1000 (_ = _) => repeat subst_def ; rasimpl ; reflexivity : wellren.
 
 Ltac ren_ih :=
   lazymatch goal with
@@ -348,7 +355,7 @@ Proof.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    subst R' A_wk R_wk. rasimpl. reflexivity.
+    eauto with wellren.
   - typing_ren_tac.
     + econstructor. 1: ren_ih.
       meta_conv.
@@ -357,19 +364,15 @@ Proof.
         - cbv. destruct l. all: reflexivity.
       }
       destruct l. all: reflexivity.
-    + eapply WellRen_up. 1: eauto with wellren.
-      subst B P' R'. rasimpl. reflexivity.
-    + subst P''. rasimpl. reflexivity.
+    + eauto with wellren.
   - intros. cbn in *. rewrite closed_ren.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
   - typing_ren_tac.
-    subst A_wk R_wk RR. rasimpl. reflexivity.
+    eauto with wellren.
   - typing_ren_tac.
     + admit.
-    + eapply WellRen_up. 1: eauto with wellren.
-      subst R_ P_ B P''. rasimpl. reflexivity.
-    + subst P''. rasimpl. reflexivity.
+    + eauto with wellren.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
   - (* Computation rule *) admit.
