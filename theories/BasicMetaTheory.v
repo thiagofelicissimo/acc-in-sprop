@@ -475,14 +475,10 @@ Proof.
     all: intros []. all: reflexivity.
   - (* eta *)
     intros. cbn in *.
-    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in H3. 
-    pose (ρ' := (0 .: (ρ >> S))).
-    eapply (H3 _ ρ').
-    1:econstructor; eauto.
-    econstructor; eauto.
-    1:eapply WellRen_weak; eauto.
-    eapply varty_meta.
-    1:econstructor. rasimpl. reflexivity.
+    eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in H3.
+    eapply (H3 _ (0 .: (ρ >> S))).
+    1: econstructor; eauto.
+    eauto with wellren.
   - typing_ren_comp_tac.
     + rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
