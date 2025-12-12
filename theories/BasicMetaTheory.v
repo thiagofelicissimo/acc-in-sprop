@@ -713,6 +713,9 @@ Ltac subst_ih :=
   | |- _ => eauto with sidecond
   end.
 
+(* Would have been cool, but too slow *)
+(* Hint Extern 2000 (⊢ _ ,, _) => econstructor ; [| subst_ih] : sidecond. *)
+
 Ltac typing_subst_tac :=
   intros ; cbn in * ;
   meta_conv ; [
@@ -774,6 +777,115 @@ Proof.
       * econstructor. 2: eauto with sidecond.
         econstructor. 1: eauto with sidecond.
         subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. 1,2: eauto with sidecond.
+      rasimpl. subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. 1,2: eauto with sidecond.
+      rasimpl. subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. 1,2: eauto with sidecond.
+      rasimpl. subst_ih.
+    + rasimpl. econstructor. 1: subst_ih.
+      meta_conv. 1: eapply meta_lvl.
+      { econstructor.
+        - subst_ih. unfold ">>". cbn. rasimpl.
+          eapply well_scons_alt.
+          + eapply well_scons_alt.
+            * eapply autosubst_simpl_WellSubst. 1: exact _.
+              eapply WellSubst_compr. all: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+            * econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+          + econstructor. 2: eauto with sidecond.
+            econstructor. 1: eauto with sidecond.
+            subst_ih.
+        - subst_ih.
+          + unfold ">>". cbn.
+            eapply autosubst_simpl_WellSubst. 1: exact _.
+            eapply well_scons_alt.
+            * {
+              eapply well_scons_alt.
+              - eapply WellSubst_compr. all: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - econstructor. 2: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+            }
+            * econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+          + unfold ">>". cbn.
+            eapply autosubst_simpl_WellSubst. 1: exact _.
+            eapply well_scons_alt.
+            * {
+              eapply WellSubst_compr. all: eauto with sidecond.
+              econstructor.
+              - econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - subst_ih.
+                eapply autosubst_simpl_WellSubst. 1: exact _.
+                eapply well_scons_alt.
+                + eapply well_scons_alt.
+                  * eapply WellSubst_compr. all: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                  * econstructor. 2: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                + econstructor. 2: eauto with sidecond.
+                  econstructor. 1: eauto with sidecond.
+                  subst_ih.
+            }
+            * {
+              econstructor. 2: eauto with sidecond.
+              econstructor.
+              - econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - subst_ih.
+                eapply autosubst_simpl_WellSubst. 1: exact _.
+                eapply well_scons_alt.
+                + eapply well_scons_alt.
+                  * eapply WellSubst_compr. all: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                  * econstructor. 2: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                + econstructor. 2: eauto with sidecond.
+                  econstructor. 1: eauto with sidecond.
+                  subst_ih.
+            }
+      }
+      all: destruct l ; reflexivity.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      repeat subst_def. rasimpl.
+      econstructor. 1: subst_ih.
+      meta_conv. 1: eapply meta_lvl.
+      { econstructor.
+        - subst_ih. admit.
+        - subst_ih.
+          + admit.
+          + admit.
+      }
+      all: destruct l ; reflexivity.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
 Admitted.
 
 Theorem subst_ty Γ l t A Δ σ A' :
