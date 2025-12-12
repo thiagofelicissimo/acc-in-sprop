@@ -374,18 +374,18 @@ Hint Extern 1000 (_ = _) =>
 Ltac ren_ih :=
   lazymatch goal with
   | |- _ ⊢< _ > _ ⋅ _ ⋅ _ : _ => rasimpl ; ren_ih
-  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : ?Γ → Δ ⊢< _ > ρ ⋅ ?t : _ |- _ ⊢< _ > _ ⋅ ?t : _ =>
+  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : ?Γ → Δ ⊢< _ > ρ ⋅ ?t : _ |- _ ⊢< _ > ?r ⋅ ?t : _ =>
     eapply meta_conv ; [
-      eapply ih ; [
+      eapply ih with (ρ := r) ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         ren_ih
       | eauto with sidecond
       ]
     | eauto with sidecond
     ]
-  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : _ → Δ ⊢< _ > ρ ⋅ ?u ≡ ρ ⋅ ?v : _ |- _ ⊢< _ > _ ⋅ ?u ≡ _ ⋅ ?v : _ =>
+  | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : _ → Δ ⊢< _ > ρ ⋅ ?u ≡ ρ ⋅ ?v : _ |- _ ⊢< _ > ?r ⋅ ?u ≡ _ ⋅ ?v : _ =>
     eapply meta_conv_conv ; [
-      eapply ih ; [
+      eapply ih with (ρ := r) ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         ren_ih
       | eauto with sidecond
@@ -656,23 +656,54 @@ Proof.
   intros ? -> ->. auto.
 Qed.
 
-Hint Resolve WellSubst_up WellSubst_weak well_scons_alt : sidecond.
+Lemma WellSubst_ren Γ Δ ρ :
+  Δ ⊢r ρ : Γ →
+  ⊢ Δ →
+  Δ ⊢s (ρ >> var) : Γ.
+Proof.
+  induction 1.
+  - constructor.
+  - constructor.
+    + eauto.
+    + rasimpl. unfold ">>".
+      econstructor. all: eassumption.
+Qed.
+
+Lemma WellSubst_compr Γ Δ Θ σ ρ :
+  Δ ⊢s σ : Θ →
+  Γ ⊢r ρ : Δ →
+  ⊢ Γ →
+  Γ ⊢s (σ >> ren_term ρ) : Θ.
+Proof.
+  intros hσ hρ hΓ.
+  induction hσ as [| σ Θ i B h ih ho] in ρ, Γ, hΓ, hρ |- *.
+  - constructor.
+  - constructor.
+    + eauto.
+    + unfold ">>". meta_conv.
+      { eapply type_ren. all: eauto. }
+      rasimpl. reflexivity.
+Qed.
+
+Hint Resolve
+  WellSubst_up WellSubst_weak well_scons_alt WellSubst_ren WellSubst_compr
+  : sidecond.
 
 Ltac subst_ih :=
   lazymatch goal with
   | |- _ ⊢< _ > _ ⋅ _ ⋅ _ : _ => rasimpl ; subst_ih
-  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?t <[ σ ] : _ |- _ ⊢< _ > ?t <[ _ ] : _ =>
+  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?t <[ σ ] : _ |- _ ⊢< _ > ?t <[ ?s ] : _ =>
     eapply meta_conv ; [
-      eapply ih ; [
+      eapply ih with (σ := s) ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         subst_ih
       | eauto with sidecond
       ]
     | eauto with sidecond
     ]
-  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?u <[ σ ] ≡ ?v <[ σ ] : _ |- _ ⊢< _ > ?u <[ _ ] ≡ ?v <[ _ ] : _ =>
+  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?u <[ σ ] ≡ ?v <[ σ ] : _ |- _ ⊢< _ > ?u <[ ?s ] ≡ ?v <[ _ ] : _ =>
     eapply meta_conv_conv ; [
-      eapply ih ; [
+      eapply ih with (σ := s) ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         subst_ih
       | eauto with sidecond
@@ -689,6 +720,20 @@ Ltac typing_subst_tac :=
     subst_ih
   | eauto with sidecond
   ].
+
+Ltac typing_subst_comp_tac :=
+  intros ; cbn in * ;
+  meta_conv ; [
+    eapply meta_rhs_conv ; [
+      comp_rule ;
+      subst_ih
+    | eauto with sidecond
+    ]
+  | eauto with sidecond
+  ].
+
+(* A bit weird but well *)
+Hint Resolve type_nat : sidecond.
 
 Lemma typing_conversion_subst :
   (∀ Γ l t A,
@@ -709,18 +754,26 @@ Proof.
   22:{ intros. cbn. apply conv_refl. eauto using varty_subst. }
   all: try solve [ intros ; try econstructor ; eauto with sidecond ].
   all: try solve [ typing_subst_tac ].
-  (* all: try solve [ typing_subst_comp_tac ]. *)
+  all: try solve [ typing_subst_comp_tac ].
   - intros. cbn. eauto using varty_subst.
   - intros. cbn in *. rewrite closed_subst.
     2:{ eapply typing_closed. eassumption. }
     econstructor. all: eassumption.
-  - intros. cbn in *.
-    meta_conv.
-    { econstructor.
-      all: subst_ih.
-      all: admit.
-    }
-    rasimpl. reflexivity.
+  - typing_subst_tac.
+    eapply WellSubst_up. 1,2: eauto with sidecond.
+    subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + rasimpl. eapply well_scons_alt.
+      * eapply autosubst_simpl_WellSubst. 1: exact _.
+        eapply well_scons_alt.
+        -- eapply WellSubst_weak. 1: eauto with sidecond. subst_ih.
+        -- econstructor. 2: eauto with sidecond.
+          constructor. 1: auto with sidecond.
+          subst_ih.
+      * econstructor. 2: eauto with sidecond.
+        econstructor. 1: eauto with sidecond.
+        subst_ih.
 Admitted.
 
 Theorem subst_ty Γ l t A Δ σ A' :
