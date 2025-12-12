@@ -358,13 +358,18 @@ Ltac subst_def :=
   | u := _ |- _ => subst u
   end.
 
-Create HintDb wellren.
+Create HintDb sidecond.
 
-Hint Resolve WellRen_up WellRen_comp WellRen_S well_rcons_alt varty0_eq vartyS_eq : wellren.
+Hint Resolve
+  WellRen_up WellRen_comp WellRen_S well_rcons_alt varty0_eq vartyS_eq
+  ctx_nil ctx_cons
+  : sidecond.
 
-Hint Extern 100 (_ = _) => rasimpl ; reflexivity : wellren.
+Hint Extern 100 (_ = _) =>
+  rasimpl ; reflexivity : sidecond.
 
-Hint Extern 1000 (_ = _) => repeat subst_def ; rasimpl ; reflexivity : wellren.
+Hint Extern 1000 (_ = _) =>
+  repeat subst_def ; rasimpl ; reflexivity : sidecond.
 
 Ltac ren_ih :=
   lazymatch goal with
@@ -374,20 +379,20 @@ Ltac ren_ih :=
       eapply ih ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         ren_ih
-      | eauto with wellren
+      | eauto with sidecond
       ]
-    | eauto with wellren
+    | eauto with sidecond
     ]
   | ih : ∀ (Δ : ctx) (ρ : nat → nat), ⊢ Δ → Δ ⊢r ρ : _ → Δ ⊢< _ > ρ ⋅ ?u ≡ ρ ⋅ ?v : _ |- _ ⊢< _ > _ ⋅ ?u ≡ _ ⋅ ?v : _ =>
     eapply meta_conv_conv ; [
       eapply ih ; [
         repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
         ren_ih
-      | eauto with wellren
+      | eauto with sidecond
       ]
-    | eauto with wellren
+    | eauto with sidecond
     ]
-  | |- _ => eauto
+  | |- _ => eauto with sidecond
   end.
 
 Ltac typing_ren_tac :=
@@ -395,7 +400,7 @@ Ltac typing_ren_tac :=
   meta_conv ; [
     econstructor ;
     ren_ih
-  | eauto with wellren
+  | eauto with sidecond
   ].
 
 Ltac comp_rule :=
@@ -414,9 +419,9 @@ Ltac typing_ren_comp_tac :=
     eapply meta_rhs_conv ; [
       comp_rule ;
       ren_ih
-    | eauto with wellren
+    | eauto with sidecond
     ]
-  | eauto with wellren
+  | eauto with sidecond
   ].
 
 Lemma typing_conversion_ren :
@@ -437,7 +442,7 @@ Proof.
   apply typing_mutind.
   1, 22: solve [ intro ; cbn ; econstructor ; eauto using varty_ren ].
   all: try solve [
-    intros ; try econstructor ; eauto using WellRen_up, ctx_cons
+    intros ; try econstructor ; eauto with sidecond
   ].
   all: try solve [ typing_ren_tac ].
   all: try solve [ typing_ren_comp_tac ].
@@ -449,9 +454,9 @@ Proof.
     meta_conv. 1: eapply meta_lvl.
     { rasimpl. econstructor.
       all: ren_ih.
-      - eauto 6 with wellren.
-      - eauto 6 with wellren.
-      - eauto 7 with wellren.
+      - eauto 6 with sidecond.
+      - eauto 6 with sidecond.
+      - eauto 7 with sidecond.
     }
     all: destruct l. all: reflexivity.
   - intros. cbn in *. rewrite closed_ren.
@@ -461,9 +466,9 @@ Proof.
     econstructor. 1: ren_ih.
     meta_conv. 1: eapply meta_lvl.
     { econstructor. all: ren_ih.
-      - eauto 6 with wellren.
-      - eauto 6 with wellren.
-      - eauto 7 with wellren.
+      - eauto 6 with sidecond.
+      - eauto 6 with sidecond.
+      - eauto 7 with sidecond.
     }
     all: destruct l ; reflexivity.
   - typing_ren_comp_tac.
@@ -478,7 +483,7 @@ Proof.
     eapply conv_eta. 3,4: ren_ih. 1,2: ren_ih. rasimpl. rasimpl in ih.
     eapply (ih _ (0 .: (ρ >> S))).
     1: econstructor; eauto.
-    eauto with wellren.
+    eauto with sidecond.
   - typing_ren_comp_tac.
     + rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
@@ -489,9 +494,9 @@ Proof.
     + econstructor. 1: ren_ih.
       meta_conv. 1: eapply meta_lvl.
       { econstructor. all: ren_ih.
-        - eauto 6 with wellren.
-        - eauto 6 with wellren.
-        - eauto 7 with wellren.
+        - eauto 6 with sidecond.
+        - eauto 6 with sidecond.
+        - eauto 7 with sidecond.
       }
       all: destruct l ; reflexivity.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
@@ -628,8 +633,7 @@ Lemma typing_conversion_subst :
       Δ ⊢s σ : Γ →
       Δ ⊢< l > u <[ σ ] ≡ v <[ σ ] : A <[ σ ]).
 Proof.
-  (* Basically copy-pasted from renaming *)
-  apply typing_mutind; intros.
+  apply typing_mutind.
 
   all: try solve [ try econstructor ; eauto 8 using WellSubst_up, ctx_cons ].
 
