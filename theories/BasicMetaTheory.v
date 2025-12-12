@@ -869,10 +869,69 @@ Proof.
       econstructor. 1: subst_ih.
       meta_conv. 1: eapply meta_lvl.
       { econstructor.
-        - subst_ih. admit.
+        - subst_ih. eapply well_scons_alt.
+          + eapply well_scons_alt.
+            * eapply WellSubst_compr. all: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+            * econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+          + econstructor. 2: eauto with sidecond.
+            econstructor. 1: eauto with sidecond.
+            subst_ih.
         - subst_ih.
-          + admit.
-          + admit.
+          + eapply well_scons_alt.
+            * {
+              eapply well_scons_alt.
+              - eapply WellSubst_compr. all: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - econstructor. 2: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+            }
+            * {
+              econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+            }
+          + eapply well_scons_alt.
+            * {
+              eapply WellSubst_compr. all: eauto with sidecond.
+              econstructor.
+              - econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - subst_ih.
+                eapply well_scons_alt.
+                + eapply well_scons_alt.
+                  * eapply WellSubst_compr. all: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                  * econstructor. 2: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                + econstructor. 2: eauto with sidecond.
+                  econstructor. 1: eauto with sidecond.
+                  subst_ih.
+            }
+            * {
+              econstructor. 2: eauto with sidecond.
+              econstructor.
+              - econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - subst_ih. eapply well_scons_alt.
+                + eapply well_scons_alt.
+                  * eapply WellSubst_compr. all: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                  * econstructor. 2: eauto with sidecond.
+                    econstructor. 1: eauto with sidecond.
+                    subst_ih.
+                + econstructor. 2: eauto with sidecond.
+                  econstructor. 1: eauto with sidecond.
+                  subst_ih.
+            }
       }
       all: destruct l ; reflexivity.
   - admit.
