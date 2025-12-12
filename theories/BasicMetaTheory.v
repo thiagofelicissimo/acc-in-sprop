@@ -528,6 +528,44 @@ Proof.
   intros h **. subst. eapply typing_conversion_ren in h ; eauto.
 Qed.
 
+Lemma ups_below k σ n :
+  n < k →
+  Nat.iter k up_term σ n = var n.
+Proof.
+  intro h.
+  induction k as [| k ih] in n, σ, h |- *. 1: lia.
+  cbn. destruct n as [| ].
+  - reflexivity.
+  - cbn. unfold ">>". unfold Nat.iter in ih. rewrite ih. 2: lia.
+    reflexivity.
+Qed.
+
+Lemma scoped_subst σ k t :
+  scoped k t = true →
+  t <[ Nat.iter k up_term σ ] = t.
+Proof.
+  intros h.
+  induction t in k, σ, h |- *.
+  all: try solve [ cbn ; eauto ].
+  all: try solve [
+    cbn in * ;
+    rewrite ?Bool.andb_true_iff in * ;
+    repeat change (up_term_term (Nat.iter ?k up_term ?σ)) with (Nat.iter (S k) up_term σ) ;
+    intuition (f_equal ; eauto)
+  ].
+  cbn - ["<?"] in *.
+  apply ups_below.
+  apply Nat.ltb_lt. assumption.
+Qed.
+
+Corollary closed_subst σ t :
+  closed t = true →
+  t <[ σ ] = t.
+Proof.
+  intros h.
+  eapply scoped_subst in h. eauto.
+Qed.
+
 #[export] Instance WellSubst_morphism :
   Proper (eq ==> eq ==> (`=1`) ==> iff) WellSubst.
 Proof.
@@ -618,6 +656,40 @@ Proof.
   intros ? -> ->. auto.
 Qed.
 
+Hint Resolve WellSubst_up WellSubst_weak well_scons_alt : sidecond.
+
+Ltac subst_ih :=
+  lazymatch goal with
+  | |- _ ⊢< _ > _ ⋅ _ ⋅ _ : _ => rasimpl ; subst_ih
+  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?t <[ σ ] : _ |- _ ⊢< _ > ?t <[ _ ] : _ =>
+    eapply meta_conv ; [
+      eapply ih ; [
+        repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
+        subst_ih
+      | eauto with sidecond
+      ]
+    | eauto with sidecond
+    ]
+  | ih : ∀ (Δ : ctx) (σ : nat → term), ⊢ Δ → Δ ⊢s σ : _ → Δ ⊢< _ > ?u <[ σ ] ≡ ?v <[ σ ] : _ |- _ ⊢< _ > ?u <[ _ ] ≡ ?v <[ _ ] : _ =>
+    eapply meta_conv_conv ; [
+      eapply ih ; [
+        repeat (eassumption + eapply ctx_nil + eapply ctx_cons + eapply type_nat) ;
+        subst_ih
+      | eauto with sidecond
+      ]
+    | eauto with sidecond
+    ]
+  | |- _ => eauto with sidecond
+  end.
+
+Ltac typing_subst_tac :=
+  intros ; cbn in * ;
+  meta_conv ; [
+    econstructor ;
+    subst_ih
+  | eauto with sidecond
+  ].
+
 Lemma typing_conversion_subst :
   (∀ Γ l t A,
     Γ ⊢< l > t : A →
@@ -634,31 +706,21 @@ Lemma typing_conversion_subst :
       Δ ⊢< l > u <[ σ ] ≡ v <[ σ ] : A <[ σ ]).
 Proof.
   apply typing_mutind.
-
-  all: try solve [ try econstructor ; eauto 8 using WellSubst_up, ctx_cons ].
-
-  (* all: try assert (Δ,, (ty 0, Nat) ⊢< Ax l > P <[ up_term_term σ] : Sort l)
-      by eauto 6 using ctx_typing, typing, WellSubst_meta, WellSubst_up.
-
-  2,3,4,6,7,8:solve [cbn in *; (eapply meta_conv_conv + eapply meta_conv) ;
-            [ (econstructor ; try solve [ (eapply meta_conv_conv + eapply meta_conv) ;
-              [ eauto 11 using WellRen_up, WellSubst_up, WellSubst_meta, ctx_typing, typing, ctx_cons
-              | rasimpl ; reflexivity]])
-            | rasimpl; reflexivity]].
-
-  3-6: solve [ intros; cbn; eapply meta_conv_conv;
-                [ eapply meta_rhs_conv;
-                  [ ((eapply conv_beta + eapply conv_rec_zero + eapply conv_rec_succ + eapply conv_J_refl) ;
-                    eauto using ctx_typing, typing, WellRen_up, WellSubst_up, WellSubst_meta; try (eapply meta_conv;
-                    [ eauto 12 using ctx_typing, typing, WellRen_up, WellSubst_up, WellSubst_meta
-                    | rasimpl; reflexivity]))
-                  | ssimpl; reflexivity]
-                | ssimpl; reflexivity] ]. *)
-
-
-  (* - cbn. eapply varty_subst. all: eassumption.
-  - cbn. apply conv_refl.
-    eapply varty_subst. all: eassumption. *)
+  22:{ intros. cbn. apply conv_refl. eauto using varty_subst. }
+  all: try solve [ intros ; try econstructor ; eauto with sidecond ].
+  all: try solve [ typing_subst_tac ].
+  (* all: try solve [ typing_subst_comp_tac ]. *)
+  - intros. cbn. eauto using varty_subst.
+  - intros. cbn in *. rewrite closed_subst.
+    2:{ eapply typing_closed. eassumption. }
+    econstructor. all: eassumption.
+  - intros. cbn in *.
+    meta_conv.
+    { econstructor.
+      all: subst_ih.
+      all: admit.
+    }
+    rasimpl. reflexivity.
 Admitted.
 
 Theorem subst_ty Γ l t A Δ σ A' :
