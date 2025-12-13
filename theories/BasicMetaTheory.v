@@ -965,8 +965,36 @@ Proof.
         - rasimpl. subst_ih.
           unfold ">>". cbn.
           eapply autosubst_simpl_WellSubst. 1: exact _.
-          admit.
-        - rasimpl. admit.
+          eapply well_scons_alt.
+          + eapply well_scons_alt.
+            * eapply WellSubst_compr. all: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+            * econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+          + econstructor. 2: eauto with sidecond.
+            econstructor. 1: eauto with sidecond.
+            subst_ih.
+        - rasimpl. subst_ih.
+          + unfold ">>". cbn.
+            eapply autosubst_simpl_WellSubst. 1: exact _.
+            eapply well_scons_alt.
+            * {
+              eapply well_scons_alt.
+              - eapply WellSubst_compr. all: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+              - econstructor. 2: eauto with sidecond.
+                econstructor. 1: eauto with sidecond.
+                subst_ih.
+            }
+            * {
+              econstructor. 2: eauto with sidecond.
+              econstructor. 1: eauto with sidecond.
+              subst_ih.
+            }
+          + admit.
       }
       all: destruct l ; reflexivity.
     + admit.
