@@ -1117,8 +1117,11 @@ Proof.
             }
       }
       all: destruct l ; reflexivity.
-  - admit.
-  - admit.
+  - typing_subst_comp_tac.
+    repeat subst_def. cbn. rasimpl. f_equal. f_equal.
+    f_equal. f_equal. f_equal. all: rasimpl. all: reflexivity.
+  - (* eta *)
+    admit.
   - admit.
   - admit.
   - admit.
