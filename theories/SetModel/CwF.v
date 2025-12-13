@@ -1,6 +1,6 @@
 Require Import library.
-Require Import ZF_axioms.
-Require Import ZF_library.
+Require Import ZF_axioms ZF_library.
+Require Import HO.
 
 (* We define the CwF corresponding to the standard model, with a twist: types are labelled.
    This means that a type in [Γ] is a function from [Γ] to [𝕍 n × (ω × 𝕍 n)], the first component
@@ -60,28 +60,6 @@ Proof.
   apply (setArr_funext Hσ (cwfSubEmpty_typing Γ)). intros γ Hγ.
   pose proof (setAppArr_typing Hσ Hγ) as H1. apply inSetSingl in H1. refine (trans H1 _).
   pose proof (setAppArr_typing (cwfSubEmpty_typing Γ) Hγ) as H2. apply inSetSingl in H2. exact (sym H2).
-Qed.
-
-(* Universes (the CwF comes from the higher-order model given by these universes) *)
-
-Definition 𝕌 (n : nat) := 𝕍 n × (ω × 𝕍 n).
-Definition 𝕌el (n : nat) (A : ZFSet) := setFstPair (𝕍 n) (ω × 𝕍 n) A.
-Definition 𝕌hd (n : nat) (A : ZFSet) := setFstPair ω (𝕍 n) (setSndPair (𝕍 n) (ω × 𝕍 n) A).
-Definition 𝕌lbl (n : nat) (A : ZFSet) := setSndPair ω (𝕍 n) (setSndPair (𝕍 n) (ω × 𝕍 n) A).
-
-Lemma 𝕌el_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌el n A ∈ 𝕍 n.
-Proof.
-  intro HA. now apply setFstPair_typing. 
-Qed.
-
-Lemma 𝕌hd_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌hd n A ∈ ω.
-Proof.
-  intro HA. apply setFstPair_typing. now apply setSndPair_typing.
-Qed.
-
-Lemma 𝕌lbl_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌lbl n A ∈ 𝕍 n.
-Proof.
-  intro HA. apply setSndPair_typing. now apply setSndPair_typing.
 Qed.
 
 (* Presheaf of types *)

@@ -1,30 +1,11 @@
 Require Import library.
-Require Import ZF_axioms.
-Require Import ZF_library.
-Require Import CwF.
-Require Import CwF_library.
+Require Import ZF_axioms ZF_library.
+Require Import HO HO_pi HO_nat.
+Require Import CwF CwF_library.
 
 (* Type of natural numbers *)
 
-Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.
-
 Definition natTy (n : nat) (Γ : ZFSet) := HO_to_cwfTy n Γ natTy_HO. 
-
-Lemma el_natTy {n : nat} {γ : ZFSet} : 𝕌el n (natTy_HO γ) ≡ ω.
-Proof.
-  apply setPairβ1.
-  + apply ZFuniv_uncountable.
-  + apply setMkPair_typing. apply zero_typing. apply empty_in_univ.
-Qed.
-
-Lemma natTy_HO_typing (n : nat) {γ : ZFSet} : natTy_HO γ ∈ 𝕌 n.
-Proof.
-  apply setMkPair_typing.
-  - now apply ZFuniv_uncountable.
-  - apply setMkPair_typing.
-    + apply zero_typing.
-    + apply empty_in_univ.
-Qed.
 
 Lemma cwfNat {n : nat} (Γ : ZFSet) : natTy n Γ ∈ cwfTy n Γ.
 Proof.  
@@ -32,18 +13,15 @@ Proof.
   apply HO_rel_typing. intros. now apply natTy_HO_typing.
 Qed.
 
+Lemma cwfNat_to_HO {n : nat} (Γ : ZFSet) : ∀ γ ∈ Γ, cwfTy_to_HO n Γ (natTy n Γ) γ ≡ natTy_HO γ.
+Proof.
+  intros γ Hγ. cbn. apply setAppArr_HO. 2:assumption. clear γ Hγ.
+  intros γ Hγ. now apply natTy_HO_typing.
+Qed.
+
 (* Zero *)
 
-Definition zeroTm_HO : ZFSet -> ZFSet := fun _ => ∅.
-
 Definition zeroTm (n : nat) (Γ : ZFSet) := HO_to_cwfTm n Γ zeroTm_HO.
-
-Lemma zeroTm_HO_typing (n : nat) {γ : ZFSet} : zeroTm_HO γ ∈ 𝕌el n (natTy_HO γ).
-Proof.
-  refine (transpS (fun x => _ ∈ x) _ _).
-  - symmetry. apply el_natTy. 
-  - apply zero_typing.
-Qed.
 
 Lemma cwfZero {n : nat} (Γ : ZFSet) : zeroTm n Γ ∈ cwfTm n Γ (natTy n Γ).
 Proof.
@@ -54,29 +32,16 @@ Qed.
 
 (* Successor *)
 
-Definition sucTm_HO (n : nat) (Γ : ZFSet) (t : ZFSet) : ZFSet -> ZFSet :=
-  fun γ => ZFsuc (setAppArr Γ (𝕍 n) t γ).
-
 Definition sucTm (n : nat) (Γ : ZFSet) (t : ZFSet) :=
-  HO_to_cwfTm n Γ (sucTm_HO n Γ t).
-
-Lemma sucTm_HO_typing {n : nat} {Γ t γ : ZFSet} (Ht : t ∈ cwfTm n Γ (natTy n Γ)) (Hγ : γ ∈ Γ) :
-  sucTm_HO n Γ t γ ∈ 𝕌el n (natTy_HO γ).
-Proof.
-  refine (transpS (fun x => _ ∈ x) _ _).
-  { symmetry. apply el_natTy. }
-  apply suc_typing.
-  refine (transpS (fun x => _ ∈ x) _ _).
-  { apply (@el_natTy n γ). }
-  apply setAppArr_Tm_detyping ; try assumption.
-  intros ; apply natTy_HO_typing.
-Qed.
+  HO_to_cwfTm n Γ (sucTm_HO n (cwfTm_to_HO n Γ t)).
 
 Lemma cwfSuc {n : nat} {Γ t : ZFSet} (Ht : t ∈ cwfTm n Γ (natTy n Γ)) :
   sucTm n Γ t ∈ cwfTm n Γ (natTy n Γ).
 Proof.
   apply HO_to_cwfTm_typing.
   - intros. apply natTy_HO_typing.
-  - intros γ Hγ. now apply sucTm_HO_typing.
+  - intros γ Hγ. apply (sucTm_HO_typing (Γ := Γ)). 2:assumption. clear γ Hγ.
+    intros γ Hγ. refine (transpS (fun X => _ ∈ 𝕌el n X) (cwfNat_to_HO (n := n) Γ γ Hγ) _).
+    apply cwfTm_to_HO_typing. apply cwfNat. assumption. assumption.
 Qed.
 

@@ -1,19 +1,7 @@
 Require Import library.
-Require Import ZF_axioms.
-Require Import ZF_library.
+Require Import ZF_axioms ZF_library.
+Require Import HO.
 Require Import CwF.
-
-(* Elements of 𝕌 are also elements of 𝕍 *)
-
-Lemma 𝕌_incl_𝕍 {n : nat} : 𝕌 n ⊂ 𝕍 n.
-Proof.
-  intros x Hx. refine (transpS (fun X => X ∈ 𝕍 n) (sym (setPairη Hx)) _). apply setMkPair_sorting.
-  - now apply setFstPair_typing.
-  - set (y := setSndPair (𝕍 n) (ω × 𝕍 n) x). assert (y ∈ ω × 𝕍 n) as Hy. { now apply setSndPair_typing. }
-    clearbody y. clear x Hx. refine (transpS (fun X => X ∈ 𝕍 n) (sym (setPairη Hy)) _). apply setMkPair_sorting.
-    + eapply ZFuniv_trans. now apply setFstPair_typing. apply ZFuniv_uncountable.
-    + now apply setSndPair_typing.
-Qed.
 
 (* Defining terms and types using higher-order stuff *)
 
@@ -144,19 +132,6 @@ Lemma HO_to_cwfTm_detyping {n : nat} {Γ : ZFSet} {f A : ZFSet -> ZFSet}
 Proof.
   intros H γ Hγ. eapply (setAppArr_Tm_detyping HA) in H.
   refine (transpS (fun x => x ∈ _) _ H). now apply setAppArr_HO_to_cwfTm. assumption.
-Qed.
-
-(* Telescopes (useful for labels) *)
-
-Definition typeTelescope2 (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet -> ZFSet) :=
-  fun γ => ⟨ A γ ; HO_to_cwfTy n (𝕌el n (A γ)) (B γ) ⟩.
-
-Lemma typeTelescope2_typing (n : nat) {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γ ∈ Γ, ∀ a ∈ 𝕌el n (A γ), B γ a ∈ 𝕌 n) : ∀ γ ∈ Γ, typeTelescope2 n Γ A B γ ∈ 𝕍 n.
-Proof.
-  intros γ Hγ. cbn. unfold typeTelescope2. apply setMkPair_sorting.
-  - apply 𝕌_incl_𝕍. now apply HA.
-  - apply HO_to_cwfTy_sorting. apply 𝕌el_typing. now apply HA. now apply HB.
 Qed.
 
 (* Single substitution *)
