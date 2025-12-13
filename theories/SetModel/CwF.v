@@ -66,11 +66,22 @@ Qed.
 
 Definition 𝕌 (n : nat) := 𝕍 n × (ω × 𝕍 n).
 Definition 𝕌el (n : nat) (A : ZFSet) := setFstPair (𝕍 n) (ω × 𝕍 n) A.
-Definition 𝕌lbl (n : nat) (A : ZFSet) := setSndPair (𝕍 n) (ω × 𝕍 n) A.
+Definition 𝕌hd (n : nat) (A : ZFSet) := setFstPair ω (𝕍 n) (setSndPair (𝕍 n) (ω × 𝕍 n) A).
+Definition 𝕌lbl (n : nat) (A : ZFSet) := setSndPair ω (𝕍 n) (setSndPair (𝕍 n) (ω × 𝕍 n) A).
 
 Lemma 𝕌el_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌el n A ∈ 𝕍 n.
 Proof.
   intro HA. now apply setFstPair_typing. 
+Qed.
+
+Lemma 𝕌hd_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌hd n A ∈ ω.
+Proof.
+  intro HA. apply setFstPair_typing. now apply setSndPair_typing.
+Qed.
+
+Lemma 𝕌lbl_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌lbl n A ∈ 𝕍 n.
+Proof.
+  intro HA. apply setSndPair_typing. now apply setSndPair_typing.
 Qed.
 
 (* Presheaf of types *)
@@ -79,11 +90,8 @@ Definition cwfTy (n : nat) (Γ : ZFSet) := Γ ⇒ (𝕌 n).
 
 Definition cwfTy_reindex (n : nat) (Γ A Δ σ : ZFSet) := setCompArr Δ Γ (𝕌 n) σ A.
 
-Definition cwfTy_to_HO (n : nat) (Γ A : ZFSet) :=
-  fun γ => setAppArr Γ (𝕌 n) A γ.
-
 Definition cwfTy_to_depSet (n : nat) (Γ A : ZFSet) : ZFSet -> ZFSet :=
-  fun γ => 𝕌el n (cwfTy_to_HO n Γ A γ).
+  fun γ => 𝕌el n (setAppArr Γ (𝕌 n) A γ).
 
 Lemma cwfTy_reindex_typing {n : nat} {Γ A Δ σ : ZFSet} (HA : A ∈ cwfTy n Γ) (Hσ : σ ∈ cwfSub Δ Γ) :
   cwfTy_reindex n Γ A Δ σ ∈ cwfTy n Δ.
@@ -119,12 +127,6 @@ Lemma cwfTy_to_depSet_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) (�
 Proof.
   unfold cwfTy_to_depSet. apply setFstPair_typing.
   apply setAppArr_typing ; assumption.
-Qed.
-
-Lemma cwfTy_to_HO_typing {n : nat} {Γ A : ZFSet} (HA : A ∈ cwfTy n Γ) :
-  ∀ γ ∈ Γ, cwfTy_to_HO n Γ A γ ∈ 𝕌 n.
-Proof.
-  intros γ Hγ. now apply setAppArr_typing.
 Qed.
 
 (* Dependent presheaf of terms *)
