@@ -32,6 +32,15 @@ Proof.
     + now apply setSndPair_typing.
 Qed.
 
+Lemma 𝕌_in_𝕍 {n : nat} : 𝕌 n ∈ 𝕍 (S n).
+Proof.
+  apply setProd_typing.
+  + apply ZFuniv_hierarchy.
+  + apply setProd_typing.
+    * apply ZFuniv_uncountable.
+    * apply ZFuniv_hierarchy.
+Qed.
+
 (* Extended contexts *)
 
 Definition ctxExt (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) := setSigma n Γ (fun γ => 𝕌el n (A γ)).

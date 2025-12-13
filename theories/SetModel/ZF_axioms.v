@@ -86,7 +86,7 @@ Axiom ZFindescr : forall (A : ZFSet), (exU ZFSet (fun a => a ∈ A)) -> ι A ∈
 Parameter ZFuniv : nat -> ZFSet.
 Definition 𝕍 := ZFuniv.
 Axiom ZFuniv_uncountable : forall n, ω ∈ 𝕍 n.
-Axiom ZFuniv_hierarchy : forall n, 𝕍 n ∈ 𝕍 (n+1).
+Axiom ZFuniv_hierarchy : forall n, 𝕍 n ∈ 𝕍 (S n).
 Axiom ZFuniv_trans : forall n x y, x ∈ y -> y ∈ 𝕍 n -> x ∈ 𝕍 n.
 Axiom ZFuniv_pair : forall n x y, x ∈ 𝕍 n -> y ∈ 𝕍 n -> { x ; y } ∈ 𝕍 n.
 Axiom ZFuniv_power : forall n x, x ∈ 𝕍 n -> 𝒫 x ∈ 𝕍 n.
