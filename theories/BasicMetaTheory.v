@@ -934,12 +934,42 @@ Proof.
             }
       }
       all: destruct l ; reflexivity.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
+  - typing_subst_tac.
+    symmetry. apply closed_subst.
+    eapply typing_closed. eassumption.
+  - typing_subst_tac.
+    eapply WellSubst_up. all: eauto with sidecond.
+    subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      rasimpl. subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      rasimpl. subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      rasimpl. subst_ih.
+  - typing_subst_tac.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      rasimpl. subst_ih.
+    + rasimpl. subst_ih.
+    + eapply WellSubst_up. all: eauto with sidecond.
+      rasimpl. subst_ih.
+    + econstructor. 1:{ rasimpl. subst_ih. }
+      meta_conv. 1: eapply meta_lvl.
+      { econstructor.
+        - rasimpl. subst_ih.
+          unfold ">>". cbn.
+          eapply autosubst_simpl_WellSubst. 1: exact _.
+          admit.
+        - rasimpl. admit.
+      }
+      all: destruct l ; reflexivity.
+    + admit.
   - admit.
   - admit.
   - admit.
