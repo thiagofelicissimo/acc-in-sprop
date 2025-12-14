@@ -1,5 +1,5 @@
 Require Import library.
-Require Import ZF_axioms ZF_library.
+Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO HO_pi.
 
 Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.

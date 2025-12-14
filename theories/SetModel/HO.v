@@ -1,6 +1,5 @@
 Require Import library.
-Require Import ZF_axioms.
-Require Import ZF_library.
+Require Import ZF_axioms ZF_library ZF_nat.
 
 Definition 𝕌 (n : nat) := 𝕍 n × (ω × 𝕍 n).
 Definition 𝕌el (n : nat) (A : ZFSet) := setFstPair (𝕍 n) (ω × 𝕍 n) A.
@@ -39,6 +38,39 @@ Proof.
   + apply setProd_typing.
     * apply ZFuniv_uncountable.
     * apply ZFuniv_hierarchy.
+Qed.
+
+(* Propositions *)
+
+Definition unit_set := setSingl ∅.
+Notation "⋆" := unit_set.
+
+Definition Ω := 𝒫 ⋆.
+Definition prop (P : SProp) := { x ϵ ⋆ ∣ P }.
+
+Lemma Ω_typing (n : nat) : Ω ∈ 𝕍 n.
+Proof.
+  apply ZFuniv_power. apply ZFuniv_pair.
+  1,2: eapply ZFuniv_trans. 1,3: apply zero_typing. 1,2:apply ZFuniv_uncountable.
+Qed.
+
+Lemma prop_typing (P : SProp) : prop P ∈ Ω.
+Proof.
+  apply ZFinpower. intros x Hx. apply ZFincomp in Hx. now destruct Hx.
+Qed.
+
+Lemma prop_true_if (P : SProp) : ∀ x ∈ prop P, P.
+Proof.
+  intros x Hx. cbn. apply ZFincomp in Hx. now destruct Hx.
+Qed.
+
+Lemma prop_true_iff (P : SProp) : ∅ ∈ prop P ↔ P.
+Proof.
+  split.
+  - apply prop_true_if.
+  - intro H. apply ZFincomp. split.
+    + apply ZFinpairing. now left.
+    + assumption.
 Qed.
 
 (* Extended contexts *)
