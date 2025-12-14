@@ -1121,7 +1121,14 @@ Proof.
     repeat subst_def. cbn. rasimpl. f_equal. f_equal.
     f_equal. f_equal. f_equal. all: rasimpl. all: reflexivity.
   - (* eta *)
-    admit.
+    intros ?????????????????? ih ? σ **. cbn in *.
+    eapply conv_eta. 3,4: subst_ih. 1,2: subst_ih.
+    rasimpl. rasimpl in ih.
+    specialize ih with (σ := up_term_term σ).
+    cbn in ih. rasimpl in ih.
+    eapply ih.
+    1: econstructor; eauto.
+    eauto with sidecond.
   - typing_subst_comp_tac.
     eapply WellSubst_up. all: eauto with sidecond.
     subst_ih.
@@ -1286,7 +1293,7 @@ Proof.
       all: destruct l ; reflexivity.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: reflexivity.
-Admitted.
+Qed.
 
 Theorem subst_ty Γ l t A Δ σ A' :
   ⊢ Δ ->
