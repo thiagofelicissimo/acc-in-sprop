@@ -1626,15 +1626,50 @@ Proof.
     1:econstructor; eauto.
     2:reflexivity.
     1:eapply WellRen_S.
-  - admit.
-  - admit. 
-  - admit. 
+  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+    { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
+    econstructor; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty.
+    2:eapply meta_conv_conv. 2:eapply IHht4; eauto.
+    2:unfold R', acc_wk, R_wk, A_wk; rasimpl; reflexivity.
+    eapply IHht2.
+    2:eapply conv_substs_up_two; eauto.
+    2:eapply WellSubst_up_two; eauto.
+    econstructor. 1:econstructor.
+    all:eauto.
+    eapply (type_ren _ _ _ _ _ S) in H.
+    1:eassumption.
+    1:econstructor; eauto.
+    2:reflexivity.
+    1:eapply WellRen_S.
+  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+    { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
+    econstructor; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty.
+    2:eapply meta_conv_conv. 2:eapply IHht6; eauto. 
+    2: rasimpl; reflexivity.
+    eapply IHht2.
+    2:eapply conv_substs_up_two; eauto.
+    2:eapply WellSubst_up_two; eauto.
+    econstructor. 1:econstructor.
+    all:eauto.
+    eapply (type_ren _ _ _ _ _ S) in H.
+    1:eassumption.
+    1:econstructor; eauto.
+    2:reflexivity.
+    1:eapply WellRen_S.
+  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+    { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
+    eapply meta_conv_conv.
+    1:econstructor; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty.
+    4:rasimpl;reflexivity.
+    all:admit.
   - eapply meta_conv_conv.
     + econstructor.
           all : try solve [ (eapply meta_conv_conv + eapply meta_conv) ; [
         eauto 8 using subst_ty, ctx_typing, typing, WellSubst_up, conv_substs_up, subst_conv_meta_conv_ctx, subst_meta_conv_ctx | rasimpl ; reflexivity]].
     + rasimpl; reflexivity.
-  - admit.
+  - eapply meta_conv_conv.
+    1:try solve [ econstructor ; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty ].
+    rasimpl; reflexivity.
   - eapply conv_conv. 1: eauto.
     eapply meta_conv_conv.
     + eapply typing_conversion_subst; eauto. all: eauto.
