@@ -1782,6 +1782,20 @@ Proof.
   - eapply conv_substs; eauto.
 Qed.
 
+
+Lemma subst_id_reduce1 : pointwise_relation _ eq (var 0 .: (S >> var)) var.
+Proof.
+    unfold pointwise_relation. intros.
+    destruct a; reflexivity.
+Qed.
+
+Lemma subst_id_reduce2 : pointwise_relation _ eq (var 0 .: (var 1 .: (S >> (S >> var)))) var.
+Proof.
+    unfold pointwise_relation. intros.
+    destruct a. 1:reflexivity. destruct a. 1:reflexivity. reflexivity.
+Qed.
+
+
 Lemma validity_gen :
   (∀ Γ l t A,
     Γ ⊢< l > t : A →
@@ -1895,8 +1909,36 @@ Proof.
           }
           reflexivity.
       }
-  - admit.
-  - admit.
+  - split; econstructor; intuition eauto using type_conv.
+    eapply pre_conv_in_ctx_ty; eauto.
+    1:econstructor. 1:econstructor. 
+    4:econstructor. 4:econstructor.
+    all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
+    1:eapply type_ren; eauto using WellRen_S.
+    2:eapply conv_ren; eauto using WellRen_S, conv_sym.
+    all:econstructor; eauto using validity_ty_ctx.
+  - assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A')).
+    { intuition eauto. econstructor. 1:econstructor.
+      all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
+      1:eapply type_ren; eauto using WellRen_S. econstructor; eauto using validity_ty_ctx. } 
+    assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A') ≡ (Γ,, (i, A)),, (i, S ⋅ A)).
+    { intuition eauto. econstructor. 1:econstructor.
+      all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
+      eapply conv_ren; eauto using WellRen_S, conv_sym.
+      econstructor; eauto using validity_ty_ctx. } 
+    split.
+    1:econstructor.
+    5:eapply type_conv. 5:econstructor.
+    all: intuition eauto using type_conv.
+    3:econstructor; eauto using conv_conv, conv_sym. 
+    1:eapply pre_conv_in_ctx_ty; eauto.
+    2:eapply pre_conv_in_ctx_conv; eauto using conv_sym.
+    eapply type_conv; eauto.
+    eapply meta_lvl_conv. 1:econstructor.
+    1,2:eauto.
+    2:eauto.
+    eapply meta_lvl_conv. 1:econstructor.
+    all:admit.
   - admit.
   - admit.
   - destruct H0, H1, H2, H3, H4, H5. split.
@@ -1905,10 +1947,105 @@ Proof.
       1:eapply pre_conv_in_ctx_ty; eauto using ctx_typing, validity_ty_ctx, conv_ccons, ctx_conv_refl, conv_sym.
       1:eapply type_conv; eauto.
       1,2: eapply pre_subst_conv; eauto using subst_one, validity_ty_ctx, substs_one, conv_sym.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
+  - intuition eauto.
+    1:econstructor.
+    5: eapply type_conv. 5:econstructor.
+    all:eauto using type_conv, conv_sym.
+    eapply type_conv; eauto.
+    econstructor; eauto using conversion, validity_ty_ctx.
+  - intuition eauto.
+    1:econstructor.
+    6:eapply type_conv.
+    6:econstructor.
+    all:eauto.
+    1,2:eapply pre_conv_in_ctx_ty; eauto.
+    1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
+    1:eapply type_conv; eauto.
+    1,2:econstructor; eauto using conv_sym, conversion, validity_ty_ctx.
+  - intuition eauto.
+    1:econstructor.
+    7:eapply type_conv.
+    7:econstructor.
+    all:eauto using conv_sym, type_conv.
+    1,2:eapply pre_conv_in_ctx_ty; eauto.
+    1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
+    1:eapply type_conv; eauto.
+    all:unfold a1.
+    1,2:econstructor; eauto using conv_sym, conversion, validity_ty_ctx.
+    all:eapply pre_subst_conv; eauto using conv_sym, validity_ty_ctx, subst_one, substs_one.
+    1:eapply subst_one.
+    2:eapply substs_one.
+    2: { eapply conv_conv. 1:econstructor; eauto using conv_sym, conv_conv.
+    1:econstructor; eauto using conv_sym.  
+    1,2:eapply pre_conv_in_ctx_conv; eauto using conv_sym.
+    1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.   
+    1:eapply conv_conv; eauto using conv_sym.
+    1:econstructor. 
+    2,3:econstructor.
+    all:eauto using conversion, validity_ty_ctx. } 
+    eapply type_conv.
+    1:econstructor; eauto using type_conv. 2:eauto using conv_sym.
+    econstructor; eauto.
+    1,2:eapply pre_conv_in_ctx_ty; eauto using conv_sym.
+    1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
+    eapply type_conv; eauto.
+    econstructor; eauto using conv_sym, conversion, validity_ty_ctx. 
+  - intuition eauto. 
+    * econstructor. 
+      1,2:econstructor; eauto.
+      all: eauto.
+    * unfold t8.
+      econstructor; eauto.
+      unfold t7.
+      assert (Γ ,, (i, A2) ⊢< i > t5 : S ⋅ A1).
+      { unfold t5. unfold A1'.
+        econstructor. 
+        ** unfold A2'. eapply type_ren; eauto using WellRen_S.
+           econstructor; eauto using validity_ty_ctx. 
+        ** eapply type_ren; eauto using WellRen_S.
+           econstructor; eauto using validity_ty_ctx.
+        ** econstructor.
+           1-4:eapply type_ren; eauto using WellRen_S.
+           1,2,4,5:econstructor; eauto using validity_ty_ctx.
+           1,2:eapply type_ren; eauto using WellRen_S.
+           1,2:econstructor; eauto using validity_ty_ctx.
+           1,2:eapply WellRen_up; eauto using WellRen_S.
+           eapply type_ren; eauto using WellRen_S.
+           econstructor; eauto using validity_ty_ctx.
+        ** eapply meta_conv. 1:econstructor. 2:econstructor.           
+           1:econstructor; eauto using validity_ty_ctx.
+           unfold A2'; eauto. } 
+      econstructor; eauto.
+      1:eapply subst_ty; eauto.
+      1:econstructor; eauto using validity_ty_ctx.
+      1:econstructor. 2:ssimpl; renamify; eauto.
+      
+      1:ssimpl. 
+      3: {  unfold t6. 1:eapply meta_conv.
+        1:econstructor; eauto. 4:unfold B1'; rasimpl; reflexivity.
+        1,2:unfold A1', B1'.
+        all:eapply type_ren; eauto using WellRen_S.
+        1,2,4:econstructor; eauto using validity_ty_ctx.
+        1:eapply type_ren; eauto using WellRen_S.
+        1:econstructor; eauto using validity_ty_ctx.
+        eapply WellRen_up; eauto using WellRen_S. }
+      2:{ eapply meta_conv.
+       1:econstructor.
+       7:unfold B1', t5; rasimpl.
+       7:f_equal. 7:unfold B2';rasimpl.
+       7:setoid_rewrite subst_id_reduce1; rasimpl; reflexivity.
+       6:eapply meta_conv. 6:econstructor. 7:econstructor.
+       6:econstructor; eauto using validity_ty_ctx. 6:unfold A2'; reflexivity.
+       all:unfold A1', B1'.
+       all:eapply type_ren; eauto using WellRen_S.
+       3,6:eapply WellRen_up; eauto.
+       3,4:eapply WellRen_S.
+       2,4:econstructor.
+       3,5:unfold A2'; eapply type_ren; eauto using WellRen_S.
+       all:econstructor; eauto using validity_ty_ctx. } 
+
+      change (S >> var) with (var >> ren_term S).
+      eapply WellSubst_weak; eauto using subst_id, validity_ty_ctx.
   - split.
     + econstructor. all: intuition eauto.
       econstructor. auto.
