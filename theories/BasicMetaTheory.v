@@ -296,6 +296,15 @@ Proof.
   intros. eapply validity_ctx in H; eauto.
 Qed.
 
+Lemma thread_pi Γ i j A B :
+  Γ ⊢< Ax i > A : Sort i →
+  (⊢ Γ ,, (i, A) → Γ ,, (i, A) ⊢< Ax j > B : Sort j) →
+  Γ ⊢< Ax (Ru i j) > Pi i j A B : Sort (Ru i j).
+Proof.
+  intros.
+  firstorder eauto using type_pi, ctx_cons, validity_ty_ctx.
+Qed.
+
 Lemma conv_cast_refl' Γ i A B e a :
   Γ ⊢< Ax i > A ≡ B : Sort i ->
   Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
