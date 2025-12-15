@@ -2004,7 +2004,21 @@ Proof.
     2:rasimpl; simpl. 1,2:eauto.
     econstructor. 1:rasimpl; eapply substs_one.
     2:rasimpl;simpl. 1,2:eauto.
-  - admit.
+  - intuition eauto. 1:econstructor; eauto.
+    eapply type_conv. 1:econstructor; eauto using type_conv.
+    4:eapply type_conv; eauto. 4:econstructor; eauto.
+    4:eapply pre_subst_conv; eauto using validity_ty_ctx, conv_sym.
+    4:eapply subst_one; eauto.
+    4:eapply substs_one; eauto using conv_sym.
+    2:eapply pre_conv_in_ctx_ty; eauto.
+    1:eapply pre_conv_in_ctx_ty; eauto.
+    1,2:econstructor.
+    1,3,5,6:econstructor; eauto using conv_sym, validity_ty_ctx, ctx_conv_refl.
+    1:eapply type_ren; eauto. 3:eapply conv_ren; eauto using conv_sym.
+    1,3:econstructor; eauto using validity_ty_ctx.
+    1,2:eapply WellRen_S.
+    eapply type_conv. 1: eapply pre_conv_in_ctx_ty; eauto.
+    all:admit.
   - destruct H0, H1, H2, H3, H4, H5. split.
     + eapply type_J; eauto.
     + eapply type_conv. 1:eapply type_J; eauto using type_conv, conv_obseq.
@@ -2122,7 +2136,8 @@ Proof.
           + econstructor. all: intuition eauto.
       }
       rasimpl. reflexivity.
-  - admit.
+  - intuition eauto. 1:econstructor; eauto. 
+    admit.
 Admitted.
 
 Theorem validity_conv_left Γ l t u A :
