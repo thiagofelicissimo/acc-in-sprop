@@ -1796,6 +1796,132 @@ Proof.
   all: try solve [
     intros ; try econstructor ; try econstructor ; intuition eauto using validity_ty_ctx, validity_conv_ctx
   ].
+  all:try solve [ intros ; intuition eauto 6 using conversion, typing].
+  all: try solve [ intuition eauto using subst_ty, subst_one, validity_ty_ctx, conversion, typing, validity_ty_ctx, subst_one, valid_varty].
+  all:intros.
+  - eapply typing_conversion_ren in t as temp; eauto. 2:econstructor. Unshelve. 2:exact (fun _ => 0).
+    rewrite closed_ren in temp; eauto using typing_closed.
+  - eapply meta_lvl. 1:eapply type_sort. all:eauto.
+  - econstructor. 1:eapply type_sort; eauto using validity_ty_ctx.
+    all:eapply subst_ty; eauto.
+    all:eauto using validity_ty_ctx, subst_one.
+    eapply subst_one; eauto.
+    unfold a1. eapply type_cast; eauto.
+    eapply type_injpi1; eauto.
+  - split ; econstructor. all: intuition eauto.
+    eapply pre_conv_in_ctx_ty. all: eauto using ctx_typing, validity_ty_ctx, ctx_conv_refl, conv_ccons, conv_sym.
+  - split.
+    + econstructor. all: intuition eauto.
+    + econstructor.
+      * {
+        econstructor. 1: intuition eauto.
+        all: intuition eauto 9 using pre_conv_in_ctx_ty, ctx_conv_refl, conv_ccons, conv_sym, ctx_typing, validity_ty_ctx.
+        eapply pre_conv_in_ctx_ty.
+        - eapply type_conv. all: intuition eauto.
+        - econstructor; eauto using validity_ty_ctx.
+        - econstructor; eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
+      }
+      * apply conv_sym. constructor.
+        all: intuition eauto.
+  - split.
+    + econstructor. all: intuition eauto.
+    + eapply type_conv.
+      * {
+        econstructor. 1: intuition eauto.
+        all: intuition eauto 8 using type_conv, pre_conv_in_ctx_ty, ctx_conv_refl, conv_ccons, conv_sym, ctx_typing, validity_ty_ctx.
+        eapply type_conv. 1: intuition eauto.
+        constructor. all: intuition eauto.
+      }
+      * {
+        apply conv_sym. eapply conv_trans.
+        - eapply meta_conv_conv.
+          + eapply typing_conversion_subst.
+            all: intuition eauto using subst_one, validity_ty_ctx.
+          + reflexivity.
+        - eapply meta_conv_conv.
+          { eapply conv_substs.
+            - eauto using validity_ty_ctx.
+            - eapply substs_one. eauto.
+            - eapply subst_one. intuition eauto.
+            - intuition eauto.
+          }
+          reflexivity.
+      }
+  - split.
+    + econstructor. all: intuition eauto.
+    + eapply type_conv.
+      * {
+        econstructor. all: intuition eauto.
+        - eapply type_conv. 1: intuition eauto.
+          eapply meta_conv_conv.
+          + eapply typing_conversion_subst. 1,2: intuition eauto using validity_ty_ctx.
+            eapply well_scons_alt.
+            * apply subst_id. eauto using validity_ty_ctx.
+            * cbn. constructor. eauto using validity_ty_ctx.
+          + reflexivity.
+        - eapply pre_conv_in_ctx_ty.
+          + eapply type_conv. 1: intuition eauto.
+            eapply meta_conv_conv.
+            * {
+              eapply typing_conversion_subst. 1: intuition eauto.
+              1:econstructor; eauto using validity_ty_ctx.
+              eapply well_scons_alt.
+              - change (↑ >> (↑ >> var)) with (var >> ren_term S >> ren_term S).
+                eapply WellSubst_weak.
+                1:eapply WellSubst_weak.
+                1:apply subst_id; eauto using validity_ty_ctx.
+                1,2:eauto using typing, validity_ty_ctx.
+              - cbn. constructor.
+                eapply meta_conv.
+                + repeat constructor. all:eauto using validity_ty_ctx.
+                + reflexivity.
+            }
+            * reflexivity.
+          + constructor. 1: eauto using ctx_conv_refl, validity_ty_ctx. eauto.
+          + econstructor; eauto using ctx_conv_refl, conv_sym, validity_ty_ctx.
+      }
+      * {
+        apply conv_sym. eapply conv_trans.
+        - eapply meta_conv_conv.
+          + eapply typing_conversion_subst.
+            all: intuition eauto using subst_one, validity_ty_ctx.
+          + reflexivity.
+        - eapply meta_conv_conv.
+          { eapply conv_substs.
+            - eauto using validity_conv_ctx.
+            - eapply substs_one. eauto.
+            - eapply subst_one. intuition eauto.
+            - intuition eauto.
+          }
+          reflexivity.
+      }
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - destruct H0, H1, H2, H3, H4, H5. split.
+    + eapply type_J; eauto.
+    + eapply type_conv. 1:eapply type_J; eauto using type_conv, conv_obseq.
+      1:eapply pre_conv_in_ctx_ty; eauto using ctx_typing, validity_ty_ctx, conv_ccons, ctx_conv_refl, conv_sym.
+      1:eapply type_conv; eauto.
+      1,2: eapply pre_subst_conv; eauto using subst_one, validity_ty_ctx, substs_one, conv_sym.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - split.
+    + econstructor. all: intuition eauto.
+      econstructor. auto.
+    + eapply meta_conv.
+      { eapply typing_conversion_subst.
+        - eauto using validity_ty_ctx.
+        - eauto using validity_ty_ctx.
+        - eapply well_scons_alt.
+          + apply subst_one. assumption.
+          + econstructor. all: intuition eauto.
+      }
+      rasimpl. reflexivity.
+  - admit.
 Admitted.
 
 Theorem validity_conv_left Γ l t u A :
