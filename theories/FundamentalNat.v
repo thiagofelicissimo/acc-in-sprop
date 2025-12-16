@@ -109,8 +109,7 @@ Proof.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_zero; eauto using validity_conv_left.
       eapply redd_conv. eapply redd_rec_zero;
-      eauto 8 using validity_conv_right, subst_conv, substs_one, type_zero, type_conv, ctx_typing, substs_one, conv_ty_in_ctx_conv, refl_subst, conv_refl.
-      1: admit.
+      eauto 11 using validity_conv_right, subst_conv, substs_one, type_zero, type_conv, ctx_typing, subst_id_var1, conv_ty_in_ctx_conv, refl_subst, conv_refl, validity_conv_left, ctx_typing, validity_ty_ctx.
       eapply subst_conv; eauto using conv_sym, substs_one, LR_escape_tm, prefundamental_nat, ϵzero', ctx_nil.
 
     - pose (LR' := H2 _ _ (ϵsucc' H7)).
@@ -124,11 +123,9 @@ Proof.
       eapply LR_irred_tm; eauto.
       eapply redd_rec_succ; eauto using validity_conv_left.
       eapply redd_conv.
-      eapply redd_rec_succ; eauto 8 using validity_conv_right, subst_conv, substs_one, type_zero, type_conv, ctx_typing, substs_one, conv_ty_in_ctx_conv, refl_subst, conv_refl.
-      1: admit.
+      eapply redd_rec_succ; eauto 11 using validity_conv_right, subst_conv, substs_one, type_zero, type_conv, ctx_typing, substs_one, conv_ty_in_ctx_conv, refl_subst, conv_refl, subst_id_var1, ctx_typing, validity_ty_ctx.
       eapply subst_conv; eauto using conv_sym, substs_one, ϵsucc', prefundamental_nat, LR_escape_tm, ctx_nil.
-Admitted.
-
+Qed.
 
 
 
@@ -159,10 +156,13 @@ Proof.
     split; rasimpl. eauto.
 
     eapply prefundamental_rec; eauto.
-    - eapply subst_conv; eauto using lift_subst, LR_subst_escape, validity_ty_ctx, validity_conv_left. admit.
+    - eapply subst_conv; eauto using lift_subst, LR_subst_escape, validity_ty_ctx, validity_conv_left, ctx_typing, typing.
     - eapply subst_conv; eauto using LR_subst_escape, ctx_nil. rasimpl. reflexivity.
-    - eapply subst_conv; eauto using lift_subst2, LR_subst_escape, validity_ty_ctx, validity_conv_left. 1: admit.
-        substify. rasimpl. reflexivity.
+    - eapply subst_conv; eauto using lift_subst2, LR_subst_escape, validity_ty_ctx, validity_conv_left.
+      econstructor. eauto using ctx_typing, typing.
+      eapply subst_ty; eauto using validity_conv_left, ctx_typing, typing.
+      eapply WellSubst_up; eauto using LR_subst_escape, validity_subst_conv_left, typing, ctx_typing.
+      substify. rasimpl. reflexivity.
     - intros. rasimpl. eapply LR_P12. eauto.
     - pose (LR_Pzero := LR_P11 _ _ ϵzero'). eapply LRv_to_LR_tm in LRv_pzero12 as LR_pzero; eauto. rasimpl. eauto.
     - intros. rasimpl.
@@ -170,7 +170,7 @@ Proof.
       assert (⊩s (t0 .: (n1 .: σ1)) ≡ (t3 .: (n2 .: σ2)) : (Γ ,, (ty 0, Nat)),, (ty k, P1))
         as ϵtnσ by eauto using LR_subst, prefundamental_nat.
       eapply LRv_to_LR_tm in LRv_psucc12; eauto. simpl. rasimpl. eauto using ϵsucc'.
-Admitted.
+Qed.
 
 
 Lemma fundamental_rec_zero Γ k P p_zero p_succ :
