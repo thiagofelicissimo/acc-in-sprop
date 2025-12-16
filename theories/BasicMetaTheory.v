@@ -305,28 +305,6 @@ Proof.
   firstorder eauto using type_pi, ctx_cons, validity_ty_ctx.
 Qed.
 
-Lemma conv_cast_refl' Γ i A B e a :
-  Γ ⊢< Ax i > A ≡ B : Sort i ->
-  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-  Γ ⊢< i > a : A ->
-  Γ ⊢< i > cast i A B e a ≡ a : B.
-Proof.
-  intros hAB he ha.
-  eapply conv_trans.
-  - econstructor.
-    + eapply conv_refl_conv. eassumption.
-    + apply conv_sym. eassumption.
-    + apply conv_refl. assumption.
-    + apply conv_refl. assumption.
-  - econstructor. 2: eassumption.
-    econstructor. 2: auto.
-    econstructor. 1: eassumption.
-    constructor.
-    + constructor. eapply validity_ty_ctx. eassumption.
-    + eapply conv_refl_conv. eassumption.
-    + apply conv_sym. assumption.
-Qed.
-
 Lemma well_rcons_alt Γ Δ x ρ l A :
   Γ ⊢r ρ : Δ →
   Γ ∋< l > x : ρ ⋅ A →
@@ -3029,3 +3007,26 @@ Proof.
   all:eapply type_ren; eauto using ctx_typing, WellRen_S, validity_ty_ctx.
 Qed.
 
+
+
+Lemma conv_cast_refl' Γ i A B e a :
+  Γ ⊢< Ax i > A ≡ B : Sort i ->
+  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+  Γ ⊢< i > a : A ->
+  Γ ⊢< i > cast i A B e a ≡ a : B.
+Proof.
+  intros hAB he ha.
+  eapply conv_trans.
+  - econstructor.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. eassumption.
+    + apply conv_refl. assumption.
+    + apply conv_refl. assumption.
+  - econstructor. 2: eassumption.
+    econstructor; eauto using validity_conv_left.
+    econstructor. 1: eassumption.
+    constructor.
+    + constructor. eapply validity_ty_ctx. eassumption.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. assumption.
+Qed.

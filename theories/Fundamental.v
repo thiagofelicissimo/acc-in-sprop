@@ -17,19 +17,17 @@ Proof.
 Qed.
 
 Lemma fundamental_var Γ x k A :
-    nth_error Γ x = Some (ty k, A) ->
+    Γ ∋< ty k > x : A ->
     ⊢ Γ ->
-    Γ ⊨< ty k > var x ≡ var x : Init.Nat.add (S x) ⋅ A.
+    Γ ⊨< ty k > var x ≡ var x : A.
 Proof.
     generalize Γ k A. clear Γ k A. induction x; unfold LRv; intros.
     - destruct Γ; dependent destruction H. dependent destruction H1.
       rasimpl. eauto.
     - destruct Γ; dependent destruction H. dependent destruction H1.
-      eapply nth_error_succ in x. dependent destruction H0.
-      eapply IHx in x; eauto. eapply x in H1 as (R' & LR & lr).
-      exists R'. split. rasimpl.
-      assert (forall σ, (Init.Nat.add (S x0) ⋅ A) <[ ↑ >> σ] = A <[ Init.Nat.add (S (S x0)) >> σ]). intros. rasimpl. eauto.
-      rewrite 2 H1 in LR. eauto. rasimpl. eapply lr.
+      eapply IHx in H as H'. 2:inversion H0; eauto.
+      eapply H' in H1 as (R' & LR & lr).
+      exists R'. split; rasimpl; eauto.
 Qed.
 
 Lemma fundamental_prop_ty Γ A B :
@@ -54,9 +52,11 @@ Proof.
     2:eauto using subst_conv, LR_subst_escape.
     eapply LR_prop.
     2:reflexivity.
-    eauto 6 using subst_conv, validity_conv_left, validity_ty_ty,
-        conv_refl, LR_subst_escape.
-Admitted.
+    eauto 8 using subst_conv, validity_conv_left, validity_ty_ty,
+        conv_refl, LR_subst_escape, ctx_typing.
+    eapply subst_conv; eauto using ctx_typing, LR_subst_escape.
+Qed.
+
 
 (* used to eliminate the condition
         forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> ...
@@ -78,7 +78,7 @@ Proof.
     apply typing_mutind; intros.
     all: dependent destruction _temp.
     all: try erewrite helper_fund in *; eauto using conv_refl.
-    (* - eauto using fundamental_var.
+    - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi, conv_refl. eauto using fundamental_prop_ty.
     - destruct j; dependent destruction x. eauto using fundamental_lam, conv_refl.
@@ -105,7 +105,7 @@ Proof.
     - eauto using fundamental_accel.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
-    - eauto using fundamental_cast_refl.
+    - eauto using fundamental_cast_refl, conv_refl. 
     - destruct j. 2: eauto using fundamental_prop. dependent destruction x. eauto using fundamental_cast_pi.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
@@ -119,8 +119,7 @@ Proof.
       eapply H in H2 as (ϵA & LR_A & ϵtu). eapply H0 in H3 as (ϵA' & LR_A' & ϵuv).
       assert (ϵA <~> ϵA') by eauto using LR_sym, LR_irrel. rewrite <- H2 in ϵuv.
       eapply LR_trans_tm in ϵuv; eauto.
-Qed. *)
-Admitted.
+Qed.
 
 Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.

@@ -405,7 +405,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 | conv_cast_refl :
     ∀ Γ i A e a,
-      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A A ->
+      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A A ->  
+      Γ ⊢< Ax i > A : Sort i ->
       Γ ⊢< i > a : A ->
       Γ ⊢< i > cast i A A e a ≡ a : A
 

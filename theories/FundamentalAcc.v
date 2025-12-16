@@ -27,15 +27,31 @@ Proof.
     eapply validity_ctx in H. assumption.
 Qed.
 
+Lemma wk1_conv Γ i l t t' u u' B B' A :
+    Γ ⊢< l > t ≡ u : B ->
+    t' = S ⋅ t ->
+    u' = S ⋅ u ->
+    B' = S ⋅ B ->
+    Γ ⊢< Ax i > A : Sort i ->
+    Γ ,, (i, A) ⊢< l > t' ≡ u' : B'.
+Proof.
+    intros. subst.
+    substify. eapply subst_conv; eauto.
+    2:change (S >> var) with (var >> ren_term S).
+    2:eapply ConvSubst_weak.
+    all: eauto using ctx_typing, validity_ty_ctx, refl_subst, subst_id.
+Qed.
+
+
 Lemma aaux A' R' P' Γ i k A R a q P p r b X Y l:
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
     Γ ,, (i, A) ⊢< Ax (ty k) > P : Sort (ty k) ->
-    let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P_ := P <[var 1 .: (S >> S >> S >> var)] in
-    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P_ := (1 .: (S >> S >> S)) ⋅ P in
+    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A ->
     Γ ⊢< i > b : A ->
@@ -52,7 +68,7 @@ Lemma aaux A' R' P' Γ i k A R a q P p r b X Y l:
     let t4 := Pi prop l t2 P'' in
     let t5 := lam i (ty k) A t4 t3 in
     let t2' := R'<[S ⋅ a .: (var 0 .: S >> var)] in
-    let t4' := Pi prop l t2' (P' <[var 1.: (S >> (S >> var))]) in
+    let t4' := Pi prop l t2' ((1.: (S >> S)) ⋅ P') in
     let t6 := app i (ty k) A' t4' t5 b in
     let t7 := app prop (ty k) (R'<[a .: b ..]) (S ⋅ (P' <[ b ..])) t6 r in
     X = t7 ->
@@ -64,20 +80,24 @@ Proof.
     eapply redd_conv.
     eapply redd_step.
 
-(*     eapply red_app'; eauto 7 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv.
+    eapply red_app'; eauto 7 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv, validity_ty_ctx.
     3:rasimpl; eauto using subst_conv, substs_one_3, conv_refl, conv_sym.
     eapply red_beta'; eauto using conv_sym, type_conv.
     3:unfold t4', t2';rasimpl; reflexivity.
     1-2:admit.
     eapply red_to_redd.
-    unfold t3, t2, P''; rasimpl. eapply red_beta' ; rasimpl ; eauto 7 using conv_sym, substs_one_4, conv_refl, subst, type_conv.
+    unfold t3, t2, P''; rasimpl. eapply red_beta' ; rasimpl ; eauto 7 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv, ctx_typing, validity_ty_ctx.
     3:{ unfold t1, t0, Awk, Rwk, Pwk, pwk. rasimpl.
         setoid_rewrite subst_id_reduce2.
         setoid_rewrite subst_id_reduce1.
         rasimpl. reflexivity. }
-    eapply wk1_conv; eauto using conv_sym, subst, substs_one_3, conv_refl; ssimpl; eauto.
-    eauto  7 using conv_sym, substs_one_4, conv_refl, subst, type_conv, validity_conv_right.
-    admit. *)
+        1:admit.
+    (* eapply subst_conv; eauto using conv_sym.
+    econstructor; eauto using ctx_typing.
+    1: change (P' <[ S ⋅ b .: S >> var]) with (P' <[ (S ⋅ b) ..]).
+    eapply wk1_conv. 1:eaooky exact H1. ; eauto using conv_sym, subst_conv, substs_one_3, conv_refl, validity_ty_ctx, ctx_typing; rasimpl; eauto. *)
+    (* 2:eauto  11 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv, validity_conv_right, ctx_typing, validity_ty_ctx, validity_conv_left. *)
+    admit.
 Admitted.
 
 
@@ -111,12 +131,12 @@ Lemma fundamental_accel_aux2 i k C1' C2' A1 A2 R1 R2 P1 P2 a1 a2 l :
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R2 : Sort prop ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
-    let R1' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P1' := P1 <[var 1 .: (S >> S >> S >> var)] in
+    let R1' := (1 .: (0 .: (S >> S))) ⋅ R1 in
+    let P1' := (1 .: (S >> S >> S)) ⋅ P1 in
     let C1 := Pi prop (ty k) R1' P1' in
     let B1 := Pi i (ty k) (S ⋅ A1) C1 in
-    let R2' := R2 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P2' := P2 <[var 1 .: (S >> S >> S >> var)] in
+    let R2' := (1 .: (0 .: (S >> S))) ⋅ R2 in
+    let P2' := (1 .: (S >> S >> S)) ⋅ P2 in
     let C2 := Pi prop (ty k) R2' P2' in
     let B2 := Pi i (ty k) (S ⋅ A2) C2 in
     ∙ ⊢< i > a1 ≡ a2 : A1 ->
@@ -131,10 +151,10 @@ Proof.
       ≡ R2 <[ ↑ ⋅ a2 .: (var 0 .: ↑ >> var)] : Sort prop).
     { eapply subst_conv; eauto.
       1: eapply validity_ctx. 1: eassumption.
-      econstructor. econstructor. econstructor.
-      ssimpl. eapply conv_var'; eauto using validity_conv_left, validity_ty_ctx. reflexivity. substify. reflexivity. rasimpl.  eapply conv_ren; eauto.
+      econstructor. econstructor. econstructor. all:admit.
+      (* ssimpl. eapply conv_var'; eauto using validity_conv_left, validity_ty_ctx. reflexivity. substify. reflexivity. rasimpl.  eapply conv_ren; eauto.
       1: eapply validity_ctx. 1: eassumption.
-      apply WellRen_S.
+      apply WellRen_S. *)
     }
     unfold C1, C2, R1', R2', P1', P2'.
     rasimpl. eapply conv_pi'; eauto.
@@ -145,10 +165,10 @@ Proof.
       - eapply validity_conv_left. eassumption.
     }
     econstructor. econstructor. rasimpl.
-    eapply conv_var'.
-    reflexivity. econstructor; eauto using validity_conv_left, validity_ty_ctx.
-    substify. reflexivity.
-Qed.
+    eapply conv_var'. 1:econstructor. 1:econstructor.
+    1:econstructor; eauto using validity_ty_ctx, validity_conv_left.
+    rasimpl. reflexivity.
+Admitted.
 
 
 
@@ -169,8 +189,8 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
                 (app i (ty k) A3 (Pi prop (ty k) (R3<[(S ⋅ a2) .: (var 0 .: (S >> var))]) (P3 <[var 1 .: (S >> S >> var)])) f2 b2)
             r2 ->
             ϵP b1 b2 t1 t2 in
-    let R' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P1 <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R1 in
+    let P' := (1 .: (S >> S >> S)) ⋅ P1 in
     let B := Pi i (ty k) (S ⋅ A1) (Pi prop (ty k) R' P') in
     (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 f1 f2),
         ∙ ⊢< Ru i (ty k)> f1 ≡ f2 : B <[a1..] ->
@@ -192,7 +212,7 @@ Proof.
     eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
 
     eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
-    - eauto 6 using red_to_redd, red_accel', validity_conv_left.
+    - eauto 6 using red_to_redd, red_accel', validity_conv_left. admit.
     - eapply red_to_redd; eapply red_conv; eauto 7 using red_accel', validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
       all: admit.
     - unfold ϵB. all:clear ϵB. intros; subst.
@@ -202,7 +222,7 @@ Proof.
       eapply (accinv i A1 R1 a1 q1 b1 r1).
       eapply (accinv i A2 R2 a2 q2 b2 r2).
       unfold meta; eexists; eauto using validity_conv_right.
-      eauto.
+      (* eauto.
       eauto using LR_escape_tm.
       { eapply conv_irrel.
         - eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
@@ -225,7 +245,7 @@ Proof.
     + eapply conv_lam'; eauto.
       1,2:admit.
       admit.
-    + unfold B, R', P'. rasimpl. reflexivity.
+    + unfold B, R', P'. rasimpl. reflexivity. *)
 Admitted.
 
 
@@ -234,12 +254,12 @@ Lemma fundamental_accel_aux1 i k C1' C2' A1 A2 R1 R2 P1 P2 f1 f2 s1 s2 a1 a2 T l
     ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
     (∙ ,, (i, A1)),, (i, S ⋅ A1) ⊢< Ax prop > R1 ≡ R2 : Sort prop ->
     ∙ ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
-    let R1' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P1' := P1 <[var 1 .: (S >> S >> S >> var)] in
+    let R1' := (1 .: (0 .: (S >> S))) ⋅ R1 in
+    let P1' := (1 .: (S >> S >> S)) ⋅ P1 in
     let C1 := Pi prop (ty k) R1' P1' in
     let B1 := Pi i (ty k) (S ⋅ A1) C1 in
-    let R2' := R2 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P2' := P2 <[var 1 .: (S >> S >> S >> var)] in
+    let R2' := (1 .: (0 .: (S >> S))) ⋅ R2 in
+    let P2' := (1 .: (S >> S >> S)) ⋅ P2 in
     let C2 := Pi prop (ty k) R2' P2' in
     let B2 := Pi i (ty k) (S ⋅ A2) C2 in
     ∙ ⊢< Ru i (ty k) > f1 ≡ f2 : B1 <[a1..] ->
@@ -269,11 +289,11 @@ Lemma fundamental_accel Γ i k A1 A2 R1 R2 a1 a2 q1 q2 P1 P2 p1 p2 :
     (Γ,, (i, A1)),, (i, S ⋅ A1) ⊨< Ax prop > R1 ≡ R2 : Sort prop ->
     Γ,, (i, A1) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
-    let R' := R1 <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P1 <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R1 in
+    let P' := (1 .: (S >> S >> S)) ⋅ P1 in
     let C := Pi prop (ty k) R' P' in
     let B := Pi i (ty k) (S ⋅ A1) C in
-    let P'' := P1 <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P1 in
     (Γ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : P'' ->
     (Γ,, (i, A1)),, (Ru i (ty k), B) ⊨< ty k > p1 ≡ p2 : P'' ->
     Γ ⊢< i > a1 ≡ a2 : A1 ->
@@ -397,10 +417,10 @@ Lemma fundamental_accel_accin Γ i k A R a q P p :
     (Γ,, (i, A)),, (i, S ⋅ A) ⊨< Ax prop > R ≡ R : Sort prop ->
     Γ,, (i, A) ⊢< Ax (ty k) > P : Sort (ty k) ->
     Γ,, (i, A) ⊨< Ax (ty k) > P ≡ P : Sort (ty k) ->
-    let R' := R <[ var 1 .: (var 0 .: (S >> S) >> var)] in
-    let P' := P <[ var 1 .: ((S >> S) >> S) >> var] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i (ty k) (S ⋅ A) (Pi prop (ty k) R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     (Γ,, (i, A)),, (Ru i (ty k), B) ⊢< ty k > p : P'' ->
     (Γ,, (i, A)),, (Ru i (ty k), B) ⊨< ty k > p ≡ p : P'' ->
     Γ ⊢< i > a : A ->

@@ -179,7 +179,7 @@ Qed.
 Lemma red_to_conv Γ l t u A :
     Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
 Proof.
-    intros. induction H; eauto using conversion, conv_refl.
+    intros. induction H; eauto using conversion, conv_refl, typing, validity_ty_ctx.
     eapply conv_trans. eapply conv_app'.
     1,2:(eapply conv_refl; eauto using validity_conv_left).
     2: eauto using conv_refl.

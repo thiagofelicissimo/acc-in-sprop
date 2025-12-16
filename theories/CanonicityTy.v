@@ -12,17 +12,24 @@ Import CombineNotations.
 
 Open Scope subst_scope.
 
+Reserved Notation "Γ ∋'< l > x : T" (at level 50, l, x, T at next level).
 Reserved Notation "Γ ⊢'< l > t : T" (at level 50, l, t, T at next level).
 Reserved Notation "Γ ⊢'< l > t ≡ u : T" (at level 50, l, t, u, T at next level).
 Reserved Notation "⊢' Γ" (at level 50).
+
+Inductive varty' : ctx → nat → level → term → Type :=
+| vartyO Γ l A : Γ ,, (l , A) ∋'< l > 0 : S ⋅ A
+| vartyS Γ i j A B x : Γ ∋'< i > x : A → Γ ,, (j, B) ∋'< i > S x : S ⋅ A
+
+where "Γ ∋'< l > x : T" := (varty' Γ x l T).
 
 Inductive typing' : ctx -> level -> term → term → Type :=
 
 | type'_var :
     ∀ Γ x l A,
       ⊢' Γ ->
-      nth_error Γ x = Some (l , A) →
-      (Γ ⊢'< l > (var x) : ((plus (S x)) ⋅ A))
+      Γ ∋'< l > x : A →
+      Γ ⊢'< l > (var x) : A
 
 | type'_sort :
     ∀ Γ l,
@@ -35,7 +42,6 @@ Inductive typing' : ctx -> level -> term → term → Type :=
       nth_error assm_sig c = Some A ->
       ∙ ⊢'< Ax prop > A : Sort prop ->
       Γ ⊢'< prop > assm c : A
-
 
 | type'_pi :
     ∀ Γ i j A B,
@@ -101,7 +107,6 @@ Inductive typing' : ctx -> level -> term → term → Type :=
     Γ ⊢'< prop > p : Pi i prop A (Pi prop prop R' acc_wk) ->
     Γ ⊢'< prop > accin i A R a p : acc i A R a
 
-
 | type'_accinv :
     ∀ Γ i A R a p b r,
     Γ ⊢'< Ax i > A : Sort i ->
@@ -117,10 +122,10 @@ Inductive typing' : ctx -> level -> term → term → Type :=
     Γ ⊢'< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ⊢'< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢'< l > p : P'' ->
     Γ ⊢'< i > a : A ->
     Γ ⊢'< prop > q : acc i A R a ->
@@ -198,9 +203,9 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_var :
     ∀ Γ x l A,
-      nth_error Γ x = Some (l , A) →
+      Γ ∋'< l > x : A →
       ⊢' Γ ->
-      (Γ ⊢'< l > (var x) ≡ (var x) : ((plus (S x)) ⋅ A))
+      Γ ⊢'< l > var x ≡ var x : A
 
 | conv'_sort :
     ∀ Γ l,
@@ -214,14 +219,17 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
       ∙ ⊢'< Ax prop > A : Sort prop ->
       Γ ⊢'< prop > assm c ≡ assm c : A
 
+
 | conv'_pi :
     ∀ Γ i j A B A' B',
+      Γ ⊢'< Ax i > A : Sort i →
       Γ ⊢'< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢'< Ax j > B ≡ B' : Sort j →
       Γ ⊢'< Ax (Ru i j) > Pi i j A B ≡ Pi i j A' B' : Sort (Ru i j)
 
 | conv'_lam :
     ∀ Γ i j A B t A' B' t',
+      Γ ⊢'< Ax i > A : Sort i →
       Γ ⊢'< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢'< Ax j > B ≡ B': Sort j →
       Γ ,, (i , A) ⊢'< j > t ≡ t' : B →
@@ -229,11 +237,13 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_app :
     ∀ Γ i j A B t u A' B' t' u',
+      Γ ⊢'< Ax i > A : Sort i →
       Γ ⊢'< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢'< Ax j > B ≡ B': Sort j →
       Γ ⊢'< Ru i j > t ≡ t' : Pi i j A B →
       Γ ⊢'< i > u ≡ u' : A →
       Γ ⊢'< j > app i j A B t u ≡ app i j A' B' t' u' : B <[ u .. ]
+
 
 | conv'_nat :
     ∀ Γ,
@@ -252,6 +262,7 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_rec :
     ∀ Γ l P p_zero p_succ t P' p_zero' p_succ' t',
+      Γ ,, (ty 0 , Nat) ⊢'< Ax l > P : Sort l ->
       Γ ,, (ty 0 , Nat) ⊢'< Ax l > P ≡ P' : Sort l ->
       Γ ⊢'< l > p_zero ≡ p_zero' : P <[ zero .. ] ->
       Γ ,, (ty 0 , Nat) ,, (l , P) ⊢'< l > p_succ ≡ p_succ' : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
@@ -261,6 +272,7 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_acc :
     ∀ Γ i A A' R R' a a',
+    Γ ⊢'< Ax i > A : Sort i ->
     Γ ⊢'< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢'< i > a ≡ a' : A ->
@@ -268,19 +280,20 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_accin :
     ∀ Γ i A A' R R' a a' p p',
+    Γ ⊢'< Ax i > A : Sort i ->
     Γ ⊢'< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢'< i > a ≡ a' : A ->
     let A_wk := (S >> S) ⋅ A in
     let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
     let acc_wk := acc i A_wk R_wk (var 1)  in
-    let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
-    Γ ⊢'< prop > p ≡ p' : Pi i prop A (Pi prop prop R' acc_wk) ->
+    let RR := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
+    Γ ⊢'< prop > p ≡ p' : Pi i prop A (Pi prop prop RR acc_wk) ->
     Γ ⊢'< prop > accin i A R a p ≡ accin i A' R' a' p' : acc i A R a
-
 
 | conv'_accinv :
     ∀ Γ i A A' R R' a a' p p' b b' r r',
+    Γ ⊢'< Ax i > A : Sort i ->
     Γ ⊢'< Ax i > A ≡ A' : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R ≡ R' : Sort prop ->
     Γ ⊢'< i > a ≡ a' : A ->
@@ -291,13 +304,16 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_accel :
     ∀ Γ i l A A' R R' a a' q q' P P' p p',
+    Γ ⊢'< Ax i > A : Sort i ->
     Γ ⊢'< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (i, A) ⊢'< Ax l > P : Sort l ->
     Γ ,, (i, A) ⊢'< Ax l > P ≡ P' : Sort l ->
-    let R_ := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P_ := P <[var 1 .: (S >> S >> S >> var)] in
+    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P_ := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢'< l > p ≡ p' : P'' ->
     Γ ⊢'< i > a ≡ a': A ->
     Γ ⊢'< prop > q ≡ q' : acc i A R a ->
@@ -319,6 +335,7 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_J :
     ∀ Γ l A A' a a' P P' p p' b b' e e',
+      Γ ⊢'< Ax l > A : Sort l ->
       Γ ⊢'< Ax l > A ≡ A' : Sort l ->
       Γ ⊢'< l > a ≡ a' : A ->
       Γ ,, (l , A) ⊢'< Ax prop > P ≡ P' : Sort prop ->
@@ -337,8 +354,10 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_injpi1 :
   ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e',
+    Γ ⊢'< Ax i > A1 : Sort i ->
     Γ ⊢'< Ax i > A1 ≡ A1' : Sort i ->
     Γ ,, (i, A1) ⊢'< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ⊢'< Ax i > A2 : Sort i ->
     Γ ⊢'< Ax i > A2 ≡ A2' : Sort i ->
     Γ ,, (i, A2) ⊢'< Ax j > B2 ≡ B2' : Sort j ->
     Γ ⊢'< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
@@ -346,8 +365,10 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
 
 | conv'_injpi2 :
   ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
+    Γ ⊢'< Ax i > A1 : Sort i ->
     Γ ⊢'< Ax i > A1 ≡ A1' : Sort i ->
     Γ ,, (i, A1) ⊢'< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ⊢'< Ax i > A2 : Sort i ->
     Γ ⊢'< Ax i > A2 ≡ A2' : Sort i ->
     Γ ,, (i, A2) ⊢'< Ax j > B2 ≡ B2' : Sort j ->
     Γ ⊢'< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
@@ -356,11 +377,11 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
     Γ ⊢'< prop > injpi2 i j A1 A2 B1 B2 e a2 ≡ injpi2 i j A1' A2' B1' B2' e' a2' : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
 
 | conv'_cast_refl :
-    ∀ Γ i A B e a,
-      Γ ⊢'< Ax i > A ≡ B : Sort i ->
-      Γ ⊢'< prop > e : obseq (Ax i) (Sort i) A B ->
+    ∀ Γ i A e a,
+      Γ ⊢'< prop > e : obseq (Ax i) (Sort i) A A ->  
+      Γ ⊢'< Ax i > A : Sort i ->
       Γ ⊢'< i > a : A ->
-      Γ ⊢'< i > cast i A B e a ≡ a : B
+      Γ ⊢'< i > cast i A A e a ≡ a : A
 
 | conv'_cast_pi :
   ∀ Γ i j A1 A2 B1 B2 e f,
@@ -401,8 +422,7 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
       Γ ⊢'< i > u : A →
       Γ ⊢'< j > app i j A B (lam i j A B t) u ≡ t <[ u .. ] : B <[ u .. ]
 
-
-| conv_eta :
+| conv'_eta :
     ∀ Γ i j A B t u,
       Γ ⊢'< Ax i > A : Sort i →
       Γ ,, (i , A) ⊢'< Ax j > B : Sort j →
@@ -434,10 +454,10 @@ with conversion' : ctx -> level -> term -> term -> term -> Type :=
     Γ ⊢'< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢'< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ⊢'< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢'< l > p : P'' ->
     Γ ⊢'< i > a : A ->
     Γ ⊢'< prop > q : acc i A R a ->
@@ -484,6 +504,25 @@ with conversion'__mut := Induction for conversion' Sort Prop
 with ctx_typing'__mut := Induction for ctx_typing' Sort Prop.
 Combined Scheme typing_conversion__mutind' from typing'__mut, conversion'__mut, ctx_typing'__mut.
 
+Theorem varty'_to_varty Γ l x T : Γ ∋'< l > x : T -> Γ ∋< l > x : T.
+Proof.
+  intros. induction H; eauto using varty.
+Qed.
+
+Theorem varty_to_varty' Γ l x T : Γ ∋< l > x : T -> Squash (Γ ∋'< l > x : T).
+Proof.
+  intros. induction H.
+  - econstructor. econstructor.
+  - inversion IHvarty. econstructor. econstructor. eauto.
+Qed.
+
+Theorem ty'_to_ty :
+    (forall Γ l t A, Γ ⊢'< l > t : A -> Γ ⊢< l > t : A) /\
+    (forall Γ l t u A, Γ ⊢'< l > t ≡ u : A -> Γ ⊢< l > t ≡ u : A) /\
+    (forall Γ, ⊢' Γ -> ⊢ Γ).
+Proof.
+    eapply typing_conversion__mutind' ; intros; eauto using typing, conversion, ctx_typing, varty'_to_varty.
+Qed.
 
 Theorem ty_to_ty' :
     (forall Γ l t A, Γ ⊢< l > t : A -> Squash (Γ ⊢'< l > t : A)) /\
@@ -491,19 +530,17 @@ Theorem ty_to_ty' :
     (forall Γ, ⊢ Γ -> Squash (⊢' Γ)).
 Proof.
     eapply typing_conversion__mutind; intros;
+    try inversion H5;
     try inversion H4; try inversion H3;
     try inversion H2; try inversion H1;
     try inversion H0; try inversion H;
-    eauto using sq, typing', conversion', ctx_typing'.
-Admitted.
-
-Theorem ty'_to_ty :
-    (forall Γ l t A, Γ ⊢'< l > t : A -> Γ ⊢< l > t : A) /\
-    (forall Γ l t u A, Γ ⊢'< l > t ≡ u : A -> Γ ⊢< l > t ≡ u : A) /\
-    (forall Γ, ⊢' Γ -> ⊢ Γ).
-Proof.
-    eapply typing_conversion__mutind' ; intros; eauto using typing, conversion, ctx_typing.
-Admitted.
+    eauto using sq, typing', conversion', ctx_typing'. 
+    3:inversion H6; inversion H7;
+    eauto using sq, typing', conversion', ctx_typing'. 
+    3:inversion H6;
+    eauto using sq, typing', conversion', ctx_typing'. 
+    all:eapply varty_to_varty' in v; inversion v; econstructor; econstructor; eauto.
+Qed.
 
 
 Record totalspace :=
