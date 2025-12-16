@@ -388,9 +388,8 @@ Proof.
     eapply LRv_to_LR_tm in LRv_a12 as LR_a12; eauto.
     clear LRv_A12 LRv_B11 LRv_B12 LRv_a12.
     eexists. split; eauto. rasimpl.
-    eapply prefundamental_cast; eauto using subst_conv, LR_subst_escape.
-    all: admit.
-Admitted.
+    eapply prefundamental_cast; eauto using subst_conv, LR_subst_escape, ctx_typing.
+Qed.
 
 Lemma prefundamental_cast_refl l A B ϵA a e :
     ⊩< l > A ≡ B ↓ ϵA ->
