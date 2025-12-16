@@ -67,10 +67,10 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< Ax i > A : Sort i ->
     Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A ->
     Γ ⊢< prop > q : acc i A R a ->
@@ -147,10 +147,10 @@ Qed.
 
 Lemma red_accel' Γ i l A R a q P p X Y :
     Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< prop > q : acc i A R a ->
     let Awk := (S >> S) ⋅ A in
@@ -183,10 +183,10 @@ Proof.
     eapply conv_trans. eapply conv_app'.
     1,2:(eapply conv_refl; eauto using validity_conv_left).
     2: eauto using conv_refl.
-    eapply conv_conv. eapply conv_lam'; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv.
+    eapply conv_conv. eapply conv_lam'; eauto using conv_refl, conv_sym, conv_ty_in_ctx_conv, type_conv, validity_conv_left.
     eapply conv_pi'; eauto using conv_ty_in_ctx_conv, conv_sym. 1: reflexivity.
     eauto using conv_beta, validity_conv_left.
-Admitted.
+Qed.
 
 Lemma red_app' Γ t t' u i j A B X Y :
     Γ ⊢< Ru i j > t --> t' : Pi i j A B ->
@@ -376,10 +376,10 @@ Definition red_inv_type Γ t v :=
             Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
             Γ ⊢< ty 0 > n --> n' : Nat
     | accel i l A R P p a q =>
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
@@ -619,10 +619,9 @@ Lemma sim_sym Γ l t u A :
 Proof.
     intros. induction H; eauto using ann_conv.
     eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
-    eapply aconv_conv; eauto using conv_pi.
-    (* Missing ⊢ Γ *)
-    eauto using conv_trans, subst_conv, substs_one, conv_refl.
-Admitted.
+    eapply aconv_conv; eauto using conv_pi, validity_ty_ctx, validity_conv_left.
+    eauto 7 using conv_trans, subst_conv, substs_one, conv_refl, validity_ty_ctx.
+Qed.
 
 Lemma sim_left_red Γ l t t' u A :
     Γ ⊢< l > t ~ u : A ->
@@ -637,20 +636,18 @@ Proof.
       + eapply IHann_conv in H4 as (u' & red & sim).
         eexists. split.
         eapply red_conv. eapply red_app'; eauto using type_conv, red_conv, conv_pi, conv_sym, conv_ty_in_ctx_conv.
-        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym.
-        1: admit.
+        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym, validity_ty_ctx.
         eapply aconv_app; eauto.
       + dependent destruction H1. eexists.
         split. eapply red_conv.
         eapply red_beta'; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
-        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym. 1: admit.
+        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym, validity_ty_ctx.
         eapply aconv_refl.
         eapply validity_conv_left.
-        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym.
-        admit.
+        eapply subst_conv; eauto using substs_one, conv_refl, conv_sym, validity_ty_ctx.
       + eapply IHred in H1 as (v & red & sim); eauto using conv_trans.
         eexists. split; eauto using red_conv, aconv_conv.
-Admitted.
+Qed.
 
 Lemma sim_left_redd Γ l t t' u A :
     Γ ⊢< l > t ~ u : A ->
