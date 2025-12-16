@@ -1795,6 +1795,179 @@ Proof.
     destruct a. 1:reflexivity. destruct a. 1:reflexivity. reflexivity.
 Qed.
 
+Section AccCompValidity.
+  Context (Γ : ctx) (i l : level) (A R a q P p : term)
+    (AWt : Γ ⊢< Ax i > A : Sort i)
+    (RWt : Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop)
+    (PWt : Γ ,, (i, A) ⊢< Ax l > P : Sort l).  
+  Let R' := (1 .: (0 .: (S >> S))) ⋅ R.
+  Let P' := (1 .: (S >> S >> S)) ⋅ P.
+  Let B := Pi i l (S ⋅ A) (Pi prop l R' P').
+  Let P'' := (1.: (S >> S)) ⋅ P.
+  Context 
+    (pWt : Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'')
+    (aWt : Γ ⊢< i > a : A)
+    (qWt : Γ ⊢< prop > q : acc i A R a).
+  Let Awk := (S >> S) ⋅ A.
+  Let Rwk := (up_ren (up_ren (S >> S))) ⋅ R.
+  Let Pwk := (up_ren (S >> S)) ⋅ P.
+  Let pwk := (up_ren (up_ren (S >> S))) ⋅ p.
+  Let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
+  Let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0.
+  Let t2 := R<[S ⋅ a .: (var 0 .: S >> var)].
+  Let t3 := lam prop l t2 P'' t1.
+  Let t4 := Pi prop l t2 P''.
+  Let t5 := lam i l A t4 t3.
+
+  Lemma R'Wt : Γ,, (i, A),, (i, S ⋅ A) ⊢< Ax prop > R' : Sort prop.
+  Proof.
+    unfold R'.
+    eapply type_ren; eauto using validity_ty_ctx.
+    econstructor. 1:econstructor.
+    - ssimpl. eapply WellRen_weak, WellRen_S.
+    - ssimpl. eapply varty_meta. 1:econstructor. rasimpl; reflexivity.
+    - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl;reflexivity.
+  Qed.
+
+  Lemma P'Wt : Γ,, (i, A),, (i, S ⋅ A),, (prop, R') ⊢< Ax l > P' : Sort l.
+  Proof.
+    unfold P'.
+    eapply type_ren;eauto.
+    1:econstructor; eauto using validity_ty_ctx, R'Wt.
+    1:econstructor. 
+    - ssimpl. eapply WellRen_weak, WellRen_weak, WellRen_S.
+    - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
+  Qed.
+
+  Lemma BWt : Γ,, (i, A)⊢< Ax (Ru i l) > B : Sort (Ru i l).
+  Proof.
+    unfold B.
+    econstructor.
+    1:eapply type_ren; eauto using validity_ty_ctx.
+    1:eapply WellRen_S.
+    1:eapply meta_lvl. 1:eapply meta_conv.
+    1:econstructor; eauto using R'Wt, P'Wt.
+    all: destruct l; reflexivity.
+  Qed.
+
+  Lemma P''Wt : Γ ,, (i, A) ,, (Ru i l, B) ⊢< Ax l > P'' : Sort l.
+  Proof.
+    unfold P''.
+    eapply type_ren; eauto using validity_ty_ctx.
+    econstructor. 
+    - ssimpl. eapply WellRen_weak, WellRen_S.
+    - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl. reflexivity.
+  Qed.
+
+  Lemma t2Wt : Γ ,, (i, A) ⊢< Ax prop > t2 : Sort prop.
+  Proof.
+    unfold t2.
+    eapply subst_ty; eauto using validity_ty_ctx.
+    econstructor. 
+    1:econstructor.
+    - ssimpl. change (S >> var) with (var >> ren_term S). eapply WellSubst_weak; eauto using subst_id, validity_ty_ctx.
+    - ssimpl. eapply meta_conv. 1:econstructor. 2:econstructor. 1:eauto using validity_ty_ctx. rasimpl. reflexivity.
+    - ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx. 1:eapply WellRen_S. rasimpl. reflexivity.
+  Qed.
+
+
+  Lemma AwkWt : Γ ,, (i, A) ,, (prop, t2) ⊢< Ax i > Awk : Sort i.
+  Proof.
+    unfold Awk.
+    eapply type_ren; eauto using validity_ty_ctx.
+    1:econstructor; eauto using validity_ty_ctx, t2Wt.
+    eapply WellRen_weak, WellRen_S.
+  Qed.
+
+  Lemma RwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ,, (i, S ⋅ Awk) ⊢< Ax prop > Rwk : Sort prop.
+  Proof.
+    unfold Rwk, Awk.
+    eapply type_ren; eauto.
+    1:econstructor. 1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
+    1:ssimpl. 1:eapply type_ren; eauto. 1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
+    1:eapply WellRen_weak, WellRen_weak, WellRen_S.
+    eapply WellRen_up. 1:eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. all:rasimpl; reflexivity.
+  Qed.
+
+  Lemma PwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ⊢< Ax l > Pwk : Sort l.
+  Proof.
+    unfold Pwk, Awk.
+    eapply type_ren; eauto.
+    1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
+    eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. reflexivity.
+  Qed.
+
+  Lemma pwkWt : Γ ,, (i, A) ,, (prop, t2) ,, (i, Awk) ,, (Ru i l, (up_ren (S >> S)) ⋅ B) ⊢< l > pwk : (up_ren (up_ren (S >> S))) ⋅ P''.
+  Proof.
+    unfold pwk, Awk. eapply type_ren; eauto.
+    1:econstructor; eauto using PwkWt, validity_ty_ctx.
+    1:eapply type_ren; eauto using BWt, validity_ty_ctx, PwkWt.
+    1:eapply WellRen_up.
+    1:eapply WellRen_weak, WellRen_S.
+    1:reflexivity.
+    1:eapply WellRen_up. 1:eapply WellRen_up.
+    1:eapply WellRen_weak, WellRen_S.
+    all: ssimpl; reflexivity.
+  Qed.
+
+  Lemma t0Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< prop > t0 : acc i Awk Rwk (var 1).
+  Proof.
+    unfold t0.
+    econstructor; eauto using AwkWt, RwkWt, PwkWt.
+    - eapply type_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
+    - eapply type_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
+    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. 1:unfold Awk; rasimpl; reflexivity.
+    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:unfold Rwk, t2; rasimpl; simpl; reflexivity.
+  Qed.
+
+  Lemma t1Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< l > t1 : Pwk <[ (var 1) .. ].
+  Proof.
+    unfold t1.
+    econstructor; eauto using AwkWt, RwkWt, PwkWt, t0Wt.
+    - assert (Pi i l (S ⋅ Awk) (Pi prop l ((1 .: (0 .: S >> S)) ⋅ Rwk) ((1 .: (S >> S) >> S) ⋅ Pwk)) = (up_ren (S >> S)) ⋅ B).
+      1: {unfold B, Awk, Rwk, Pwk, R', P'. rasimpl. reflexivity. }
+      rewrite H; eapply meta_conv.
+      1: eapply pwkWt. unfold P'', Pwk; rasimpl; reflexivity.
+    - econstructor; eauto using t0Wt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. unfold Awk; rasimpl; reflexivity.
+  Qed.
+
+  Lemma P''Wt2 : (Γ,, (i, A)),, (prop, t2) ⊢< Ax l > P'' : Sort l.
+  Proof.
+    unfold P''. eapply type_ren; eauto using t1Wt, validity_ty_ctx.
+    econstructor.
+    - ssimpl. eapply WellRen_weak, WellRen_S.
+    - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
+  Qed.
+
+  Lemma t3Wt : Γ ,, (i, A) ⊢< l > t3 : Pi prop l t2 P''.
+  Proof. 
+    unfold t3. eapply meta_lvl.
+    1:econstructor; eauto using t2Wt, P''Wt2.
+    1:eapply meta_conv. 1:eapply t1Wt.
+    1:unfold Pwk, P''; substify; ssimpl; reflexivity.
+    destruct l; eauto.
+  Qed.
+
+  Lemma t4Wt : Γ ,, (i, A) ⊢< Ax l > t4 : Sort l.
+  Proof.
+    unfold t4. eapply meta_conv. 1:eapply meta_lvl.
+    1:econstructor; eauto using t2Wt, P''Wt2.
+    all:destruct l; reflexivity.
+  Qed.
+  
+  Lemma t5Wt : Γ ⊢< Ru i l > t5 : Pi i l A t4.
+  Proof.
+    unfold t5. econstructor; eauto using t3Wt, t4Wt.
+  Qed.
+End AccCompValidity.
+
+Lemma meta_tm_conv Γ l t t' A : 
+  Γ ⊢< l > t : A ->
+  t = t' ->
+  Γ ⊢< l > t' : A.
+Proof.
+  intros. subst. eauto.
+Qed.
 
 Lemma validity_gen :
   (∀ Γ l t A,
@@ -2137,7 +2310,16 @@ Proof.
       }
       rasimpl. reflexivity.
   - intuition eauto. 1:econstructor; eauto. 
-    admit.
+    eapply subst_ty; eauto using validity_ty_ctx.
+    2:unfold P''; rasimpl; reflexivity.
+    econstructor. 1:econstructor.
+    + ssimpl. eapply subst_id; eauto using validity_ty_ctx.
+    + ssimpl. eauto.
+    + ssimpl. unfold B. rasimpl.
+      eapply meta_tm_conv. 1:eapply meta_conv.
+      1: eapply t5Wt; eauto.
+      * unfold R', P'. ssimpl. f_equal. f_equal. substify. ssimpl. reflexivity.
+      * unfold t10, t9, t8, t7. f_equal.
 Admitted.
 
 Theorem validity_conv_left Γ l t u A :
