@@ -2678,16 +2678,15 @@ Qed.
 
 Lemma type_inv_var' Γ l x T :
   Γ ⊢< l > var x : T →
-  Γ ⊢< l > var x : T ∧ exists A, nth_error Γ x = Some (l , A) ∧ Γ ⊢< Ax l > T ≡ (plus (S x)) ⋅ A : Sort l.
-(* Proof.
+  Γ ⊢< l > var x : T ∧ exists A, Γ ∋< l > x : A ∧ Γ ⊢< Ax l > T ≡ A : Sort l.
+Proof.
   intro H.
   apply validity_ty_ty in H as T_Wt.
   split. 1: auto.
   dependent induction H.
   - eexists. split; eauto using conv_refl.
   - edestruct IHtyping as (C & eq & A_eq_C); eauto using validity_conv_left. eexists. split; eauto using conv_trans, conv_sym.
-Qed. *)
-Admitted.
+Qed.
 
 Lemma type_inv_sort' Γ l' i T:
   Γ ⊢< l' > Sort i : T →
@@ -2844,10 +2843,10 @@ Proof.
 Qed.
 
 Lemma type_inv_accel' Γ i l A R a q P p T l' :
-    let R' := R <[var 1 .: (var 0 .: (S >> S >> var))] in
-    let P' := P <[var 1 .: (S >> S >> S >> var)] in
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := P <[var 1.: (S >> (S >> var))] in
+    let P'' := (1.: (S >> S)) ⋅ P in
     Γ ⊢< l' > accel i l A R P p a q : T →
     Γ ⊢< l' > accel i l A R P p a q : T ∧
     Γ ⊢< Ax i > A : Sort i ∧
@@ -2862,13 +2861,14 @@ Proof.
   intros.
   apply validity_ty_ty in H as T_Wt.
   split. 1: auto.
-  (* dependent induction H; eauto.
+  assert (exists t, Γ ⊢< l' > t : T /\ t = accel i l A R P p a q ).
+  1:eexists; split; eauto.
+  clear H. destruct H0 as (t & tWt & t_eq).
+  induction tWt; dependent destruction t_eq.
   - intuition eauto using conv_refl.
-  - edestruct IHtyping as (AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. intuition eauto using conv_trans, conv_sym. *)
-Admitted.
-
-
+  - edestruct IHtWt as (AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv); eauto using validity_conv_left.
+    rewrite l_eq in *. intuition eauto using conv_trans, conv_sym.
+Qed.
 
 Lemma type_inv_obseq Γ l T A i a b :
   Γ ⊢< l > obseq i A a b : T →
@@ -2937,14 +2937,14 @@ Proof.
 Qed.
 
 Lemma conv_var' Γ x l A T :
-      nth_error Γ x = Some (l , A) →
+      Γ ∋< l > x : A →
       ⊢ Γ →
-      T = ((plus (S x)) ⋅ A) →
+      T = A →
       Γ ⊢< l > (var x) ≡ (var x) : T.
-(* Proof.
+Proof.
   intros. subst. eauto using conv_var.
-Qed. *)
-Admitted.
+Qed.
+
 
 Lemma conv_lam' Γ i j A B t A' B' t' l T:
       Γ ⊢< Ax i > A ≡ A' : Sort i →
@@ -2975,16 +2975,17 @@ Lemma lift_subst σ1 σ2 i A A' Γ:
     ∙ ⊢s σ1 ≡ σ2 : Γ →
     A' = A <[ σ1] →
     ∙ ,, (i, A') ⊢s ((var 0) .: (σ1 >> ren_term S)) ≡ ((var 0) .: (σ2 >> ren_term S)) : (Γ ,, (i, A)).
-(* Proof.
-    intros. subst. eapply conv_scons.
-    1: admit. (* consequence of weakening *)
-    rasimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). simpl. ssimpl. eauto.
-    rewrite H1.
-    eapply conv_var. eauto. inversion H.
-    eapply validity_subst_conv_left in H0.
-    econstructor. econstructor.
-    eauto using validity_conv_left, subst, refl_subst, conv_refl. *)
-Admitted.
+Proof.
+    intros. subst. dependent destruction H. eapply conv_scons.
+    1:ssimpl. 1:eapply ConvSubst_weak; eauto.
+    1:eapply subst_ty; eauto using validity_subst_conv_left, ctx_typing.
+    rasimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). 1:simpl. 1:ssimpl. 1:eauto.
+    rewrite H2.
+    eapply conv_var. 1:eauto. 1:inversion H.
+    1:eapply validity_subst_conv_left in H0.
+    1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
+    eapply subst_ty; eauto using validity_subst_conv_left. econstructor.
+Qed.
 
 
 Lemma lift_subst2 σ1 σ2 i j B A _A _B Γ:
@@ -2994,18 +2995,18 @@ Lemma lift_subst2 σ1 σ2 i j B A _A _B Γ:
     _B = B<[var 0 .: σ1 >> ren_term S] →
     ∙ ,, (i, _A) ,, (j, _B) ⊢s ((var 0) .: (var 1 .: (σ1 >> ren_term (S >> S)))) ≡ ((var 0) .: (var 1 .: (σ2 >> ren_term (S >> S)))) : (Γ ,, (i, A)) ,,(j, B).
 Proof.
-    (* intros. subst. eapply conv_scons. eapply conv_scons. ssimpl. admit. (* consequence of weakening *)
-    ssimpl. assert (A <[ σ1 >> ren_term (S >> S)] = (plus (S 1)) ⋅ A <[σ1]). ssimpl. reflexivity.
-    rewrite H1. eapply conv_var. eauto. shelve.
-    ssimpl. assert (B <[ var 1 .: σ1 >> ren_term (S >> S)] = (plus (S 0)) ⋅ B<[ var 0 .: σ1 >> ren_term S]). ssimpl. reflexivity.
-    rewrite H1. eapply conv_var. eauto.
-    dependent destruction H. eapply lift_subst in H; eauto.
-    dependent destruction H. asimpl in H3.
-    econstructor.
-    eauto using validity_ty_ctx, validity_conv_left.
-    eapply lift_subst in H1; eauto using validity_ty_ctx.
-    eauto using validity_conv_left, subst, refl_subst, conv_refl. *)
-Admitted.
+    intros. subst.
+    dependent destruction H. dependent destruction H.
+    eapply subst_ty in H2 as H2'. 3,4:eauto using validity_subst_conv_left. 2:econstructor.
+    eapply subst_ty in H1 as H1'.
+    3:eapply lift_subst in H0; eauto using validity_subst_conv_left, validity_ty_ctx.
+    2,3:econstructor; eauto using ctx_typing.
+    assert (forall σ, pointwise_relation _ eq (var 0 .: (var 1 .: σ >> ren_term (S >> S))) (up_term (up_term σ))).
+    { intros. unfold pointwise_relation; intros; destruct a.
+      1:reflexivity. 1:destruct a.  1:reflexivity. 1:ssimpl; reflexivity. }
+    setoid_rewrite H3. eapply conv_substs_up_two; eauto.
+    econstructor; eauto. econstructor; eauto using ctx_typing.
+Qed.
 
 Definition obseq_sym l A a b e : term :=
   J l A a (obseq l (S ⋅ A) (var 0) (S ⋅ a)) (obsrefl l A a) b e.
@@ -3014,17 +3015,17 @@ Lemma type_obseq_sym : forall Γ l A a b e,
     Γ ⊢< prop > e : obseq l A a b →
     Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.
 Proof.
-  (* intros. eapply validity_ty_ty in H as H'.
+  intros. eapply validity_ty_ty in H as H'.
   eapply type_inv_obseq in H' as (H1 & H2 & H3 & _).
   unfold obseq_sym.
   eapply meta_conv.
-  eapply type_J; eauto. all: rasimpl. 3:reflexivity.
+  1:eapply type_J; eauto. all: rasimpl. 3:reflexivity.
   2:eapply type_obsrefl; eauto.
   eapply type_obseq.
   2:eapply meta_conv. 2: eapply type_var.
   2:eauto using validity_ty_ctx, ctx_cons.
-  2:reflexivity.
-  2:reflexivity.
-  1,2:admit. (* consequences of renaming *) *)
-Admitted.
+  3:reflexivity.
+  2:econstructor.
+  all:eapply type_ren; eauto using ctx_typing, WellRen_S, validity_ty_ctx.
+Qed.
 
