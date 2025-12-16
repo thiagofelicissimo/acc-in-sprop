@@ -50,7 +50,7 @@ Lemma aaux A' R' P' Γ i k A R a q P p r b X Y l:
     Γ ,, (i, A) ⊢< Ax (ty k) > P : Sort (ty k) ->
     let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
     let P_ := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
     let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
     Γ ⊢< i > a : A ->
@@ -77,6 +77,26 @@ Lemma aaux A' R' P' Γ i k A R a q P p r b X Y l:
     Γ ⊢< l > X -->> accel i (ty k) A R P p b (accinv i A R a q b r) : Y.
 Proof.
     intros. subst.
+    assert (Γ ⊢< Ax prop > R <[ a .: b..] ≡ R' <[a .: b ..] : Sort prop) as R_conv_R'.
+    { eapply subst_conv; eauto using validity_ty_ctx. econstructor. econstructor.
+      ssimpl. eauto using refl_subst, subst_id, validity_ty_ctx.
+      all:ssimpl; eauto using conv_refl. } 
+
+    assert (Γ,, (i, A) ⊢< Ax prop > R <[ S ⋅ a .: (var 0 .: S >> var)] ≡ R' <[ S ⋅ a .: (var 0 .: S >> var)] : Sort prop).
+    { eapply subst_conv; eauto using ctx_typing, validity_ty_ctx.
+      setoid_rewrite subst_id_reduce1. eapply substs_one.
+      eapply conv_refl, type_ren; eauto using validity_ty_ctx, WellRen_S. }
+
+    assert (Γ,, (i, A) ⊢< Ax (ty k) > t4 ≡ t4' : Sort (ty k)).
+    { unfold t4, t4', t2, t2', P''.
+      eapply meta_conv_conv. eapply meta_lvl_conv.
+      econstructor; eauto using validity_conv_left.
+      eapply conv_ren; eauto using ctx_typing, validity_conv_left, validity_ty_ctx.
+      econstructor. ssimpl. eapply WellRen_weak, WellRen_S.
+      eapply varty_meta. econstructor. econstructor.
+      all:rasimpl; reflexivity. }
+
+
     eapply redd_conv.
     eapply redd_step.
 
@@ -84,22 +104,43 @@ Proof.
     3:rasimpl; eauto using subst_conv, substs_one_3, conv_refl, conv_sym.
     eapply red_beta'; eauto using conv_sym, type_conv.
     3:unfold t4', t2';rasimpl; reflexivity.
-    1-2:admit.
+    eauto using conv_sym, conv_ty_in_ctx_conv.
+    eapply conv_ty_in_ctx_ty; eauto. eapply type_conv; eauto.
+    eapply t3Wt; eauto using validity_conv_left.
+    
     eapply red_to_redd.
     unfold t3, t2, P''; rasimpl. eapply red_beta' ; rasimpl ; eauto 7 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv, ctx_typing, validity_ty_ctx.
     3:{ unfold t1, t0, Awk, Rwk, Pwk, pwk. rasimpl.
         setoid_rewrite subst_id_reduce2.
         setoid_rewrite subst_id_reduce1.
         rasimpl. reflexivity. }
-        1:admit.
-    (* eapply subst_conv; eauto using conv_sym.
-    econstructor; eauto using ctx_typing.
-    1: change (P' <[ S ⋅ b .: S >> var]) with (P' <[ (S ⋅ b) ..]).
-    eapply wk1_conv. 1:eaooky exact H1. ; eauto using conv_sym, subst_conv, substs_one_3, conv_refl, validity_ty_ctx, ctx_typing; rasimpl; eauto. *)
-    (* 2:eauto  11 using conv_sym, substs_one_4, conv_refl, subst_conv, type_conv, validity_conv_right, ctx_typing, validity_ty_ctx, validity_conv_left. *)
-    admit.
-Admitted.
+    eapply subst_conv; eauto using conv_sym, ctx_typing, validity_ty_ctx, validity_conv_right.
+    3: { eapply subst_conv; eauto using validity_ty_ctx, conv_sym. 
+         econstructor; ssimpl; eauto using conv_refl, subst_id, validity_ty_ctx, refl_subst. }
+    1:{ econstructor; ssimpl. change (S >> var) with (var >> ren_term S). 
+        eapply ConvSubst_weak; eauto using validity_conv_right, validity_ty_ctx, refl_subst, subst_id.
+        eapply wk1_conv. eapply conv_refl, H5. all:rasimpl; eauto using validity_conv_right. } 
 
+    eapply conv_ty_in_ctx_ty; eauto.
+    assert (forall b, pointwise_relation _ eq (var 0 .: (S ⋅ b .: S >> var)) (up_term (b ..))).
+    { unfold pointwise_relation. intros. destruct a0. reflexivity. rasimpl. destruct a0.
+      reflexivity. ssimpl. reflexivity. }
+    eapply type_conv.
+    eapply subst_ty. 3:eapply t1Wt.
+    3:eauto using validity_conv_left.
+    8:reflexivity.
+    all:eauto using ctx_typing, validity_ty_ctx, validity_conv_left.
+    rewrite H10.
+    eapply WellSubst_up. 2:rasimpl;reflexivity. 2:rasimpl; eauto using validity_conv_left.
+    eapply subst_one; eauto. 
+    rasimpl.
+    eapply subst_conv; eauto using ctx_typing, validity_conv_left, validity_ty_ctx.
+    assert (pointwise_relation _ eq (S ⋅ b .: S >> var)  ((b..) >> ren_term S)).
+    { unfold pointwise_relation. intro. destruct a0. reflexivity.
+      rasimpl. reflexivity. }
+    rewrite H11.
+    eapply ConvSubst_weak; eauto using validity_conv_left, substs_one, conv_refl.
+Qed.
 
 Lemma conv_ty_in_ctx_conv2 Γ l A A' l' t u B :
   Γ ,, (l , A) ,, (l, S ⋅ A) ⊢< l' > t ≡ u : B ->
@@ -149,13 +190,9 @@ Proof.
     assert (∙,, (i, A1) ⊢< Ax prop >
         R1 <[ ↑ ⋅ a1 .: (var 0 .: ↑ >> var)]
       ≡ R2 <[ ↑ ⋅ a2 .: (var 0 .: ↑ >> var)] : Sort prop).
-    { eapply subst_conv; eauto.
-      1: eapply validity_ctx. 1: eassumption.
-      econstructor. econstructor. econstructor. all:admit.
-      (* ssimpl. eapply conv_var'; eauto using validity_conv_left, validity_ty_ctx. reflexivity. substify. reflexivity. rasimpl.  eapply conv_ren; eauto.
-      1: eapply validity_ctx. 1: eassumption.
-      apply WellRen_S. *)
-    }
+    { eapply subst_conv; eauto using validity_conv_left, ctx_typing. econstructor. econstructor. econstructor.
+      ssimpl. eapply conv_var'; eauto using validity_conv_left, validity_ty_ctx, varty. rasimpl; reflexivity.
+      eapply conv_ren; eauto; eauto using ctx_typing, validity_conv_left. eapply WellRen_S. rasimpl. reflexivity. }
     unfold C1, C2, R1', R2', P1', P2'.
     rasimpl. eapply conv_pi'; eauto.
     eapply subst_conv; eauto.
@@ -168,8 +205,7 @@ Proof.
     eapply conv_var'. 1:econstructor. 1:econstructor.
     1:econstructor; eauto using validity_ty_ctx, validity_conv_left.
     rasimpl. reflexivity.
-Admitted.
-
+Qed.
 
 
 Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1 p2 :
@@ -183,10 +219,10 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > P1<[a1..] ≡ P2<[a2..] ↓ ϵP a1 a2) ->
     let ϵB a1 a2 f1 f2 := forall b1 b2 (ϵb : ϵA b1 b2) r1 r2 (r_Wt : ∙ ⊢< prop > r1 ≡ r2 : R1 <[a1 .:b1 ..]) t1 t2,
         t1 = app prop (ty k) (R1<[a1 .: b1 ..]) (S ⋅ (P1 <[b1..]))
-                (app i (ty k) A1 (Pi prop (ty k) (R1<[(S ⋅ a1) .: (var 0 .: (S >> var))]) (P1 <[var 1 .: (S >> S >> var)])) f1 b1)
+                (app i (ty k) A1 (Pi prop (ty k) (R1<[(S ⋅ a1) .: (var 0 .: (S >> var))]) ((1 .: S >> S) ⋅ P1)) f1 b1)
             r1 ->
         t2 = app prop (ty k) (R3<[a2 .: b2 ..]) (S ⋅ (P3 <[b2..]))
-                (app i (ty k) A3 (Pi prop (ty k) (R3<[(S ⋅ a2) .: (var 0 .: (S >> var))]) (P3 <[var 1 .: (S >> S >> var)])) f2 b2)
+                (app i (ty k) A3 (Pi prop (ty k) (R3<[(S ⋅ a2) .: (var 0 .: (S >> var))]) ((1 .: S >> S) ⋅ P3)) f2 b2)
             r2 ->
             ϵP b1 b2 t1 t2 in
     let R' := (1 .: (0 .: (S >> S))) ⋅ R1 in
@@ -195,7 +231,7 @@ Lemma prefundamental_accel A3 R3 P3 i k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     (forall a1 a2 (ϵa : ϵA a1 a2) f1 f2 (ϵf : ϵB a1 a2 f1 f2),
         ∙ ⊢< Ru i (ty k)> f1 ≡ f2 : B <[a1..] ->
         ϵP a1 a2 (p1 <[f1.: a1 ..]) (p2<[f2 .: a2 ..])) ->
-    (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : P1 <[var 1.: (S >> (S >> var))] ->
+    (∙ ,, (i, A1)),, (Ru i (ty k), B) ⊢< ty k > p1 ≡ p2 : (1 .: S >> S) ⋅ P1 ->
     ∙ ⊢< i > a1 ≡ a2 : A1 ->
     forall (ϵa : ϵA a1 a2),
     ∙ ⊢< prop > q1 ≡ q2 : acc i A1 R1 a1 ->
@@ -208,13 +244,14 @@ Proof.
     induction H11. rename x into a1. intros.
 
     assert (∙ ⊢< ty k> accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp.
-    { eauto using conv_accel, validity_conv_right. admit. (* Nedd conv_accel' *) }
+    { eauto using conv_accel, validity_conv_right.  admit. (* Nedd conv_accel' *) }
     eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
 
     eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
-    - eauto 6 using red_to_redd, red_accel', validity_conv_left. admit.
-    - eapply red_to_redd; eapply red_conv; eauto 7 using red_accel', validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
-      all: admit.
+    - eapply red_to_redd, red_accel'; eauto using validity_conv_left.
+    - eapply red_to_redd; eapply red_conv.
+      eapply red_accel'; eauto 7 using validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
+      eapply subst_conv; eauto using ctx_typing, conv_sym, substs_one.
     - unfold ϵB. all:clear ϵB. intros; subst.
       eapply LR_irred_tm; eauto.
       1,2:shelve.
@@ -222,30 +259,34 @@ Proof.
       eapply (accinv i A1 R1 a1 q1 b1 r1).
       eapply (accinv i A2 R2 a2 q2 b2 r2).
       unfold meta; eexists; eauto using validity_conv_right.
-      (* eauto.
+      eauto.
       eauto using LR_escape_tm.
       { eapply conv_irrel.
         - eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
-        - eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, substs_one_4, subst_conv.
-        1: admit.
-        eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm. admit. }
+        - eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, substs_one_4, subst_conv, ctx_typing.
+        eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm, ctx_typing, validity_ty_ctx, validity_conv_left. }
       Unshelve.
-      + shelve.
-      + shelve.
+      (* + shelve.
+      + shelve. *)
       + rasimpl. eapply (aaux A1 R1 P1); eauto using validity_conv_left, LR_escape_tm, conv_refl. substify. rasimpl. reflexivity.
 
       + eapply redd_conv.
         eapply (aaux A3 R3 P3); eauto 6 using validity_conv_right, conv_sym, conv_trans, LR_escape_tm, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, type_conv, conv_acc, substs_one_4, subst_conv.
-        1: admit.
-        eauto using substs_one_3, subst_conv, conv_sym, LR_escape_tm.
-        admit.
+        2:eapply subst_conv; eauto using ctx_typing, conv_sym, substs_one, LR_escape_tm.
+        eapply type_conv; eauto using validity_conv_right.
+        eapply subst_conv; eauto using ctx_typing. 
+        econstructor. ssimpl. eapply substs_one; eauto using LR_escape_tm.
+        ssimpl. eauto using LR_escape_tm.
     -  clear ϵB H10 p2Wt.
+    assert (pointwise_relation _ eq ((1 .: S >> S) >> var) (var 1 .: (S >> S) >> var)).
+    { unfold pointwise_relation.  intros. destruct a. reflexivity. reflexivity. }
     eapply conv_lam'; eauto.
-    + clear H3 H5. eapply fundamental_accel_aux2; eauto. 1,2:rasimpl;reflexivity.
+    + clear H3 H5. eapply fundamental_accel_aux2; eauto. rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
+      rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
     + eapply conv_lam'; eauto.
       1,2:admit.
       admit.
-    + unfold B, R', P'. rasimpl. reflexivity. *)
+    + unfold B, R', P'. rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
 Admitted.
 
 
