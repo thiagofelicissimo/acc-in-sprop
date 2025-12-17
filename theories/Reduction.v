@@ -484,10 +484,10 @@ Proof.
     - simpl. split; eauto. split; eauto.
     - eapply IHred. eauto.
     - destruct A.
-      1,3,5,6,8-20: simpl;left;eexists; split; eauto.
+      1,3,5,6,8-21: simpl;left;eexists; split; eauto.
       1-3:(unshelve eapply (H _ _) in H0); simpl. 1-3:lia. 1-3:inversion H0.
     - destruct B.
-      1,3,5,6,8-20:destruct A; simpl; right; eexists; split; eauto.
+      1,3,5,6,8-21:destruct A; simpl; right; eexists; split; eauto.
       1-3:(unshelve eapply (H _ _) in H2); simpl. 1-3:lia. 1-3:inversion H2.
     - simpl. split; eauto.
     - simpl. split; eauto.

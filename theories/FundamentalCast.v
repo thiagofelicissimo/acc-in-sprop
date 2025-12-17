@@ -259,7 +259,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-20:inversion LR_B12.
+      1,3,5,6,8-21:inversion LR_B12.
       + split; intros; eapply nat_neq_sort_red in A1_red_nat;
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_nat.
       + split; intros; eapply nat_neq_pi_red in A1_red_nat;
@@ -284,7 +284,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-20:inversion LR_B12.
+      1,3,5,6,8-21:inversion LR_B12.
       + destruct LR_B12 as (eq' & _ & B2_red & ϵB_iff_ϵsort).
         eapply Ax_inj in eq'. subst.
         split; intros; try rewrite H0 in * ; try rewrite ϵB_iff_ϵsort in *.
@@ -309,7 +309,7 @@ Proof.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
-      1,3,5,6,8-20:inversion LR_B12.
+      1,3,5,6,8-21:inversion LR_B12.
       + split; intros; eapply sort_neq_pi_red in A1_red_pi;
         eauto using validity_conv_left, type_obseq_sym; inversion A1_red_pi.
       + destruct l0. 2:inversion LR_B12.
