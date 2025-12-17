@@ -364,9 +364,8 @@ Proof.
         as R1σ_conv_R2σ.
     { eapply validity_conv_left, conv_refl in R1_conv_R2.
       eapply subst_conv; eauto using conv_refl.
-      1:{
-        constructor. all: admit.
-      }
+      econstructor. econstructor; eauto using ctx_typing, LR_escape_ty, validity_conv_left.
+      eapply type_ren; eauto using WellRen_S, validity_conv_left, LR_escape_ty, ctx_typing.
       eapply lift_subst2; eauto using validity_conv_left, validity_ty_ctx, LR_subst_escape.
       rasimpl. reflexivity.
     }
@@ -374,19 +373,34 @@ Proof.
     assert (∙,, (i, A1 <[ σ1]) ⊢< Ax (ty k) >
         P1 <[ var 0 .: σ1 >> ren_term ↑] ≡
         P1 <[ var 0 .: σ2 >> ren_term ↑] : Sort (ty k)) as P1σ_conv_P2σ.
-    { eauto 8 using validity_conv_left, conv_refl, subst_conv, lift_subst, validity_ty_ctx, LR_subst_escape. admit. }
+    { eapply subst_conv; eauto using ctx_typing, LR_escape_ty, validity_conv_left, validity_conv_left, conv_refl, lift_subst, LR_subst_escape, validity_ty_ctx. }
 
 
 
     exists (eP (a1 <[ σ1]) (a2 <[ σ2])).
     split; rasimpl. eauto.
     eapply (prefundamental_accel (A1 <[σ2]) (R1 <[ var 0 .: (var 1 .: σ2 >> ren_term (↑ >> ↑))]) (P1 <[ var 0 .: σ2 >> ren_term ↑]));
-    eauto 6 using subst_conv, LR_subst_escape, validity_conv_left, conv_refl, lift_subst, validity_ty_ctx.
-    1:eapply subst_conv; eauto using validity_conv_left, conv_refl, ctx_nil. (* eapply conv_scons_alt; eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx; rasimpl; reflexivity.
+    eauto 8 using subst_conv, LR_subst_escape, validity_conv_left, conv_refl, lift_subst, validity_ty_ctx, ctx_typing.
+    1:eapply subst_conv; eauto using validity_conv_left, conv_refl, validity_ty_ctx; 
+      eapply lift_subst2; eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx; rasimpl; reflexivity.
     intros; rasimpl; eauto.
-    3:eapply subst; eauto using LR_subst_escape; rasimpl; reflexivity.
-    2:{eapply subst; eauto. 2: unfold P''; rasimpl; substify; reflexivity.
-      eapply lift_subst2; eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx. unfold B, C, R', P'. rasimpl. reflexivity. }
+    3:eapply subst_conv; eauto using LR_subst_escape, validity_ty_ctx, validity_conv_left, ctx_typing; rasimpl; reflexivity.
+    2:{ 
+      eapply subst_conv; eauto.
+      2:eapply lift_subst2; eauto using LR_subst_escape, validity_conv_left, validity_ty_ctx; unfold B, C, R', P'; rasimpl; reflexivity.
+      2:unfold P''; rasimpl; substify; reflexivity.
+      eapply validity_conv_left, validity_ty_ctx in p1_conv_p2.
+      dependent destruction p1_conv_p2. 
+      econstructor; eauto using ctx_typing , validity_conv_left, LR_escape_ty.
+      eapply meta_tm_conv.
+      eapply subst_ty. 3:exact H.
+      2:eapply WellSubst_up; eauto using ctx_typing , validity_conv_left, LR_escape_ty, LR_subst_escape, validity_subst_conv_left.
+      eauto using ctx_typing , validity_conv_left, LR_escape_ty.
+      rasimpl;reflexivity.
+      unfold C, R', P'. rasimpl. reflexivity. }
+
+
+  
 
     intros.
 
@@ -423,11 +437,12 @@ Proof.
           unfold P', R'; rasimpl; reflexivity.
         - rasimpl. eauto.
         - intros. rasimpl.
-          assert (∙ ⊢< Ax (ty k) > P1 <[ s1.: σ1] ≡ P1 <[ s2.: σ2 ] : Sort (ty k))
-            by eauto 7 using subst, conv_refl, validity_conv_left, ConvSubst, LR_escape_tm, LR_subst_escape.
+          assert (∙ ⊢< Ax (ty k) > P1 <[ s1.: σ1] ≡ P1 <[ s2.: σ2 ] : Sort (ty k)).
+          { eapply subst_conv; eauto using conv_refl, validity_conv_left. 
+            all:eauto using ctx_typing, ConvSubst, LR_escape_tm, LR_subst_escape. }
 
           assert (∙ ⊢< Ax prop > R' <[ s1 .: (a0 .: σ1)] ≡ R' <[ s2 .: (a3 .: σ2)] : Sort prop).
-          { unfold R'. rasimpl. eapply subst; eauto using validity_conv_left, conv_refl.
+          { unfold R'. rasimpl. eapply subst_conv; eauto using validity_conv_left, conv_refl, ctx_typing.
             econstructor. econstructor. eauto using LR_subst_escape. eauto using LR_escape_tm. rasimpl. eauto using LR_escape_tm. }
           unshelve eapply LR_pi'.
           exact (fun t u => ∙ ⊢< prop > t ≡ u : R1 <[ a0 .: (s1 .: σ1)]).
@@ -448,8 +463,8 @@ Proof.
 
     eapply LRv_to_LR_tm in LRv_p12 as ϵp; eauto.
     2:unfold P''; rasimpl; eauto.
-    rasimpl. eapply ϵp. *)
-Admitted.
+    rasimpl. eapply ϵp.
+Qed.
 
 Lemma fundamental_accel_accin Γ i k A R a q P p :
     Γ ⊢< Ax i > A : Sort i ->
