@@ -6,7 +6,9 @@ Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
 From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux FundamentalPi FundamentalNat FundamentalAcc FundamentalCast.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
-Require Import Stdlib.Program.Equality.
+
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 Import CombineNotations.
 
 
@@ -81,7 +83,7 @@ Proof.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi, conv_refl. eauto using fundamental_prop_ty.
-    - destruct j; dependent destruction x. eauto using fundamental_lam, conv_refl.
+    - destruct j; dependent destruction H3. eauto using fundamental_lam, conv_refl.
     - eauto 6 using fundamental_app, conv_refl.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
@@ -95,7 +97,7 @@ Proof.
     - eauto using fundamental_var.
     - eauto using fundamental_sort.
     - destruct j. eauto using fundamental_pi. eauto using fundamental_prop_ty.
-    - destruct j; dependent destruction x. eauto using fundamental_lam.
+    - destruct j; dependent destruction H4. eauto using fundamental_lam.
     - eauto using fundamental_app.
     - eauto using fundamental_nat.
     - eauto using fundamental_zero.
@@ -106,7 +108,7 @@ Proof.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
     - eauto using fundamental_cast_refl, conv_refl. 
-    - destruct j. 2: eauto using fundamental_prop. dependent destruction x. eauto using fundamental_cast_pi.
+    - destruct j. 2: eauto using fundamental_prop. dependent destruction H6. eauto using fundamental_cast_pi.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
     - destruct j. eauto using fundamental_eta. eauto using fundamental_prop.
@@ -167,3 +169,5 @@ Proof.
     intros. eapply canonicity_red in H as (k & lr).
     eauto using ϵNat_escape.
 Qed.
+
+Print Assumptions canonicity_conv.

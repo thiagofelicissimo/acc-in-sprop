@@ -6,7 +6,9 @@ Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
 From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux FundamentalNat FundamentalPi.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
-Require Import Stdlib.Program.Equality.
+
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 Import CombineNotations.
 
 
@@ -315,7 +317,7 @@ Proof.
         destruct LR_B12 as (S2' & T2' & ϵS' & ϵT' & eq' & _ & B2_red & T1'_eq_T2' & LR_S12' & LR_T12' & ϵB_iff).
         split; intros; try rewrite ϵB_iff in *; try rewrite H in *.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
-           destruct temp as (eq1 & eq2). dependent destruction eq2.
+           destruct temp as (eq1 & eq2). dependent elimination eq2. subst.
            unfold ϵPi. intros. split.
            eapply conv_conv; eauto using conv_cast, LR_escape_ty, redd_whnf_to_conv.
            (* clear LR_A12' LR_B12'. *)
@@ -340,7 +342,7 @@ Proof.
               eapply type_conv; eauto using validity_conv_right, conv_obseq, LR_escape_ty, conv_sort, ctx_typing.
               eapply subst_conv; eauto using conv_sym, substs_one, LR_escape_tm, ctx_nil.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
-           destruct temp as (eq1 & eq2). dependent destruction eq2.
+           destruct temp as (eq1 & eq2). dependent elimination eq2. subst.
            unfold ϵPi. intros. split.
            eapply conv_conv; eauto using conv_cast, LR_escape_ty, redd_whnf_to_conv.
            intros s1 s2 ϵs.

@@ -5,7 +5,9 @@ From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
 From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory. (*  Env Inst. *)
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
-Require Import Stdlib.Program.Equality.
+
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 Import CombineNotations.
 
 
@@ -302,8 +304,7 @@ Proof.
     - eapply redd_refl. eauto using type_rec.
     - eapply redd_step; eauto using red_rec.
       eapply redd_conv. eapply IHredd; eauto.
-      eapply validity_ctx in H0 as ?.
-      eauto 6 using subst_conv, conv_refl, red_to_conv, conv_sym, substs_one.
+      eauto 7 using subst_conv, conv_refl, red_to_conv, conv_sym, substs_one, validity_ty_ctx.
 Qed.
 
 
@@ -333,7 +334,7 @@ Proof.
     intros.
     eapply validity_ctx in H0 as ?.
     dependent induction H2.
-    - eapply red_to_redd. eapply type_inv_succ' in H2 as (_ & nWt & _). eapply red_rec_succ; eauto.
+    - eapply red_to_redd. eapply type_inv_succ' in H as (_ & nWt & _). eapply red_rec_succ; eauto.
     - eapply redd_step. eapply red_conv. eapply red_rec; eauto.
       + eauto 7 using subst_conv, conv_refl, redd_to_conv, red_to_conv, conv_trans, substs_one, conv_sym.
       + eapply IHredd; eauto.
@@ -467,7 +468,7 @@ Lemma red_inv Γ l t u T : Γ ⊢< l > t --> u : T -> red_inv_type Γ t u.
 Proof.
     generalize t Γ l u T. clear t Γ l u T.
     refine (@well_founded_ind _ (fun t u => size t < size u) _ _ _).
-    eauto using wf_inverse_image, lt_wf.
+    eapply wf_inverse_image, lt_wf.
     intros. induction H0.
     - destruct t.
       5: (unshelve eapply (H _ _) in H2; simpl). 5: lia. 5: inversion H2.
@@ -638,7 +639,7 @@ Proof.
         eapply red_conv. eapply red_app'; eauto using type_conv, red_conv, conv_pi, conv_sym, conv_ty_in_ctx_conv.
         eapply subst_conv; eauto using substs_one, conv_refl, conv_sym, validity_ty_ctx.
         eapply aconv_app; eauto.
-      + dependent destruction H1. eexists.
+      + dependent destruction H5. eexists.
         split. eapply red_conv.
         eapply red_beta'; eauto using conv_sym, conv_trans, conv_ty_in_ctx_conv, type_conv, conv_ty_in_ctx_ty.
         eapply subst_conv; eauto using substs_one, conv_refl, conv_sym, validity_ty_ctx.

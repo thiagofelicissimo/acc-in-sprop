@@ -6,7 +6,9 @@ Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
 From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory
     Reduction LRDef LRBasicProps FundamentalAux.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
-Require Import Stdlib.Program.Equality.
+
+Require Import Equations.Prop.DepElim.
+From Equations Require Import Equations.
 Import CombineNotations.
 
 
@@ -464,7 +466,7 @@ Proof.
       2:eapply WellSubst_up; eauto using ctx_typing , validity_conv_left, LR_escape_ty, LR_subst_escape, validity_subst_conv_left.
       eauto using ctx_typing , validity_conv_left, LR_escape_ty.
       rasimpl;reflexivity.
-      unfold C, R', P'. rasimpl. reflexivity. }
+      unfold B, C, R', P'. rasimpl. reflexivity. }
 
 
   
