@@ -3030,3 +3030,23 @@ Proof.
     + eapply conv_refl_conv. eassumption.
     + apply conv_sym. assumption.
 Qed.
+
+
+Lemma conv_accel' :
+    ∀ Γ i l A A' R R' a a' q q' P P' p p' P0,
+    Γ ⊢< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
+    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P_ := (1 .: (S >> S >> S)) ⋅ P in
+    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
+    let P'' := (1.: (S >> S)) ⋅ P in
+    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
+    Γ ⊢< i > a ≡ a': A ->
+    Γ ⊢< prop > q ≡ q' : acc i A R a ->
+    P0 = P <[a ..] ->
+    Γ ⊢< l > accel i l A R P p a q ≡ accel i l A' R' P' p' a' q' : P0.
+Proof.
+  intros. subst.
+  eapply conv_accel; eauto using validity_conv_left.
+Qed.

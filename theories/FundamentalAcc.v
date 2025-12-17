@@ -244,14 +244,15 @@ Proof.
     induction H11. rename x into a1. intros.
 
     assert (∙ ⊢< ty k> accel i (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp.
-    { eauto using conv_accel, validity_conv_right.  admit. (* Nedd conv_accel' *) }
+    { eauto using conv_accel', validity_conv_right. }
     eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
-
+    assert (pointwise_relation _ eq ((1 .: S >> S) >> var) (var 1 .: (S >> S) >> var)).
+    { unfold pointwise_relation.  intros. destruct a. reflexivity. reflexivity. }
     eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
-    - eapply red_to_redd, red_accel'; eauto using validity_conv_left.
-    - eapply red_to_redd; eapply red_conv.
+    1: eapply red_to_redd, red_accel'; eauto using validity_conv_left.
+    1: {eapply red_to_redd; eapply red_conv.
       eapply red_accel'; eauto 7 using validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
-      eapply subst_conv; eauto using ctx_typing, conv_sym, substs_one.
+      eapply subst_conv; eauto using ctx_typing, conv_sym, substs_one. }
     - unfold ϵB. all:clear ϵB. intros; subst.
       eapply LR_irred_tm; eauto.
       1,2:shelve.
@@ -266,8 +267,6 @@ Proof.
         - eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, substs_one_4, subst_conv, ctx_typing.
         eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm, ctx_typing, validity_ty_ctx, validity_conv_left. }
       Unshelve.
-      (* + shelve.
-      + shelve. *)
       + rasimpl. eapply (aaux A1 R1 P1); eauto using validity_conv_left, LR_escape_tm, conv_refl. substify. rasimpl. reflexivity.
 
       + eapply redd_conv.
@@ -278,16 +277,84 @@ Proof.
         econstructor. ssimpl. eapply substs_one; eauto using LR_escape_tm.
         ssimpl. eauto using LR_escape_tm.
     -  clear ϵB H10 p2Wt.
-    assert (pointwise_relation _ eq ((1 .: S >> S) >> var) (var 1 .: (S >> S) >> var)).
-    { unfold pointwise_relation.  intros. destruct a. reflexivity. reflexivity. }
+    assert ((∙,, (i, A1)),, (prop, R1 <[ S ⋅ a1 .: (var 0 .: S >> var)]) ⊢< Ax (ty k) > (1 .: S >> S) ⋅ P1 ≡ (1 .: S >> S) ⋅ P2 : Sort (ty k)).
+    { eapply conv_ren; eauto. 
+      2:econstructor.
+      2:ssimpl; eapply WellRen_weak, WellRen_S. 
+      2:eapply varty_meta. 2:econstructor. 2:econstructor. 2:rasimpl; reflexivity.
+      econstructor. 2:eapply subst_ty; eauto using validity_conv_left. 
+      3:econstructor. 4:ssimpl. 4:eapply type_ren; eauto using validity_conv_left.
+      3:ssimpl ;rewrite subst_id_reduce1; eapply subst_id.
+      all : eauto using ctx_typing, validity_conv_left, WellRen_S.
+      rasimpl. reflexivity. }
+    assert (⊢ (((∙,, (i, A1)),, (prop, R1 <[ S ⋅ a1 .: (var 0 .: S >> var)])),, (i, (S >> S) ⋅ A1)),, (i, S ⋅ (S >> S) ⋅ A1)).
+    { econstructor. econstructor; eauto using validity_conv_left, validity_ty_ctx. 2:rasimpl.
+      all:eapply type_ren; eauto using validity_conv_left, WellRen_S, WellRen_weak, validity_conv_left, validity_ty_ctx.
+      econstructor. 2:eapply type_ren. all:eauto using validity_conv_left, WellRen_S, WellRen_weak, validity_conv_left, validity_ty_ctx. }
     eapply conv_lam'; eauto.
-    + clear H3 H5. eapply fundamental_accel_aux2; eauto. rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
-      rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
+    + clear H3 H5. eapply fundamental_accel_aux2; eauto. rasimpl. f_equal. substify. setoid_rewrite H13. reflexivity.
+      rasimpl. f_equal. substify. setoid_rewrite H13. reflexivity.
     + eapply conv_lam'; eauto.
-      1,2:admit.
-      admit.
-    + unfold B, R', P'. rasimpl. f_equal. substify. setoid_rewrite H7. reflexivity.
-Admitted.
+      1: {
+        eapply subst_conv; eauto.
+        2:econstructor; ssimpl.
+        2:rewrite subst_id_reduce1; eapply refl_subst, subst_id.
+        3:eapply conv_ren; eauto using WellRen_S.
+        all:eauto using ctx_typing, validity_conv_left. 
+        rasimpl. reflexivity. }
+      
+        eapply conv_accel'; eauto.
+        * eapply conv_ren; eauto using validity_conv_left, validity_ty_ctx, WellRen_S, WellRen_weak.
+        * eapply conv_ren; eauto.
+          eapply WellRen_up. eapply WellRen_up. eapply WellRen_weak, WellRen_S.
+          all:rasimpl; reflexivity.
+        * dependent destruction H10.
+          eapply conv_ren; eauto. 
+          eapply WellRen_up. eapply WellRen_weak, WellRen_S. reflexivity.
+        * dependent destruction H10.
+          eapply conv_ren; eauto.
+          2:eapply WellRen_up. 2:eapply WellRen_up.
+          2:eapply WellRen_weak, WellRen_S.          
+          2-4:unfold B, P', R'; rasimpl; reflexivity.
+          econstructor; eauto.
+          econstructor. rasimpl.
+          eapply type_ren ;eauto using validity_conv_left, WellRen_S, WellRen_weak.
+          eapply meta_conv. eapply meta_lvl.
+          econstructor.
+          rasimpl. eapply type_ren; rasimpl in H14; eauto using validity_conv_left, ctx_typing.
+          econstructor. econstructor. 1-3:ssimpl.
+          eauto using WellRen_S, WellRen_weak.
+          eapply varty_meta. econstructor. rasimpl. reflexivity.
+          eapply varty_meta. econstructor. econstructor. rasimpl. reflexivity.
+          rasimpl. eapply type_ren; eauto using validity_conv_left.
+          2:econstructor. 2:ssimpl; eauto using WellRen_S, WellRen_weak.
+          2:eapply varty_meta. 2:econstructor. 2:econstructor.
+          2:rasimpl; reflexivity.
+          econstructor. rasimpl in H14. eauto using ctx_typing.
+          eapply type_ren; eauto using validity_conv_left.
+          rasimpl in H14. eauto using ctx_typing.
+          econstructor. econstructor. ssimpl.
+          eauto using WellRen_S, WellRen_weak.
+          eapply varty_meta. econstructor.
+          2:eapply varty_meta. 2:econstructor. 2:econstructor.
+          all: rasimpl; reflexivity.
+        * econstructor. eapply varty_meta. econstructor. econstructor.
+          rasimpl. reflexivity.
+          eauto using validity_conv_left, validity_ty_ctx.
+        * dependent destruction H10. dependent destruction H10. 
+          eapply conv_accinv; eauto.
+          1-4:eapply conv_ren; eauto using WellRen_S, WellRen_weak, ctx_typing.
+          eapply WellRen_up. eapply WellRen_up.
+          eauto using WellRen_S, WellRen_weak. 1,2:rasimpl;reflexivity.
+          econstructor. eapply varty_meta. econstructor. econstructor.
+          rasimpl; reflexivity.
+          eauto using validity_conv_left, validity_ty_ctx.
+          econstructor. eapply varty_meta. econstructor. 
+          rasimpl; reflexivity. 
+          eauto using validity_conv_left, validity_ty_ctx.
+        * rasimpl. substify. rasimpl. setoid_rewrite <- H13. rasimpl. reflexivity.
+    + unfold B, R', P'. rasimpl. f_equal. substify. setoid_rewrite H13. reflexivity.
+Qed.
 
 
 
