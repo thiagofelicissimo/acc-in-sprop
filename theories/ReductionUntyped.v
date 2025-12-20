@@ -12,17 +12,41 @@ Import CombineNotations.
 
 Reserved Notation "t ---> u" (at level 50, u at next level).
 
-Axiom box : term.
 
-Definition appu t u := app prop prop Nat Nat t u.
-Definition lamu t := lam prop prop Nat Nat t.
-Definition recu P pzero psucc t := rec prop P pzero psucc t.
-Definition accelu P p a := accel prop prop Nat Nat P p a Nat.
-Definition castu A B t := cast prop A B Nat t.
-Definition Piu A B := Pi prop prop A B.
-Definition accu A R a := acc prop A R a.
-Definition obsequ A a b := obseq prop A a b.
+(* to represent erased subterms *)
+Definition Box := Nat.
+Definition boxlvl := prop.
 
+Definition appu t u := app boxlvl boxlvl Box Box t u.
+Definition lamu t := lam boxlvl boxlvl Box Box t.
+Definition recu P pzero psucc t := rec boxlvl P pzero psucc t.
+Definition accelu P p a := accel boxlvl boxlvl Box Box P p a Box.
+Definition castu A B t := cast boxlvl A B Box t.
+Definition Piu A B := Pi boxlvl boxlvl A B.
+Definition accu A R a := acc boxlvl A R a.
+Definition obsequ A a b := obseq boxlvl A a b.
+
+
+Fixpoint erasure t :=
+    match t with 
+    | var i => var i 
+    | assm c => assm c
+    | lam _ _ _ _ t => lamu (erasure t)
+    | app _ _ _ _ t u => appu (erasure t) (erasure u)
+    | Pi _ _ A B => Piu (erasure A) (erasure B)
+    | zero => zero 
+    | succ t => succ (erasure t)
+    | rec _ P pzero psucc t => 
+        recu (erasure P) (erasure pzero) (erasure psucc) (erasure t)
+    | Nat => Nat
+    | accel _ _ _ _ P p a _ => 
+        accelu (erasure P) (erasure p) (erasure a)
+    | Sort i => Sort i
+    | acc _ A R a => accu (erasure A) (erasure R) (erasure a)
+    | obseq _ A a b => obsequ (erasure A) (erasure a) (erasure b)
+    | cast i A B e t => castu (erasure A) (erasure B) (erasure t)
+    | _ => Nat
+    end.
 
 Inductive red_untyped : term -> term -> Prop :=
 | redu_app t t' u :
@@ -76,27 +100,6 @@ Inductive red_untyped : term -> term -> Prop :=
 
 where "t ---> u" := (red_untyped t u).
 
-
-Fixpoint erasure t :=
-    match t with 
-    | var i => var i 
-    | assm c => assm c
-    | lam _ _ _ _ t => lamu (erasure t)
-    | app _ _ _ _ t u => appu (erasure t) (erasure u)
-    | Pi _ _ A B => Piu (erasure A) (erasure B)
-    | zero => zero 
-    | succ t => succ (erasure t)
-    | rec _ P pzero psucc t => 
-        recu (erasure P) (erasure pzero) (erasure psucc) (erasure t)
-    | Nat => Nat
-    | accel _ _ _ _ P p a _ => 
-        accelu (erasure P) (erasure p) (erasure a)
-    | Sort i => Sort i
-    | acc _ A R a => accu (erasure A) (erasure R) (erasure a)
-    | obseq _ A a b => obsequ (erasure A) (erasure a) (erasure b)
-    | cast i A B e t => castu (erasure A) (erasure B) (erasure t)
-    | _ => Nat
-    end.
 
 Lemma ren_erasure t ρ :
     erasure (ρ ⋅ t) = ρ ⋅ (erasure t).
@@ -336,12 +339,28 @@ Theorem eval_red_untyped_correct k n :
     eval (erasure n) k ->
     ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat.
 Proof.
-    intros.
-    eapply canonicity_red in H as (k' & lr).
-    dependent induction lr.
-    - dependent destruction H. 
-      dependent destruction H1. eapply redd_to_conv in H. eauto.
-      eapply redd_erasure in H.
-      eapply reddu_fun in H; eauto.
-      2:simpl; eauto.  inversion H.
-Admitted. (* didnt have time to finish *)
+    intros nWt eval.
+    dependent induction eval; 
+    eapply canonicity_red in nWt as temp;
+    destruct temp as (k' & lr).
+    - dependent destruction lr.
+      * destruct H0. eapply redd_to_conv in H0. eauto.
+      * destruct H0. eapply redd_erasure in H0.
+        eapply reddu_fun in H; eauto. 2:simpl;eauto.
+        inversion H.
+    - dependent destruction lr.
+      * destruct H0. eapply redd_erasure in H0. 
+        eapply reddu_fun in H; eauto. 2:simpl;eauto.
+        inversion H.
+      * destruct H0. eapply redd_erasure in H0 as H0'.
+        eapply reddu_fun in H as temp; eauto.       
+        2:simpl;eauto. 
+        dependent destruction temp.
+        eapply redd_to_conv in H0 as H0''.
+        eapply conv_trans.
+        exact H0''.
+        eapply conv_succ.
+        eapply IHeval. 2:reflexivity.
+        eapply redd_to_conv, validity_conv_right, type_inv_succ in H0.
+        eauto.
+Qed.
