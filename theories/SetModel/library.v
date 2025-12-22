@@ -69,6 +69,10 @@ Lemma fequal2 {A B C : Set} (f : A -> B -> C) {a a' : A} {b b' : B} : a ≡ a' -
   intros e1 e2. destruct e1. destruct e2. reflexivity.
 Qed.
 
+Lemma fequal3 {A B C D : Set} (f : A -> B -> C -> D) {a a' : A} {b b' : B} {c c' : C} : a ≡ a' -> b ≡ b' -> c ≡ c' -> f a b c ≡ f a' b' c'.
+  intros e1 e2 e3. destruct e1. destruct e2. destruct e3. reflexivity.
+Qed.
+
 Lemma sym {A : Set} {a b : A} : a ≡ b -> b ≡ a.
 Proof.
   intro e. exact (eqS_sind A a (fun b _ => b ≡ a) (eqS_refl a) b e).

@@ -73,6 +73,36 @@ Proof.
     + assumption.
 Qed.
 
+Lemma proof_irr {P : ZFSet} (HP : P ∈ Ω) : ∀ p ∈ P, p ≡ ∅.
+Proof.
+  intros p Hp. unfold Ω in HP. apply ZFinpower in HP. specialize (HP p Hp). apply inSetSingl in HP.
+  exact HP.
+Qed.
+
+Lemma proof_irr' {P : ZFSet} (HP : P ∈ Ω) : ∀ x ∈ P, ∅ ∈ P.
+Proof.
+  intros p Hp. unfold Ω in HP. apply ZFinpower in HP. specialize (HP p Hp). apply inSetSingl in HP.
+  cbn. refine (transpS (fun X => X ∈ P) HP Hp).
+Qed.
+
+Lemma prop_impl {P Q : SProp} : (P -> Q) ↔ (prop P ⊂ prop Q).
+Proof.
+  split.
+  - intro H. intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx HP ].
+    apply ZFincomp. split. assumption. tauto.
+  - intros H HP. assert (∅ ∈ prop P) as H1. { apply ZFincomp. split ; try assumption. now apply inSetSingl. }
+    apply H in H1. apply ZFincomp in H1. now destruct H1.
+Qed.
+
+Lemma prop_ext {P Q : SProp} : (P ↔ Q) ↔ (prop P ≡ prop Q).
+Proof.
+  split.
+  - intros [ H1 H2 ]. apply ZFext ; now apply (fstS prop_impl).
+  - intro H. split ; apply (sndS prop_impl).
+    + refine (transpS (fun X => _ ⊂ X) H _). easy.
+    + refine (transpS (fun X => X ⊂ _) H _). easy.
+Qed.
+
 (* Extended contexts *)
 
 Definition ctxExt (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) := setSigma n Γ (fun γ => 𝕌el n (A γ)).
