@@ -172,7 +172,7 @@ Qed.
 Lemma piTy_HO_η (n : nat) {Γ : ZFSet} {A B t u : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ 𝕌 n)
   (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (piTy_HO n A B γ)) :
-  ∀ γ ∈ Γ, t γ ≡ lamTm_HO n A (fun γa => appTm_HO n (fun γa => A (ctx_wk n Γ A γa)) (fun γa => t (ctx_wk n Γ A γa)) (ctx_var0 n Γ A) γa) γ.
+  ∀ γ ∈ Γ, t γ ≡ lamTm_HO n A (appTm_HO n (fun γa => A (ctx_wk n Γ A γa)) (fun γa => t (ctx_wk n Γ A γa)) (ctx_var0 n Γ A)) γ.
 Proof.
   intros γ Hγ. cbn. unfold lamTm_HO. unfold appTm_HO.
   assert (t γ ∈ setPi n (𝕌el n (A γ)) (fun a => 𝕌el n (B ⟨ γ ; a ⟩))) as Ht'.

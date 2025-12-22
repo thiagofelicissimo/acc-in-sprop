@@ -4,13 +4,6 @@ Require Import HO HO_pi.
 
 Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.
 
-Lemma el_natTy {n : nat} {γ : ZFSet} : 𝕌el n (natTy_HO γ) ≡ ω.
-Proof.
-  apply setPairβ1.
-  + apply ZFuniv_uncountable.
-  + apply setMkPair_typing. apply zero_typing. apply empty_in_univ.
-Qed.
-
 Lemma natTy_HO_typing {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, natTy_HO γ ∈ 𝕌 n.
 Proof.
   intros γ Hγ. apply setMkPair_typing.
@@ -18,6 +11,26 @@ Proof.
   - apply setMkPair_typing.
     + apply zero_typing.
     + apply empty_in_univ.
+Qed.
+
+Lemma el_natTy {n : nat} {γ : ZFSet} : 𝕌el n (natTy_HO γ) ≡ ω.
+Proof.
+  apply setPairβ1.
+  + apply ZFuniv_uncountable.
+  + apply setMkPair_typing. apply zero_typing. apply empty_in_univ.
+Qed.
+
+Lemma hd_natTy {n : nat} {γ : ZFSet} :
+  𝕌hd n (natTy_HO γ) ≡ ZFzero.
+Proof.
+  refine (trans (fequal (setFstPair ω (𝕍 n)) _) _).
+  apply setPairβ2'.
+  { apply setMkPair_typing.
+    - now apply ZFuniv_uncountable.
+    - apply setMkPair_typing.
+      + apply zero_typing.
+      + apply empty_in_univ. }
+  apply setPairβ1. apply zero_typing. apply empty_in_univ.
 Qed.
 
 (* Zero *)
