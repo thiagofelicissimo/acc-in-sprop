@@ -1,6 +1,6 @@
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
-Require Import HO.
+Require Import HO HO_univ.
 
 (* Universe of propositions *)
 
@@ -13,6 +13,12 @@ Proof.
   - apply setMkPair_typing.
     + apply four_typing.
     + apply empty_in_univ.
+Qed.
+
+Lemma propTy_HO_typing' {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, propTy_HO γ ∈ 𝕌el (S n) (univTy_HO n γ).
+Proof.
+  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (propTy_HO_typing γ Hγ)).
+  now apply el_univTy.
 Qed.
 
 Lemma el_propTy {n : nat} {γ : ZFSet} : 𝕌el n (propTy_HO γ) ≡ Ω.

@@ -1,3 +1,4 @@
+From Stdlib Require Import Arith.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 
@@ -38,6 +39,17 @@ Proof.
   + apply setProd_typing.
     * apply ZFuniv_uncountable.
     * apply ZFuniv_hierarchy.
+Qed.
+
+Lemma 𝕌_le_incl {n m : nat} : (n <= m) -> 𝕌 n ⊂ 𝕌 m.
+Proof.
+  intros H x Hx. refine (transpS (fun X => X ∈ 𝕌 m) (sym (setPairη Hx)) _). apply setMkPair_typing.
+  - eapply univ_le_incl. exact H. now apply setFstPair_typing.
+  - assert (setSndPair (𝕍 n) (ω × 𝕍 n) x ∈ ω × 𝕍 n) as Hy.
+    { now apply setSndPair_typing. }
+    refine (transpS (fun X => X ∈ ω × 𝕍 m) (sym (setPairη Hy)) _). apply setMkPair_typing.
+    + now apply setFstPair_typing.
+    + eapply univ_le_incl. exact H. now apply setSndPair_typing.
 Qed.
 
 (* Propositions *)
@@ -146,18 +158,18 @@ Proof.
 Qed.
 
 
-Lemma typeExt_typing {n : nat} {Γ γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ 𝕌 n) (Hγ : γ ∈ Γ) :
-  ∀ a ∈ 𝕌el n (A γ), B ⟨ γ ; a ⟩ ∈ 𝕌 n.
+Lemma typeExt_typing {nA nB : nat} {Γ γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) (Hγ : γ ∈ Γ) :
+  ∀ a ∈ 𝕌el nA (A γ), B ⟨ γ ; a ⟩ ∈ 𝕌 nB.
 Proof.
   intros a Ha. apply HB. apply setMkSigma_typing ; try assumption.
   clear γ Hγ a Ha. intros γ Hγ. apply 𝕌el_typing. now apply HA.
 Qed.
 
-Lemma termExt_typing {n : nat} {Γ γ : ZFSet} {A B t : ZFSet -> ZFSet} 
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ 𝕌 n)
-  (Ht : ∀ γa ∈ ctxExt n Γ A, t γa ∈ 𝕌el n (B γa)) (Hγ : γ ∈ Γ) :
-  ∀ a ∈ 𝕌el n (A γ), t ⟨ γ ; a ⟩ ∈ 𝕌el n (B ⟨ γ ; a ⟩).
+Lemma termExt_typing {nA nB : nat} {Γ γ : ZFSet} {A B t : ZFSet -> ZFSet} 
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB)
+  (Ht : ∀ γa ∈ ctxExt nA Γ A, t γa ∈ 𝕌el nB (B γa)) (Hγ : γ ∈ Γ) :
+  ∀ a ∈ 𝕌el nA (A γ), t ⟨ γ ; a ⟩ ∈ 𝕌el nB (B ⟨ γ ; a ⟩).
 Proof.
   intros a Ha. apply Ht. apply setMkSigma_typing ; try assumption.
   clear γ Hγ a Ha. intros γ Hγ. apply 𝕌el_typing. now apply HA.
@@ -165,27 +177,33 @@ Qed.
 
 (* Telescopes (useful for labels) *)
 
-Definition typeToGraph (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) :=
-  relToGraph (𝕌el n A) (𝕌 n) (HO_rel B).
+Definition typeToGraph (nA nB : nat) (A : ZFSet) (B : ZFSet -> ZFSet) :=
+  relToGraph (𝕌el nA A) (𝕌 nB) (HO_rel B).
 
-Definition typeTelescope2 (n : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) :=
-  fun γ => ⟨ A γ ; typeToGraph n (A γ) (fun a => B ⟨ γ ; a ⟩) ⟩. 
+Definition typeTelescope2 (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) :=
+  fun γ => ⟨ ⟨ nat_to_ω nA ; A γ ⟩ ; ⟨ nat_to_ω nB ; typeToGraph nA nB (A γ) (fun a => B ⟨ γ ; a ⟩) ⟩ ⟩. 
 
-Lemma typeToGraph_sorting (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕌 n)
-  (HB : ∀ a ∈ 𝕌el n A, B a ∈ 𝕌 n) : typeToGraph n A B ∈ 𝕍 n.
+Lemma typeToGraph_sorting (nA nB : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕌 nA)
+  (HB : ∀ a ∈ 𝕌el nA A, B a ∈ 𝕌 nB) : typeToGraph nA nB A B ∈ 𝕍 (max nA nB).
 Proof.
-  assert (relToGraph (𝕌el n A) (𝕌 n) (HO_rel B) ∈ (𝕌el n A) ⇒ 𝕌 n).
+  assert (relToGraph (𝕌el nA A) (𝕌 nB) (HO_rel B) ∈ (𝕌el nA A) ⇒ 𝕌 nB).
   { apply relToGraph_typing. apply HO_rel_typing. intros a Ha. now apply HB. }
-  assert (𝕌el n A ⇒ 𝕌 n ⊂ 𝕍 n) as H1.
-  { apply setArr_big_typing. apply 𝕌el_typing. now apply HA. apply 𝕌_incl_𝕍. }
+  assert (𝕌el nA A ⇒ 𝕌 nB ⊂ 𝕍 (max nA nB)) as H1.
+  { apply setArr_big_typing.
+    - eapply univ_le_incl. apply Nat.le_max_l. apply 𝕌el_typing. now apply HA.
+    - eapply subset_trans. apply 𝕌_incl_𝕍. apply univ_le_incl. apply Nat.le_max_r. }
   apply H1. exact H.
 Qed.
 
-Lemma typeTelescope2_typing (n : nat) {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ 𝕌 n) :
-  ∀ γ ∈ Γ, typeTelescope2 n A B γ ∈ 𝕍 n.
+Lemma typeTelescope2_typing (nA nB : nat) {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) :
+  ∀ γ ∈ Γ, typeTelescope2 nA nB A B γ ∈ 𝕍 (max nA nB).
 Proof.
   intros γ Hγ. cbn. unfold typeTelescope2. apply setMkPair_sorting.
-  - apply 𝕌_incl_𝕍. now apply HA.
-  - apply typeToGraph_sorting. now apply HA. now apply (typeExt_typing HA HB).
+  - apply setMkPair_sorting.
+    + eapply ZFuniv_trans. now apply nat_to_ω_typing. apply ZFuniv_uncountable.
+    + eapply univ_le_incl. apply Nat.le_max_l. apply 𝕌_incl_𝕍. now apply HA.
+  - apply setMkPair_sorting.
+    + eapply ZFuniv_trans. now apply nat_to_ω_typing. apply ZFuniv_uncountable.
+    + apply typeToGraph_sorting. now apply HA. now apply (typeExt_typing HA HB).
 Qed.

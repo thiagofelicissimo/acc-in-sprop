@@ -19,3 +19,9 @@ Proof.
   + apply 𝕌_in_𝕍.
   + apply setMkPair_typing. apply three_typing. apply empty_in_univ.
 Qed.
+
+Lemma univTy_HO_typing' {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, univTy_HO n γ ∈ 𝕌el (S (S n)) (univTy_HO (S n) γ).
+Proof.
+  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (univTy_HO_typing γ Hγ)).
+  now apply el_univTy.
+Qed.

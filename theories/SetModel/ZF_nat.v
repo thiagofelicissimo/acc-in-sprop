@@ -46,6 +46,19 @@ Proof.
   apply suc_typing. apply four_typing.
 Qed.
 
+Fixpoint nat_to_ω (n : nat) {struct n} :=
+  match n with
+  | 0    => ∅
+  | S n' => ZFsuc (nat_to_ω n')
+  end.
+
+Lemma nat_to_ω_typing (n : nat) : nat_to_ω n ∈ ω.
+Proof.
+  induction n.
+  - apply zero_typing.
+  - now apply suc_typing.
+Qed.
+
 (* zero is not a successor *)
 
 Lemma zero_ne_suc (x : ZFSet) : ∅ ≡ ZFsuc x -> FalseS.
@@ -89,6 +102,18 @@ Proof.
       destruct H1. assert (setSingl x ≡ x).
       { apply inSetSingl. refine (transpS (fun X => setSingl x ∈ X) H0 _). apply ZFinpairing. now right. }
       exact (trans H0 H1).
+Qed.
+
+Lemma nat_to_ω_inj {n m : nat} : nat_to_ω n ≡ nat_to_ω m -> n ≡ m.
+Proof.
+  revert m. induction n.
+  - intros m H. destruct m as [ | m ].
+    + easy.
+    + cbn in H. apply zero_ne_suc in H. destruct H.
+  - intros m H. destruct m as [ | m ].
+    + cbn in H. apply sym in H. apply zero_ne_suc in H. destruct H.
+    + cbn in H. apply suc_inj in H ; try (now apply nat_to_ω_typing).
+      refine (fequal S _). now apply IHn.
 Qed.
 
 (* Definition of the recursor (messy, should eventually be rewritten) *)

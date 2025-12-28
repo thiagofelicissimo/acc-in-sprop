@@ -9,6 +9,13 @@ Proof.
   intros H1 H2 a Ha. apply H2. apply H1. exact Ha.
 Qed.
 
+Lemma univ_le_incl {n m : nat} : n <= m -> 𝕍 n ⊂ 𝕍 m.
+Proof.
+  intro H. induction H.
+  - easy.
+  - intros x Hx. apply IHle in Hx. eapply ZFuniv_trans. exact Hx. apply ZFuniv_hierarchy.
+Qed.
+
 Lemma setComp_sorting (n : nat) {A : ZFSet} {P : ZFSet -> SProp} (HA : A ∈ 𝕍 n) : { x ϵ A ∣ P x } ∈ 𝕍 n.
 Proof.
   assert ({ x ϵ A ∣ P x } ∈ 𝒫 A) as H.
