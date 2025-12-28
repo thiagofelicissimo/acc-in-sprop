@@ -53,16 +53,13 @@ Proof.
   (* We interpret the judgment in our ZF model *)
   intros t H. apply model in H. destruct H as [ iΓ fΓ iA fA _ vt ].
   (* We unfold the interpretation function using [inversion] *)
-  inversion fΓ. destruct H0. clear fΓ.
-  inversion fA. symmetry in H1. destruct H1. symmetry in H. destruct H.
-  symmetry in H0. destruct H0. symmetry in H2. destruct H2. destruct H4. clear fA.
-  inversion H3. symmetry in H. destruct H. destruct H2. clear H3.
-  inversion H5. symmetry in H0. destruct H0. symmetry in H1. destruct H1.
-  symmetry in H. destruct H. destruct H3. clear H5.
-  inversion H2. symmetry in H. destruct H. symmetry in H0. destruct H0.
-  symmetry in H3. destruct H3. destruct H5. clear H2.
-  inversion H1. destruct H0. clear H1.
-  inversion H4. symmetry in H. destruct H. destruct H2. clear H4.
+  inversion fΓ ; subst ; clear fΓ. 
+  inversion fA ; subst ; clear fA. 
+  inversion H3 ; subst ; clear H3.
+  inversion H5 ; subst ; clear H5. 
+  inversion H2 ; subst ; clear H2. 
+  inversion H1 ; subst ; clear H1. 
+  inversion H4 ; subst ; clear H4. 
   (* We derive a contradiction *)
   assert (∅ ∈ ⋆) as Hγ. { now apply inSetSingl. }
   specialize (vt _ Hγ). clear Hγ. apply prop_true_if in vt.

@@ -6,7 +6,7 @@ Import ListNotations.
 
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat ZF_acc.
-Require Import HO HO_univ HO_prop HO_box HO_pi HO_sigma HO_nat HO_obseq HO_forall.
+Require Import HO HO_univ HO_prop HO_box HO_pi HO_sigma HO_nat HO_acc HO_obseq HO_forall.
 
 Open Scope subst_scope.
 
@@ -83,26 +83,45 @@ with interp_tm : forall (Γ : ctx) (l : level) (A : term), (ZFSet -> ZFSet) -> P
 | interp_app_ir : forall Γ lB A B t u iA it iu, interp_tm Γ (Ax BasicAST.prop) A iA
                   -> interp_tm Γ (ty lB) t it
                   -> interp_tm Γ BasicAST.prop u iu
-                  -> interp_tm Γ (ty lB) (app BasicAST.prop (ty lB) A B t u) (appTm_HO 0 lB (boxTy_HO iA) it iu).
+                  -> interp_tm Γ (ty lB) (app BasicAST.prop (ty lB) A B t u) (appTm_HO 0 lB (boxTy_HO iA) it iu)
 
-(* | interp_nat : forall Γ, *)
-(*                interp_tm Γ (ty 1) Nat natTy_HO *)
+| interp_nat : forall Γ,
+               interp_tm Γ (ty 1) Nat natTy_HO
 
-(* | interp_zero : forall Γ, *)
-(*                 interp_tm Γ (ty 0) zero zeroTm_HO *)
+| interp_zero : forall Γ,
+                interp_tm Γ (ty 0) zero zeroTm_HO
 
-(* | interp_succ : forall Γ t it, interp_tm Γ (ty 0) t it *)
-(*                 -> interp_tm Γ (ty 0) (succ t) (sucTm_HO it) *)
+| interp_succ : forall Γ t it, interp_tm Γ (ty 0) t it
+                -> interp_tm Γ (ty 0) (succ t) (sucTm_HO it)
 
-(* | interp_natrec : *)
+| interp_natrec : forall Γ l P pz ps m iP ipz ips im, interp_tm (Γ ,, (ty 0 , Nat)) (Ax (ty l)) P iP
+                  -> interp_tm Γ (ty l) pz ipz
+                  -> interp_tm (Γ ,, (ty 0 , Nat) ,, (ty l , P)) (ty l) ps ips
+                  -> interp_tm Γ (ty 0) m im
+                  -> interp_tm Γ (ty l) (rec (ty l) P pz ps m) (natrecTm_HO l iP ipz ips im)
 
-(* | interp_acc : *)
+| interp_acc : forall Γ i A R a iA iR ia, interp_tm Γ (Ax i) A iA
+               -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax BasicAST.prop) R iR
+               -> interp_tm Γ i a ia
+               -> interp_tm Γ (Ax BasicAST.prop) (Core.acc i A R a) (accTy_HO iA iR ia)
 
-(* | interp_accelim : *)
+| interp_accelim : forall Γ i l A R a q P p iA iR ia iP ip, interp_tm Γ (Ax i) A iA
+                   -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax BasicAST.prop) R iR
+                   -> interp_tm (Γ ,, (i, A)) (Ax (ty l)) P iP
+                   -> interp_tm Γ (ty l) p ip
+                   -> interp_tm Γ i a ia
+                   -> interp_tm Γ (ty l) (accel i (ty l) A R P p a q) (accelimTm_HO l iA iR iP ip ia)
 
-(* | interp_obseq : *)
+| interp_obseq : forall Γ l A a b iA ia ib, interp_tm Γ (Ax l) A iA
+                 -> interp_tm Γ l a ia
+                 -> interp_tm Γ l b ib
+                 -> interp_tm Γ (Ax BasicAST.prop) (obseq l A a b) (eqTy_HO iA ia ib)
 
-(* | interp_cast : *)
+| interp_cast : forall Γ l A B e a iA iB ie ia, interp_tm Γ (Ax (ty l)) A iA
+                -> interp_tm Γ (Ax (ty l)) B iB
+                -> interp_tm Γ BasicAST.prop e ie
+                -> interp_tm Γ (ty l) a ia
+                -> interp_tm Γ (ty l) (cast (ty l) A B e a) (castTm_HO iA iB ie ia).
 
 Scheme interp_tm_mut := Induction for interp_tm Sort Prop
 with interp_ctx_mut := Induction for interp_ctx Sort Prop
@@ -128,36 +147,31 @@ Proof.
   - intros Γ l x ix fx IH it ft. inversion ft. subst. now apply IH.
   - intros Γ l it ft. now inversion ft. 
   - intros Γ it ft. now inversion ft.
-  - intros Γ lA lB A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal.
-    + now apply IHA.
-    + now apply IHB.
-  - intros Γ lB A B iA IB fA IHA fB IHB it ft. inversion ft. subst. f_equal.
+  - intros Γ lA lB A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal ; auto.
+  - intros Γ lB A B iA IB fA IHA fB IHB it ft. inversion ft. subst. f_equal ; auto.
     + f_equal. now apply IHA.
-    + now apply IHB.
-  - intros Γ lA A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal.
-    + now apply IHA.
-    + now apply IHB.
-  - intros Γ A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal.
+  - intros Γ lA A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal ; auto.
+  - intros Γ A B iA iB fA IHA fB IHB it ft. inversion ft. subst. f_equal ; auto.
     + f_equal. now apply IHA.
-    + now apply IHB.
-  - intros Γ lA lB A B t iA it fA IHA ft IHt iu fu. inversion fu. subst. f_equal.
-    + now apply IHA.
-    + now apply IHt.
-  - intros Γ lB A B t iA it fA IHA ft IHt iu fu. inversion fu. subst. f_equal.
+  - intros Γ lA lB A B t iA it fA IHA ft IHt iu fu. inversion fu. subst. f_equal ; auto.
+  - intros Γ lB A B t iA it fA IHA ft IHt iu fu. inversion fu. subst. f_equal ; auto.
     + f_equal. now apply IHA.
-    + now apply IHt.
-  - intros Γ lA lB A B t u iA it iu fA IHA ft IHt fu IHu iv fv. inversion fv. subst. f_equal.
-    + now apply IHA.
-    + now apply IHt.
-    + now apply IHu.
-  - intros Γ lB A B t u iA it iu fA IHA ft IHt fu IHu iv fv. inversion fv. subst. f_equal.
+  - intros Γ lA lB A B t u iA it iu fA IHA ft IHt fu IHu iv fv. inversion fv. subst. f_equal ; auto.
+  - intros Γ lB A B t u iA it iu fA IHA ft IHt fu IHu iv fv. inversion fv. subst. f_equal ; auto.
     + f_equal. now apply IHA.
-    + now apply IHt.
-    + now apply IHu.
+  - intros Γ iA fA. now inversion fA.
+  - intros Γ it ft. now inversion ft.
+  - intros Γ t it ft IHt iu fu. inversion fu. subst. f_equal. now apply IHt.
+  - intros Γ l P pz ps m iP ipz ips im fP IHP fpz IHpz fps IHps fm IHm it ft.
+    inversion ft. subst. clear ft. f_equal ; auto.
+  - intros Γ i A R a iA iR ia fA IHA fR IHR fa IHa it ft. inversion ft. subst. f_equal ; auto.
+  - intros Γ i l A R a q P p iA iR ia iP ip fA IHA fR IHR fP IHP fp IHp fa IHa it ft.
+    inversion ft. subst. f_equal ; auto.
+  - intros Γ l A a b iA ia ib fA IHA fa IHa fb IHb iP fP. inversion fP. subst. f_equal ; auto.
+  - intros Γ l A B e a iA iB ie ia fA IHA fB IHB fe IHe fa IHa it ft.
+    inversion ft. subst. f_equal ; auto.
   - intros iΓ fΓ. now inversion fΓ. 
-  - intros Γ l A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal.
-    + now apply IHΓ.
-    + now apply IHA.
+  - intros Γ l A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal ; auto.
   - intros Γ A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal.
     + now apply IHΓ.
     + f_equal. now apply IHA.
@@ -165,18 +179,10 @@ Proof.
     + now apply IHΓ.
     + refine (f_equal (fun X => (fun γ : ZFSet => 𝕌el l (X γ))) _). now apply IHA.
   - intros Γ l lA A x iΓ iA ix fΓ IHΓ fA IHA fx IHx iy fy. inversion fy. subst.
-    refine (f_equal3 (fun X Y Z => (fun γa : ZFSet => X (setFstSigma lA Y (fun γ : ZFSet => 𝕌el lA (Z γ)) γa))) _ _ _).
-    + now apply IHx.
-    + now apply IHΓ.
-    + now apply IHA.
-  - intros Γ A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal.
-    + now apply IHΓ.
-    + now apply IHA.
+    refine (f_equal3 (fun X Y Z => (fun γa : ZFSet => X (setFstSigma lA Y (fun γ : ZFSet => 𝕌el lA (Z γ)) γa))) _ _ _) ; auto.
+  - intros Γ A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal ; auto.
   - intros Γ l A x iΓ iA ix fΓ IHΓ fA IHA fx IHx iy fy. inversion fy. subst.
-    refine (f_equal3 (fun X Y Z => (fun γa : ZFSet => X (setFstSigma 0 Y Z γa))) _ _ _).
-    + now apply IHx.
-    + now apply IHΓ.
-    + now apply IHA.
+    refine (f_equal3 (fun X Y Z => (fun γa : ZFSet => X (setFstSigma 0 Y Z γa))) _ _ _) ; auto.
 Qed.
 
 Lemma functional_tm {Γ l} (t : term) {it it'} : interp_tm Γ l t it -> interp_tm Γ l t it' -> it = it'.
