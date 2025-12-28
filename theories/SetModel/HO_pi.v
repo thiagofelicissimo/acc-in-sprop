@@ -1,7 +1,7 @@
 From Stdlib Require Import Arith.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
-Require Import HO HO_univ.
+Require Import HO HO_univ HO_box.
 
 (* Pi types *)
 
@@ -28,6 +28,22 @@ Lemma piTy_HO_typing' {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet
 Proof.
   intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing HA HB γ Hγ)).
   now apply el_univTy.
+Qed.
+
+Lemma piTy_HO_typing_ir {nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB) :
+  ∀ γ ∈ Γ, piTy_HO 0 nB (boxTy_HO A) B γ ∈ 𝕌 nB.
+Proof.
+  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing (boxTy_HO_typing HA) HB γ Hγ)).
+  refine (fequal 𝕌 _). destruct (eq_sym (Nat.max_0_l nB)). easy.
+Qed.
+
+Lemma piTy_HO_typing_ir' {nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB) :
+  ∀ γ ∈ Γ, piTy_HO 0 nB (boxTy_HO A) B γ ∈ 𝕌el (S nB) (univTy_HO nB γ).
+Proof.
+  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing (boxTy_HO_typing HA) HB γ Hγ)).
+  refine (trans _ (fequal 𝕌 _)). now apply el_univTy. destruct (eq_sym (Nat.max_0_l nB)). easy.
 Qed.
 
 Lemma el_piTy {nA nB : nat} {Γ γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet} 
@@ -243,6 +259,15 @@ Proof.
       eapply univ_le_incl. apply Nat.le_max_r. apply 𝕌el_typing. now apply (typeExt_typing HA HB).
       reflexivity.
     + apply setMkSigma_typing ; try assumption. intros γ' Hγ'. apply 𝕌el_typing. now apply HA.
+Qed.
+
+Lemma lamTm_HO_typing_ir {nB : nat} {Γ : ZFSet} {A B t : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB)
+  (Ht : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), t γa ∈ 𝕌el nB (B γa)) :
+  ∀ γ ∈ Γ, lamTm_HO 0 nB (boxTy_HO A) t γ ∈ 𝕌el nB (piTy_HO 0 nB (boxTy_HO A) B γ).
+Proof.
+  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (lamTm_HO_typing (boxTy_HO_typing HA) HB Ht γ Hγ)).
+  refine (fequal (fun n => 𝕌el n _) _). destruct (eq_sym (Nat.max_0_l nB)). easy.
 Qed.
 
 (* Application *)

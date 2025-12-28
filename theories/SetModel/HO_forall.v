@@ -14,16 +14,22 @@ Proof.
   intros γ Hγ. unfold forallTy_HO. apply prop_typing.
 Qed.
 
+Lemma forallTy_HO_typing' {n : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω) :
+  ∀ γ ∈ Γ, forallTy_HO n A B γ ∈ 𝕌el 0 (propTy_HO γ).
+Proof.
+  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (forallTy_HO_typing HA HB γ Hγ)).
+  now apply el_propTy.
+Qed.
+
 (* Lambda abstraction *)
 
-Definition ilamTm_HO (n : nat) (A t : ZFSet -> ZFSet) : ZFSet -> ZFSet := fun γ => ∅.
-
-Lemma lamTm_HO_typing (n : nat) {Γ : ZFSet} {A B t : ZFSet -> ZFSet}
+Lemma ilamTm_HO_typing (n : nat) {Γ : ZFSet} {A B : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω)
-  (Ht : ∀ γa ∈ ctxExt n Γ A, t γa ∈ B γa) :
-  ∀ γ ∈ Γ, ilamTm_HO n A t γ ∈ forallTy_HO n A B γ.
+  (Ht : ∀ γa ∈ ctxExt n Γ A, ∅ ∈ B γa) :
+  ∀ γ ∈ Γ, ∅ ∈ forallTy_HO n A B γ.
 Proof.
-  intros γ Hγ. cbn. unfold ilamTm_HO. unfold forallTy_HO.
+  intros γ Hγ. cbn. unfold forallTy_HO.
   apply prop_true_iff. intros a Ha. assert (⟨ γ ; a ⟩ ∈ ctxExt n Γ A) as Hγa.
   { apply setMkSigma_typing ; try assumption. intros γ' Hγ'. apply 𝕌el_typing. now apply HA. }
   specialize (Ht _ Hγa). cbn in Ht. specialize (HB _ Hγa). cbn in HB.
@@ -32,14 +38,12 @@ Qed.
 
 (* Application *)
 
-Definition iappTm_HO (n : nat) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet := fun γ => ∅.
-
-Lemma appTm_HO_typing (n : nat) {Γ : ZFSet} {A B t u : ZFSet -> ZFSet} 
+Lemma iappTm_HO_typing (n : nat) {Γ : ZFSet} {A B u : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω)
-  (Ht : ∀ γ ∈ Γ, t γ ∈ forallTy_HO n A B γ) (Hu : ∀ γ ∈ Γ, u γ ∈ 𝕌el n (A γ)) :
-  ∀ γ ∈ Γ, iappTm_HO n A t u γ ∈ B ⟨ γ ; u γ ⟩.
+  (Ht : ∀ γ ∈ Γ, ∅ ∈ forallTy_HO n A B γ) (Hu : ∀ γ ∈ Γ, u γ ∈ 𝕌el n (A γ)) :
+  ∀ γ ∈ Γ, ∅ ∈ B ⟨ γ ; u γ ⟩.
 Proof.
-  intros γ Hγ. cbn. unfold iappTm_HO. 
+  intros γ Hγ. cbn. 
   specialize (Ht _ Hγ). cbn in Ht. unfold forallTy_HO in Ht. apply prop_true_if in Ht.
   apply Ht. now apply Hu.
 Qed.
