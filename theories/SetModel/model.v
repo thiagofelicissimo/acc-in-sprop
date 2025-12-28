@@ -7,7 +7,7 @@ Import ListNotations.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat ZF_acc.
 Require Import HO HO_univ HO_prop HO_box HO_pi HO_sigma HO_nat HO_obseq HO_forall.
-Require Import model_interp model_def model_univ model_pi.
+Require Import model_interp model_def model_univ model_pi model_nat.
 
 Open Scope subst_scope.
 
@@ -44,6 +44,21 @@ Proof.
   - apply model_pi.
   - apply model_lambda.
   - apply model_app.
+  - apply model_nat.
+  - apply model_zero.
+  - apply model_suc.
+  - apply model_natrec.
+  - admit. (* apply model_acc *)
+  - admit. (* apply model_accin *)
+  - admit. (* apply model_accinv *)
+  - admit. (* apply model_accelim *)
+  - admit. (* apply model_obseq *)
+  - admit. (* apply model_obsrefl *)
+  - admit. (* apply model_J *)
+  - admit. (* apply model_cast *)
+  - admit. (* apply model_injpi1 *)
+  - admit. (* apply model_injpi2 *)
+  - admit. (* apply model_conv *)
 Admitted.
 
 (* Corollary : the theory is consistent *)

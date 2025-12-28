@@ -1,6 +1,6 @@
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
-Require Import HO HO_pi.
+Require Import HO HO_pi HO_univ.
 
 Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.
 
@@ -11,6 +11,12 @@ Proof.
   - apply setMkPair_typing.
     + apply zero_typing.
     + apply empty_in_univ.
+Qed.
+
+Lemma natTy_HO_typing' {Γ : ZFSet} : ∀ γ ∈ Γ, natTy_HO γ ∈ 𝕌el 1 (univTy_HO 0 γ).
+Proof.
+  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (natTy_HO_typing γ Hγ)).
+  now apply el_univTy.
 Qed.
 
 Lemma el_natTy {n : nat} {γ : ZFSet} : 𝕌el n (natTy_HO γ) ≡ ω.
