@@ -28,13 +28,13 @@ Inductive model_typing_irr (Γ : ctx) (t A : term) : Prop :=
 | mkModelTypingIrr (iΓ : ZFSet)
     (fΓ : interp_ctx Γ iΓ)
     (iA : ZFSet -> ZFSet)
-    (fA : interp_tm Γ (Ax BasicAST.prop) A iA)
+    (fA : interp_tm Γ (Ax prop) A iA)
     (vA : ∀ γ ∈ iΓ, iA γ ∈ Ω)
     (vt : ∀ γ ∈ iΓ, ∅ ∈ iA γ).
 
 Definition model_typing (Γ : ctx) (l : level) (t A : term) : Prop :=
   match l with
-  | BasicAST.prop => model_typing_irr Γ t A
+  | prop => model_typing_irr Γ t A
   | ty l => model_typing_rel Γ l t A
   end.
 
@@ -55,13 +55,13 @@ Inductive model_conv_irr (Γ : ctx) (t u A : term) : Prop := True.
 (* | mkModelConvIrr (iΓ : ZFSet) *)
 (*     (fΓ : interp_ctx Γ iΓ) *)
 (*     (iA : ZFSet -> ZFSet) *)
-(*     (fA : interp_tm Γ (Ax BasicAST.prop) A iA) *)
+(*     (fA : interp_tm Γ (Ax prop) A iA) *)
 (*     (vA : ∀ γ ∈ iΓ, iA γ ∈ Ω) *)
 (*     (vt : ∀ γ ∈ iΓ, ∅ ∈ iA γ). *)
 
 Definition model_conv (Γ : ctx) (l : level) (t u A : term) : Prop :=
   match l with
-  | BasicAST.prop => model_conv_irr Γ t u A
+  | prop => model_conv_irr Γ t u A
   | ty l => model_conv_rel Γ l t u A
   end.
 

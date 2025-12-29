@@ -20,7 +20,7 @@ Inductive interp_ctx : forall (Γ : ctx), ZFSet -> Prop :=
                     -> interp_ctx (Γ ,, (ty l , A)) (ctxExt l iΓ iA)
 
 | interp_cons_irr : forall Γ A iΓ iA, interp_ctx Γ iΓ -> interp_tm Γ (ty 0) A iA
-                    -> interp_ctx (Γ ,, (BasicAST.prop , A)) (ctxExt 0 iΓ (boxTy_HO iA))
+                    -> interp_ctx (Γ ,, (prop , A)) (ctxExt 0 iΓ (boxTy_HO iA))
 
 with nth_proj : forall (Γ : ctx) (l : level) (x : nat), (ZFSet -> ZFSet) -> Prop :=
 
@@ -31,10 +31,10 @@ with nth_proj : forall (Γ : ctx) (l : level) (x : nat), (ZFSet -> ZFSet) -> Pro
               -> nth_proj (Γ ,, (ty lA , A)) l (S x) (fun γa => ix (setFstSigma lA iΓ (fun γ => 𝕌el lA (iA γ)) γa))
 
 | here_irr : forall Γ A iΓ iA, interp_ctx Γ iΓ -> interp_tm Γ (ty 0) A iA
-             -> nth_proj (Γ ,, (BasicAST.prop , A)) BasicAST.prop 0 (setSndSigma 0 iΓ iA)
+             -> nth_proj (Γ ,, (prop , A)) prop 0 (setSndSigma 0 iΓ iA)
 
 | there_irr : forall Γ l A x iΓ iA ix, interp_ctx Γ iΓ -> interp_tm Γ (ty 0) A iA -> nth_proj Γ l x ix
-              -> nth_proj (Γ ,, (BasicAST.prop , A)) l (S x) (fun γa => ix (setFstSigma 0 iΓ iA γa))
+              -> nth_proj (Γ ,, (prop , A)) l (S x) (fun γa => ix (setFstSigma 0 iΓ iA γa))
 
 with interp_tm : forall (Γ : ctx) (l : level) (A : term), (ZFSet -> ZFSet) -> Prop :=
 
@@ -45,45 +45,45 @@ with interp_tm : forall (Γ : ctx) (l : level) (A : term), (ZFSet -> ZFSet) -> P
                 interp_tm Γ (Ax (Ax (ty l))) (Sort (ty l)) (univTy_HO l)
 
 | interp_prop : forall Γ, 
-                interp_tm Γ (ty 1) (Sort BasicAST.prop) propTy_HO
+                interp_tm Γ (ty 1) (Sort prop) propTy_HO
 
 | interp_pi_rr : forall Γ lA lB A B iA iB, interp_tm Γ (Ax (ty lA)) A iA
                  -> interp_tm (Γ ,, (ty lA , A)) (Ax (ty lB)) B iB
                  -> interp_tm Γ (Ax (Ru (ty lA) (ty lB))) (Pi (ty lA) (ty lB) A B) 
                               (piTy_HO lA lB iA iB)
 
-| interp_pi_ir : forall Γ lB A B iA iB, interp_tm Γ (Ax BasicAST.prop) A iA
-                 -> interp_tm (Γ ,, (BasicAST.prop , A)) (Ax (ty lB)) B iB
-                 -> interp_tm Γ (Ax (ty lB)) (Pi BasicAST.prop (ty lB) A B)
+| interp_pi_ir : forall Γ lB A B iA iB, interp_tm Γ (Ax prop) A iA
+                 -> interp_tm (Γ ,, (prop , A)) (Ax (ty lB)) B iB
+                 -> interp_tm Γ (Ax (ty lB)) (Pi prop (ty lB) A B)
                               (piTy_HO 0 lB (boxTy_HO iA) iB)
 
 | interp_pi_ri : forall Γ lA A B iA iB, interp_tm Γ (Ax (ty lA)) A iA
-                 -> interp_tm (Γ ,, (ty lA , A)) (Ax BasicAST.prop) B iB
-                 -> interp_tm Γ (Ax BasicAST.prop) (Pi (ty lA) BasicAST.prop A B) 
+                 -> interp_tm (Γ ,, (ty lA , A)) (Ax prop) B iB
+                 -> interp_tm Γ (Ax prop) (Pi (ty lA) prop A B) 
                               (forallTy_HO lA iA iB)
 
-| interp_pi_ii : forall Γ A B iA iB, interp_tm Γ (Ax BasicAST.prop) A iA
-                 -> interp_tm (Γ ,, (BasicAST.prop , A)) (Ax BasicAST.prop) B iB
-                 -> interp_tm Γ (Ax BasicAST.prop) (Pi BasicAST.prop BasicAST.prop A B)
+| interp_pi_ii : forall Γ A B iA iB, interp_tm Γ (Ax prop) A iA
+                 -> interp_tm (Γ ,, (prop , A)) (Ax prop) B iB
+                 -> interp_tm Γ (Ax prop) (Pi prop prop A B)
                               (forallTy_HO 0 (boxTy_HO iA) iB)
 
 | interp_lam_rr : forall Γ lA lB A B t iA it, interp_tm Γ (Ax (ty lA)) A iA
                   -> interp_tm (Γ ,, (ty lA , A)) (ty lB) t it
                   -> interp_tm Γ (Ru (ty lA) (ty lB)) (lam (ty lA) (ty lB) A B t) (lamTm_HO lA lB iA it)
 
-| interp_lam_ir : forall Γ lB A B t iA it, interp_tm Γ (Ax BasicAST.prop) A iA
-                  -> interp_tm (Γ ,, (BasicAST.prop , A)) (ty lB) t it
-                  -> interp_tm Γ (ty lB) (lam BasicAST.prop (ty lB) A B t) (lamTm_HO 0 lB (boxTy_HO iA) it)
+| interp_lam_ir : forall Γ lB A B t iA it, interp_tm Γ (Ax prop) A iA
+                  -> interp_tm (Γ ,, (prop , A)) (ty lB) t it
+                  -> interp_tm Γ (ty lB) (lam prop (ty lB) A B t) (lamTm_HO 0 lB (boxTy_HO iA) it)
 
 | interp_app_rr : forall Γ lA lB A B t u iA it iu, interp_tm Γ (Ax (ty lA)) A iA
                   -> interp_tm Γ (Ru (ty lA) (ty lB)) t it
                   -> interp_tm Γ (ty lA) u iu
                   -> interp_tm Γ (ty lB) (app (ty lA) (ty lB) A B t u) (appTm_HO lA lB iA it iu)
 
-| interp_app_ir : forall Γ lB A B t u iA it iu, interp_tm Γ (Ax BasicAST.prop) A iA
+| interp_app_ir : forall Γ lB A B t u iA it iu, interp_tm Γ (Ax prop) A iA
                   -> interp_tm Γ (ty lB) t it
-                  -> interp_tm Γ BasicAST.prop u iu
-                  -> interp_tm Γ (ty lB) (app BasicAST.prop (ty lB) A B t u) (appTm_HO 0 lB (boxTy_HO iA) it iu)
+                  -> interp_tm Γ prop u iu
+                  -> interp_tm Γ (ty lB) (app prop (ty lB) A B t u) (appTm_HO 0 lB (boxTy_HO iA) it iu)
 
 | interp_nat : forall Γ,
                interp_tm Γ (ty 1) Nat natTy_HO
@@ -101,25 +101,27 @@ with interp_tm : forall (Γ : ctx) (l : level) (A : term), (ZFSet -> ZFSet) -> P
                   -> interp_tm Γ (ty l) (rec (ty l) P pz ps m) (natrecTm_HO l iP ipz ips im)
 
 | interp_acc : forall Γ i A R a iA iR ia, interp_tm Γ (Ax i) A iA
-               -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax BasicAST.prop) R iR
+               -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax prop) R iR
                -> interp_tm Γ i a ia
-               -> interp_tm Γ (Ax BasicAST.prop) (Core.acc i A R a) (accTy_HO iA iR ia)
+               -> interp_tm Γ (Ax prop) (Core.acc i A R a) (accTy_HO iA iR ia)
 
 | interp_accelim : forall Γ i l A R a q P p iA iR ia iP ip, interp_tm Γ (Ax i) A iA
-                   -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax BasicAST.prop) R iR
+                   -> interp_tm (Γ ,, (i, A) ,, (i, S ⋅ A)) (Ax prop) R iR
                    -> interp_tm (Γ ,, (i, A)) (Ax (ty l)) P iP
                    -> interp_tm Γ (ty l) p ip
                    -> interp_tm Γ i a ia
                    -> interp_tm Γ (ty l) (accel i (ty l) A R P p a q) (accelimTm_HO l iA iR iP ip ia)
 
-| interp_obseq : forall Γ l A a b iA ia ib, interp_tm Γ (Ax l) A iA
-                 -> interp_tm Γ l a ia
-                 -> interp_tm Γ l b ib
-                 -> interp_tm Γ (Ax BasicAST.prop) (obseq l A a b) (eqTy_HO iA ia ib)
+| interp_obseq_r : forall Γ l A a b iA ia ib, interp_tm Γ (Ax (ty l)) A iA
+                   -> interp_tm Γ (ty l) a ia
+                   -> interp_tm Γ (ty l) b ib
+                   -> interp_tm Γ (Ax prop) (obseq (ty l) A a b) (eqTy_HO iA ia ib)
+
+| interp_obseq_i : forall Γ A a b, interp_tm Γ (Ax prop) (obseq prop A a b) (fun _ => ⋆)
 
 | interp_cast : forall Γ l A B e a iA iB ie ia, interp_tm Γ (Ax (ty l)) A iA
                 -> interp_tm Γ (Ax (ty l)) B iB
-                -> interp_tm Γ BasicAST.prop e ie
+                -> interp_tm Γ prop e ie
                 -> interp_tm Γ (ty l) a ia
                 -> interp_tm Γ (ty l) (cast (ty l) A B e a) (castTm_HO iA iB ie ia).
 
@@ -168,6 +170,7 @@ Proof.
   - intros Γ i l A R a q P p iA iR ia iP ip fA IHA fR IHR fP IHP fp IHp fa IHa it ft.
     inversion ft. subst. f_equal ; auto.
   - intros Γ l A a b iA ia ib fA IHA fa IHa fb IHb iP fP. inversion fP. subst. f_equal ; auto.
+  - intros Γ A a b iP fP. now inversion fP. 
   - intros Γ l A B e a iA iB ie ia fA IHA fB IHB fe IHe fa IHa it ft.
     inversion ft. subst. f_equal ; auto.
   - intros iΓ fΓ. now inversion fΓ. 

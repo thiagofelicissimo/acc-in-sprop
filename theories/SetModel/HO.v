@@ -58,7 +58,7 @@ Definition unit_set := setSingl ∅.
 Notation "⋆" := unit_set.
 
 Definition Ω := 𝒫 ⋆.
-Definition prop (P : SProp) := { x ϵ ⋆ ∣ P }.
+Definition subsingl (P : SProp) := { x ϵ ⋆ ∣ P }.
 
 Lemma Ω_typing (n : nat) : Ω ∈ 𝕍 n.
 Proof.
@@ -66,20 +66,20 @@ Proof.
   1,2: eapply ZFuniv_trans. 1,3: apply zero_typing. 1,2:apply ZFuniv_uncountable.
 Qed.
 
-Lemma prop_typing (P : SProp) : prop P ∈ Ω.
+Lemma subsingl_typing (P : SProp) : subsingl P ∈ Ω.
 Proof.
   apply ZFinpower. intros x Hx. apply ZFincomp in Hx. now destruct Hx.
 Qed.
 
-Lemma prop_true_if (P : SProp) : ∀ x ∈ prop P, P.
+Lemma subsingl_true_if (P : SProp) : ∀ x ∈ subsingl P, P.
 Proof.
   intros x Hx. cbn. apply ZFincomp in Hx. now destruct Hx.
 Qed.
 
-Lemma prop_true_iff (P : SProp) : ∅ ∈ prop P ↔ P.
+Lemma subsingl_true_iff (P : SProp) : ∅ ∈ subsingl P ↔ P.
 Proof.
   split.
-  - apply prop_true_if.
+  - apply subsingl_true_if.
   - intro H. apply ZFincomp. split.
     + apply ZFinpairing. now left.
     + assumption.
@@ -97,20 +97,20 @@ Proof.
   cbn. refine (transpS (fun X => X ∈ P) HP Hp).
 Qed.
 
-Lemma prop_impl {P Q : SProp} : (P -> Q) ↔ (prop P ⊂ prop Q).
+Lemma subsingl_impl {P Q : SProp} : (P -> Q) ↔ (subsingl P ⊂ subsingl Q).
 Proof.
   split.
   - intro H. intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx HP ].
     apply ZFincomp. split. assumption. tauto.
-  - intros H HP. assert (∅ ∈ prop P) as H1. { apply ZFincomp. split ; try assumption. now apply inSetSingl. }
+  - intros H HP. assert (∅ ∈ subsingl P) as H1. { apply ZFincomp. split ; try assumption. now apply inSetSingl. }
     apply H in H1. apply ZFincomp in H1. now destruct H1.
 Qed.
 
-Lemma prop_ext {P Q : SProp} : (P ↔ Q) ↔ (prop P ≡ prop Q).
+Lemma subsingl_ext {P Q : SProp} : (P ↔ Q) ↔ (subsingl P ≡ subsingl Q).
 Proof.
   split.
-  - intros [ H1 H2 ]. apply ZFext ; now apply (fstS prop_impl).
-  - intro H. split ; apply (sndS prop_impl).
+  - intros [ H1 H2 ]. apply ZFext ; now apply (fstS subsingl_impl).
+  - intro H. split ; apply (sndS subsingl_impl).
     + refine (transpS (fun X => _ ⊂ X) H _). easy.
     + refine (transpS (fun X => X ⊂ _) H _). easy.
 Qed.
