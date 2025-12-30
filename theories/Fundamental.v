@@ -108,7 +108,7 @@ Proof.
     - eauto using fundamental_prop_ty.
     - eauto using fundamental_cast.
     - eauto using fundamental_cast_refl, conv_refl. 
-    - destruct j. 2: eauto using fundamental_prop. dependent destruction H6. eauto using fundamental_cast_pi.
+    - eauto using fundamental_cast_pi.
     - eauto using fundamental_conv.
     - eauto using fundamental_beta.
     - destruct j. eauto using fundamental_eta. eauto using fundamental_prop.

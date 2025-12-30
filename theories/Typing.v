@@ -190,24 +190,24 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< i > cast i A B e a : B
 
 | type_injpi1 :
-  ∀ Γ i j A1 A2 B1 B2 e,
+  ∀ Γ i n A1 A2 B1 B2 e,
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< prop > injpi1 i j A1 A2 B1 B2 e : obseq (Ax i) (Sort i) A2 A1
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< prop > injpi1 i (ty n) A1 A2 B1 B2 e : obseq (Ax i) (Sort i) A2 A1
 
 | type_injpi2 :
-  ∀ Γ i j A1 A2 B1 B2 e a2,
+  ∀ Γ i n A1 A2 B1 B2 e a2,    
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
     Γ ⊢< i > a2 : A2 ->
-    let a1 := cast i A2 A1 (injpi1 i j A1 A2 B1 B2 e) a2 in
-    Γ ⊢< prop > injpi2 i j A1 A2 B1 B2 e a2 : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
+    let a1 := cast i A2 A1 (injpi1 i (ty n) A1 A2 B1 B2 e) a2 in
+    Γ ⊢< prop > injpi2 i (ty n) A1 A2 B1 B2 e a2 : obseq (Ax (ty n)) (Sort (ty n)) (B1<[a1..]) (B2 <[a2..])
 
 | type_conv :
     ∀ Γ l A B t,
@@ -380,28 +380,28 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B
 
 | conv_injpi1 :
-  ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e',
+  ∀ Γ i n A1 A1' A2 A2' B1 B1' B2 B2' e e',
     Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 ≡ B1' : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
-    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< prop > injpi1 i j A1 A2 B1 B2 e ≡ injpi1 i j A1' A2' B1' B2' e' : obseq (Ax i) (Sort i) A2 A1
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 ≡ B2' : Sort (ty n) ->
+    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< prop > injpi1 i (ty n) A1 A2 B1 B2 e ≡ injpi1 i (ty n) A1' A2' B1' B2' e' : obseq (Ax i) (Sort i) A2 A1
 
 | conv_injpi2 :
-  ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
+  ∀ Γ i n A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
     Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 ≡ B1' : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
-    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 ≡ B2' : Sort (ty n) ->
+    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
     Γ ⊢< i > a2 ≡ a2' : A2 ->
-    let a1 := cast i A2 A1 (injpi1 i j A1 A2 B1 B2 e) a2 in
-    Γ ⊢< prop > injpi2 i j A1 A2 B1 B2 e a2 ≡ injpi2 i j A1' A2' B1' B2' e' a2' : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
+    let a1 := cast i A2 A1 (injpi1 i (ty n) A1 A2 B1 B2 e) a2 in
+    Γ ⊢< prop > injpi2 i (ty n) A1 A2 B1 B2 e a2 ≡ injpi2 i (ty n) A1' A2' B1' B2' e' a2' : obseq (Ax (ty n)) (Sort (ty n)) (B1<[a1..]) (B2 <[a2..])
 
 | conv_cast_refl :
     ∀ Γ i A e a,
@@ -411,22 +411,22 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
       Γ ⊢< i > cast i A A e a ≡ a : A
 
 | conv_cast_pi :
-  ∀ Γ i j A1 A2 B1 B2 e f,
+  ∀ Γ i n A1 A2 B1 B2 e f,
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< Ru i j > f : Pi i j A1 B1 ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
     let B2' := (up_ren S) ⋅ B2 in
-    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
-    let t2 := app i j A1' B1' (S ⋅ f) t1 in
-    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
-    let t4 := lam i j A2 B2 t3 in
-    Γ ⊢< Ru i j > cast (Ru i j) (Pi i j A1 B1) (Pi i j A2 B2) e f ≡ t4 : Pi i j A2 B2
+    let t1 := cast i A2' A1' (injpi1 i (ty n) A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i (ty n) A1' B1' (S ⋅ f) t1 in
+    let t3 := cast (ty n) (B1 <[t1.: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
+    let t4 := lam i (ty n) A2 B2 t3 in
+    Γ ⊢< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f ≡ t4 : Pi i (ty n) A2 B2
 
 
 | conv_conv :

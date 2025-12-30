@@ -118,22 +118,22 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) ->
     Γ ⊢< Ax i > cast (Ax i) (Sort i) (Sort i) e A --> A : Sort i
 
-| red_cast_pi Γ i j A1 A2 B1 B2 e f :
+| red_cast_pi Γ i n A1 A2 B1 B2 e f :
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< Ru i j > f : Pi i j A1 B1 ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
     let B2' := (up_ren S) ⋅ B2 in
-    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
-    let t2 := app i j A1' B1' (S ⋅ f) t1 in
-    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
-    let t4 := lam i j A2 B2 t3 in
-    Γ ⊢< Ru i j > cast (Ru i j) (Pi i j A1 B1) (Pi i j A2 B2) e f --> t4 : Pi i j A2 B2
+    let t1 := cast i A2' A1' (injpi1 i (ty n) A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i (ty n) A1' B1' (S ⋅ f) t1 in
+    let t3 := cast (ty n) (B1 <[t1.: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
+    let t4 := lam i (ty n) A2 B2 t3 in
+    Γ ⊢< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> t4 : Pi i (ty n) A2 B2
 
 where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
 
@@ -426,7 +426,9 @@ Definition red_inv_type Γ t v :=
         Γ ⊢< Ru i j > f : Pi i j A1 B1 /\
         l = Ru i j /\
         i' = i /\
-        j' = j
+        exists n,
+        j = ty n /\ 
+        j' = ty n
 
     | cast i A B e t =>
         (exists A',
@@ -491,7 +493,7 @@ Proof.
       1-3:(unshelve eapply (H _ _) in H2); simpl. 1-3:lia. 1-3:inversion H2.
     - simpl. split; eauto.
     - simpl. split; eauto.
-    - simpl. split; eauto. split; eauto. split; eauto. split; eauto. split; eauto.
+    - simpl. split; eauto. split; eauto. split; eauto. split; eauto. split; eauto 9.
 Qed.
 
 Lemma val_whnf Γ l t A : val t -> whnf Γ l t A.

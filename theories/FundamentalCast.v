@@ -28,10 +28,10 @@ Qed.
 Axiom nat_neq_sort : forall e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
 Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
 Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
-Axiom pi_sort_inj : forall i j i' j' A A' B B' e,
-    Ru i j = Ru i' j' ->
-    ∙ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A B) (Pi i' j' A' B') ->
-    i = i' /\ j = j'.
+Axiom pi_sort_inj : forall i n i' n' A A' B B' e,
+    Ru i (ty n) = Ru i' (ty n') ->
+    ∙ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A B) (Pi i' (ty n') A' B') ->
+    i = i' /\ n = n'.
 
 
 Lemma nat_neq_sort_red l l' A B e :
@@ -83,11 +83,11 @@ Proof.
 Qed.
 
 
-Lemma pi_sort_inj_red l i j i' j' A A' B B' T T' e :
-    ∙ ⊢< Ax l > T -->>! Pi i j A B : Sort l ->
-    ∙ ⊢< Ax l > T' -->>! Pi i' j' A' B' : Sort l ->
+Lemma pi_sort_inj_red l i n i' n' A A' B B' T T' e :
+    ∙ ⊢< Ax l > T -->>! Pi i (ty n) A B : Sort l ->
+    ∙ ⊢< Ax l > T' -->>! Pi i' (ty n') A' B' : Sort l ->
     ∙ ⊢< prop > e : obseq (Ax l) (Sort l) T T' ->
-    i = i' /\ j = j'.
+    i = i' /\ n = n'.
 Proof.
     intros T_red T'_red eWt.
     eapply redd_whnf_to_conv in T_red as temp.
@@ -509,25 +509,25 @@ Proof.
 Qed.
 
 
-Lemma red_cast_pi' Γ i j A1 A2 B1 B2 e f X Y l :
+Lemma red_cast_pi' Γ i n A1 A2 B1 B2 e f X Y l :
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< Ru i j > f : Pi i j A1 B1 ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
     let B2' := (up_ren S) ⋅ B2 in
-    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
-    let t2 := app i j A1' B1' (S ⋅ f) t1 in
-    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
-    let t4 := lam i j A2 B2 t3 in
-    X = Pi i j A2 B2 ->
+    let t1 := cast i A2' A1' (injpi1 i (ty n) A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i (ty n) A1' B1' (S ⋅ f) t1 in
+    let t3 := cast (ty n) (B1 <[t1.: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
+    let t4 := lam i (ty n) A2 B2 t3 in
+    X = Pi i (ty n) A2 B2 ->
     Y = t4 ->
-    l = Ru i j ->
-    Γ ⊢< l > cast l (Pi i j A1 B1) (Pi i j A2 B2) e f --> Y : X.
+    l = Ru i (ty n) ->
+    Γ ⊢< l > cast l (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> Y : X.
 Proof.
     intros. subst. eauto using red_cast_pi.
 Qed.
