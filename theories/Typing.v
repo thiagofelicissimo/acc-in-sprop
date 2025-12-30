@@ -159,27 +159,27 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< l > accel i l A R P p a q : P <[a ..]
 
 | type_obseq :
-    ∀ Γ i A a b,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > b : A ->
-    Γ ⊢< Ax prop > obseq i A a b : Sort prop
+    ∀ Γ n A a b,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< ty n > b : A ->
+    Γ ⊢< Ax prop > obseq (ty n) A a b : Sort prop
 
 | type_obsrefl :
-    ∀ l Γ A a,
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< l > a : A ->
-      Γ ⊢< prop > obsrefl l A a : obseq l A a a
+    ∀ n Γ A a,
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< ty n > a : A ->
+      Γ ⊢< prop > obsrefl (ty n) A a : obseq (ty n) A a a
 
 | type_J :
-    ∀ Γ l A a P p b e,
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< l > a : A ->
-      Γ ,, (l , A) ⊢< Ax prop > P : Sort prop ->
+    ∀ Γ n A a P p b e,
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< ty n > a : A ->
+      Γ ,, (ty n , A) ⊢< Ax prop > P : Sort prop ->
       Γ ⊢< prop > p : P <[a..] ->
-      Γ ⊢< l > b : A ->
-      Γ ⊢< prop > e : obseq l A a b ->
-      Γ ⊢< prop > J l A a P p b e : P <[b..]
+      Γ ⊢< ty n > b : A ->
+      Γ ⊢< prop > e : obseq (ty n) A a b ->
+      Γ ⊢< prop > J (ty n) A a P p b e : P <[b..]
 
 | type_cast :
   ∀ Γ i A B e a,
@@ -348,28 +348,28 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 
 | conv_obseq :
-    ∀ Γ i A A' a a' b b',
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ⊢< i > a ≡ a' : A ->
-    Γ ⊢< i > b ≡ b' : A ->
-    Γ ⊢< Ax prop > obseq i A a b ≡ obseq i A' a' b' : Sort prop
+    ∀ Γ n A A' a a' b b',
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< ty n > b ≡ b' : A ->
+    Γ ⊢< Ax prop > obseq (ty n) A a b ≡ obseq (ty n) A' a' b' : Sort prop
 
 | conv_obsrefl :
-  ∀ l Γ A A' a a',
-    Γ ⊢< Ax l > A ≡ A' : Sort l ->
-    Γ ⊢< l > a ≡ a' : A ->
-    Γ ⊢< prop > obsrefl l A a ≡ obsrefl l A' a' : obseq l A a a
+  ∀ n Γ A A' a a',
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< prop > obsrefl (ty n) A a ≡ obsrefl (ty n) A' a' : obseq (ty n) A a a
 
 | conv_J :
-    ∀ Γ l A A' a a' P P' p p' b b' e e',
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< Ax l > A ≡ A' : Sort l ->
-      Γ ⊢< l > a ≡ a' : A ->
-      Γ ,, (l , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
+    ∀ Γ n A A' a a' P P' p p' b b' e e',
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+      Γ ⊢< ty n > a ≡ a' : A ->
+      Γ ,, (ty n , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
       Γ ⊢< prop > p ≡ p' : P <[a..] ->
-      Γ ⊢< l > b ≡ b' : A ->
-      Γ ⊢< prop > e ≡ e' : obseq l A a b ->
-      Γ ⊢< prop > J l A a P p b e ≡ J l A' a' P' p' b' e' : P <[b..]
+      Γ ⊢< ty n > b ≡ b' : A ->
+      Γ ⊢< prop > e ≡ e' : obseq (ty n) A a b ->
+      Γ ⊢< prop > J (ty n) A a P p b e ≡ J (ty n) A' a' P' p' b' e' : P <[b..]
 
 | conv_cast :
   ∀ Γ i A A' B B' e e' a a',

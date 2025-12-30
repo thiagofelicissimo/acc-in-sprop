@@ -2989,9 +2989,9 @@ Qed.
 Definition obseq_sym l A a b e : term :=
   J l A a (obseq l (S ⋅ A) (var 0) (S ⋅ a)) (obsrefl l A a) b e.
 
-Lemma type_obseq_sym : forall Γ l A a b e,
-    Γ ⊢< prop > e : obseq l A a b →
-    Γ ⊢< prop > obseq_sym l A a b e : obseq l A b a.
+Lemma type_obseq_sym : forall Γ n A a b e,
+    Γ ⊢< prop > e : obseq (ty n) A a b →
+    Γ ⊢< prop > obseq_sym (ty n) A a b e : obseq (ty n) A b a.
 Proof.
   intros. eapply validity_ty_ty in H as H'.
   eapply type_inv_obseq in H' as (H1 & H2 & H3 & _).
