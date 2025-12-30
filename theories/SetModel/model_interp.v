@@ -119,11 +119,10 @@ with interp_tm : forall (Γ : ctx) (l : level) (A : term), (ZFSet -> ZFSet) -> P
 
 | interp_obseq_i : forall Γ A a b, interp_tm Γ (Ax prop) (obseq prop A a b) (fun _ => ⋆)
 
-| interp_cast : forall Γ l A B e a iA iB ie ia, interp_tm Γ (Ax (ty l)) A iA
+| interp_cast : forall Γ l A B e a iA iB ia, interp_tm Γ (Ax (ty l)) A iA
                 -> interp_tm Γ (Ax (ty l)) B iB
-                -> interp_tm Γ prop e ie
                 -> interp_tm Γ (ty l) a ia
-                -> interp_tm Γ (ty l) (cast (ty l) A B e a) (castTm_HO iA iB ie ia).
+                -> interp_tm Γ (ty l) (cast (ty l) A B e a) (castTm_HO iA iB ia).
 
 Scheme interp_tm_mut := Induction for interp_tm Sort Prop
 with interp_ctx_mut := Induction for interp_ctx Sort Prop
@@ -171,7 +170,7 @@ Proof.
     inversion ft. subst. f_equal ; auto.
   - intros Γ l A a b iA ia ib fA IHA fa IHa fb IHb iP fP. inversion fP. subst. f_equal ; auto.
   - intros Γ A a b iP fP. now inversion fP. 
-  - intros Γ l A B e a iA iB ie ia fA IHA fB IHB fe IHe fa IHa it ft.
+  - intros Γ l A B e a iA iB ia fA IHA fB IHB fa IHa it ft.
     inversion ft. subst. f_equal ; auto.
   - intros iΓ fΓ. now inversion fΓ. 
   - intros Γ l A iΓ iA fΓ IHΓ fA IHA iΔ fΔ. inversion fΔ. subst. f_equal ; auto.

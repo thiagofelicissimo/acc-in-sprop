@@ -22,28 +22,12 @@ Proof.
     + apply (typeTelescope2_typing nA nB (Γ := Γ)) ; try assumption. 
 Qed.
 
-Lemma piTy_HO_typing' {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) :
-  ∀ γ ∈ Γ, piTy_HO nA nB A B γ ∈ 𝕌el (S (max nA nB)) (univTy_HO (max nA nB) γ).
-Proof.
-  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing HA HB γ Hγ)).
-  now apply el_univTy.
-Qed.
-
 Lemma piTy_HO_typing_ir {nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB) :
   ∀ γ ∈ Γ, piTy_HO 0 nB (boxTy_HO A) B γ ∈ 𝕌 nB.
 Proof.
   intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing (boxTy_HO_typing HA) HB γ Hγ)).
   refine (fequal 𝕌 _). destruct (eq_sym (Nat.max_0_l nB)). easy.
-Qed.
-
-Lemma piTy_HO_typing_ir' {nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB) :
-  ∀ γ ∈ Γ, piTy_HO 0 nB (boxTy_HO A) B γ ∈ 𝕌el (S nB) (univTy_HO nB γ).
-Proof.
-  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (piTy_HO_typing (boxTy_HO_typing HA) HB γ Hγ)).
-  refine (trans _ (fequal 𝕌 _)). now apply el_univTy. destruct (eq_sym (Nat.max_0_l nB)). easy.
 Qed.
 
 Lemma el_piTy {nA nB : nat} {Γ γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet} 

@@ -1,7 +1,7 @@
 From Stdlib Require Import Arith.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
-Require Import HO HO_prop HO_univ HO_forall HO_nat HO_pi.
+Require Import HO HO_prop HO_univ HO_forall HO_nat HO_pi HO_box.
 
 (* Observational equality *)
 
@@ -13,14 +13,6 @@ Lemma eqTy_HO_typing {n : nat} {Γ : ZFSet} {A t u : ZFSet -> ZFSet}
   ∀ γ ∈ Γ, eqTy_HO A t u γ ∈ Ω.
 Proof.
   intros γ Hγ. cbn. apply subsingl_typing.
-Qed.
-
-Lemma eqTy_HO_typing' {n : nat} {Γ : ZFSet} {A t u : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) (Hu : ∀ γ ∈ Γ, u γ ∈ 𝕌el n (A γ)) :
-  ∀ γ ∈ Γ, eqTy_HO A t u γ ∈ 𝕌el 0 (propTy_HO γ).
-Proof.
-  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (eqTy_HO_typing HA Ht Hu γ Hγ)).
-  now apply el_propTy.  
 Qed.
 
 (* Reflexivity *)
@@ -52,11 +44,11 @@ Qed.
 
 (* Type casting *)
 
-Definition castTm_HO (A B e t : ZFSet -> ZFSet) : ZFSet -> ZFSet := t.
+Definition castTm_HO (A B t : ZFSet -> ZFSet) : ZFSet -> ZFSet := t.
 
 Lemma castTm_HO_typing {n : nat} {Γ : ZFSet} {A B e t : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (He : ∀ γ ∈ Γ, e γ ∈ eqTy_HO (univTy_HO n) A B γ)
-  (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) : ∀ γ ∈ Γ, castTm_HO A B e t γ ∈ 𝕌el n (B γ).
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (He : ∀ γ ∈ Γ, e γ ∈ eqTy_HO (univTy_HO n) A B γ)
+  (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) : ∀ γ ∈ Γ, castTm_HO A B t γ ∈ 𝕌el n (B γ).
 Proof.
   intros γ Hγ. unfold castTm_HO. specialize (He γ Hγ). unfold eqTy_HO in He.
   apply subsingl_true_if in He. refine (transpS (fun X => t γ ∈ 𝕌el n X) He _).
@@ -65,7 +57,7 @@ Qed.
 
 Lemma castTm_HO_refl {n : nat} {Γ : ZFSet} {A t : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) :
-  ∀ γ ∈ Γ, castTm_HO A A (reflTm_HO (univTy_HO n) A) t γ ≡ t γ.
+  ∀ γ ∈ Γ, castTm_HO A A t γ ≡ t γ.
 Proof.
   intros γ Hγ. reflexivity.
 Qed.
@@ -125,13 +117,26 @@ Proof.
   now apply subsingl_true_if in He.
 Qed.
 
+Lemma piinj1Tm_HO_typing_ir {nB : nat} {Γ : ZFSet} {A A' B B' e : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ Ω) (HB : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A), B γa ∈ 𝕌 nB)
+  (HA' : ∀ γ ∈ Γ, A' γ ∈ Ω) (HB' : ∀ γa ∈ ctxExt 0 Γ (boxTy_HO A'), B' γa ∈ 𝕌 nB)
+  (He : ∀ γ ∈ Γ, e γ ∈ eqTy_HO (univTy_HO nB) (piTy_HO 0 nB (boxTy_HO A) B) (piTy_HO 0 nB (boxTy_HO A') B') γ)
+  : ∀ γ ∈ Γ, piinj1Tm_HO A A' B B' e γ ∈ eqTy_HO propTy_HO A' A γ.
+Proof.
+  assert (∀ γ ∈ Γ, piinj1Tm_HO A A' B B' e γ ∈ eqTy_HO (univTy_HO 0) (boxTy_HO A') (boxTy_HO A) γ) as H.
+  { refine (piinj1Tm_HO_typing _ HB _ HB' He). apply boxTy_HO_typing. exact HA. apply boxTy_HO_typing. exact HA'. }
+  intros γ Hγ. cbn. specialize (H γ Hγ). cbn in H. apply subsingl_true_if in H.
+  unfold piinj1Tm_HO. apply subsingl_true_iff. refine (trans (sym _) (trans (fequal (𝕌el 0) H) _)).
+  eapply el_boxTy. exact HA'. exact Hγ. eapply el_boxTy. exact HA. exact Hγ.
+Qed.
+
 Definition piinj2Tm_HO (A A' B B' e a : ZFSet -> ZFSet) : ZFSet -> ZFSet := fun _ => ∅.
 
 Lemma piinj2Tm_HO_typing {nA nB : nat} {Γ : ZFSet} {A A' B B' e a : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB)
   (HA' : ∀ γ ∈ Γ, A' γ ∈ 𝕌 nA) (HB' : ∀ γa ∈ ctxExt nA Γ A', B' γa ∈ 𝕌 nB)
   (He : ∀ γ ∈ Γ, e γ ∈ eqTy_HO (univTy_HO (max nA nB)) (piTy_HO nA nB A B) (piTy_HO nA nB A' B') γ)
-  (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el nA (A' γ)) (a0 := castTm_HO A' A (piinj1Tm_HO A A' B B' e) a)
+  (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el nA (A' γ)) (a0 := castTm_HO A' A a)
   : ∀ γ ∈ Γ, piinj2Tm_HO A A' B B' e a γ ∈ eqTy_HO (univTy_HO (max nA nB)) (fun γ => B ⟨ γ ; a0 γ ⟩) (fun γ => B' ⟨ γ ; a γ ⟩) γ.
 Proof.
   intros γ Hγ. cbn. unfold piinj2Tm_HO. unfold eqTy_HO. apply subsingl_true_iff.
@@ -153,11 +158,10 @@ Lemma castTm_HO_pi {nA nB : nat} {Γ : ZFSet} {A A' B B' e f : ZFSet -> ZFSet}
   (Au := fun γa => A (ctx_wk nA Γ A' γa)) (A'u := fun γa => A' (ctx_wk nA Γ A' γa))
   (Bu := fun γaa => B ⟨ ctx_wk nA Γ A' (ctx_wk nA (ctxExt nA Γ A') Au γaa) ; ctx_var0 nA (ctxExt nA Γ A') Au γaa ⟩)
   (B'u := fun γaa => B' ⟨ ctx_wk nA Γ A' (ctx_wk nA (ctxExt nA Γ A') A'u γaa) ; ctx_var0 nA (ctxExt nA Γ A') A'u γaa ⟩)
-  (t1 := castTm_HO A'u Au (piinj1Tm_HO Au A'u Bu B'u (fun γa => e (ctx_wk nA Γ A' γa))) (fun γa => ctx_var0 nA Γ A' γa))
+  (t1 := castTm_HO A'u Au (fun γa => ctx_var0 nA Γ A' γa))
   (t2 := appTm_HO nA nB Au (fun γa => f (ctx_wk nA Γ A' γa)) t1)
-  (t3 := castTm_HO (fun γa => B ⟨ ctx_wk nA Γ A' γa ; t1 γa ⟩) B'
-           (piinj2Tm_HO Au A'u Bu B'u (fun γa => e (ctx_wk nA Γ A' γa)) (fun γa => ctx_var0 nA Γ A' γa)) t2)
-  (t4 := lamTm_HO nA nB A' t3) : ∀ γ ∈ Γ, castTm_HO (piTy_HO nA nB A B) (piTy_HO nA nB A' B') e f γ ≡ t4 γ.
+  (t3 := castTm_HO (fun γa => B ⟨ ctx_wk nA Γ A' γa ; t1 γa ⟩) B' t2)
+  (t4 := lamTm_HO nA nB A' t3) : ∀ γ ∈ Γ, castTm_HO (piTy_HO nA nB A B) (piTy_HO nA nB A' B') f γ ≡ t4 γ.
 Proof.
   intros γ Hγ. unfold castTm_HO in *. unfold t4. unfold t3. unfold t2. unfold t1. unfold Au.
   clear t1 t2 t3 t4. unfold lamTm_HO. unfold appTm_HO.

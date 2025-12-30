@@ -14,19 +14,15 @@ Open Scope subst_scope.
 Lemma model_univ (Γ : ctx) (l : level) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) :
   model_typing Γ (Ax (Ax l)) (Sort l) (Sort (Ax l)).
 Proof.
-  destruct mΓ as [ iΓ fΓ ]. destruct l as [ l | ].
+  apply to_model_univ. destruct mΓ as [ iΓ fΓ ]. destruct l as [ l | ].
   (* Type *)
   + econstructor.
     * exact fΓ.
     * apply interp_type.
-    * apply interp_type.
     * apply univTy_HO_typing.
-    * apply univTy_HO_typing'.
   (* Prop *)
   + econstructor.
     * exact fΓ.
-    * apply interp_type.
     * apply interp_prop.
-    * apply univTy_HO_typing.
-    * apply propTy_HO_typing'.
+    * apply propTy_HO_typing.
 Qed.

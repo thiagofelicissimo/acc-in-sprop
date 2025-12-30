@@ -7,7 +7,7 @@ Import ListNotations.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat ZF_acc.
 Require Import HO HO_univ HO_prop HO_box HO_pi HO_sigma HO_nat HO_obseq HO_forall.
-Require Import model_interp model_def model_univ model_pi model_nat model_acc.
+Require Import model_interp model_def model_univ model_pi model_nat model_acc model_obseq.
 
 Open Scope subst_scope.
 
@@ -17,6 +17,9 @@ with conversion_mutS := Induction for conversion Sort Prop.
 Combined Scheme ctx_typing_conversion_mutindS from typing_mutS, ctx_typing_mutS, conversion_mutS.
 
 (* Assumptions are validated by the model *)
+Axiom valid_assm : forall c A iA, nth_error assm_sig c = Some A
+                                  -> interp_tm ∙ (ty 0) A iA
+                                  -> ∅ ∈ iA ∅.
 
 Lemma model_assm (Γ : ctx) (c : nat) (A : term) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) (Hc : nth_error assm_sig c = Some A)
   (tA : ∙ ⊢< Ax prop > A : Sort prop) (mA : model_typing ∙ (Ax prop) A (Sort prop)) :
@@ -29,6 +32,15 @@ Proof.
     assert (∅ ∈ ⋆) as Hγ'. { now apply inSetSingl. } 
     refine (transpS (fun X => iA ∅ ∈ X) _ (vA _ Hγ')). now apply el_propTy.
   * intros γ Hγ. now apply (valid_assm c A).
+Admitted.
+
+(* Conversion *)
+
+Lemma model_conversion (Γ : ctx) (l : level) (A B t : term)
+  (ta : Γ ⊢< l > t : A) (ma : model_typing Γ l t A)
+  (tAB : Γ ⊢< Ax l > A ≡ B : Sort l) (mAB : model_conv Γ (Ax l) A B (Sort l)) :
+  model_typing Γ l t B.
+Proof.
 Admitted.
 
 (* Fundamental lemma *)
@@ -52,13 +64,14 @@ Proof.
   - apply model_accin.
   - apply model_accinv.
   - apply model_accelim.
-  - admit. (* apply model_obseq *)
-  - admit. (* apply model_obsrefl *)
-  - admit. (* apply model_J *)
-  - admit. (* apply model_cast *)
-  - admit. (* apply model_injpi1 *)
-  - admit. (* apply model_injpi2 *)
-  - admit. (* apply model_conv *)
+  - apply model_obseq.
+  - apply model_obsrefl.
+  - apply model_J.
+  - apply model_cast.
+  - apply model_injpi1.
+  - apply model_injpi2.
+  - apply model_conversion.
+  - econstructor. apply interp_empty.
 Admitted.
 
 (* Corollary : the theory is consistent *)
@@ -89,4 +102,3 @@ Proof.
   apply ZFinempty in H. destruct H.
 Qed.
 
-Print Assumptions consistency.

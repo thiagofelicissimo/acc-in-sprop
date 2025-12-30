@@ -14,14 +14,6 @@ Proof.
   intros γ Hγ. unfold forallTy_HO. apply subsingl_typing.
 Qed.
 
-Lemma forallTy_HO_typing' {n : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω) :
-  ∀ γ ∈ Γ, forallTy_HO n A B γ ∈ 𝕌el 0 (propTy_HO γ).
-Proof.
-  intros γ Hγ. cbn. refine (transpS (fun X => _ ∈ X) (sym _) (forallTy_HO_typing HA HB γ Hγ)).
-  now apply el_propTy.
-Qed.
-
 (* Lambda abstraction *)
 
 Lemma ilamTm_HO_typing (n : nat) {Γ : ZFSet} {A B : ZFSet -> ZFSet}

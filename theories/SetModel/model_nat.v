@@ -15,12 +15,10 @@ Open Scope subst_scope.
 Lemma model_nat (Γ : ctx) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) :
   model_typing Γ (ty 1) Nat (Sort (ty 0)).
 Proof.
-  destruct mΓ as [ iΓ fΓ ]. econstructor.
+  apply to_model_type. destruct mΓ as [ iΓ fΓ ]. econstructor.
   - exact fΓ.
-  - apply interp_type.
   - apply interp_nat.
-  - apply univTy_HO_typing.
-  - apply natTy_HO_typing'.
+  - apply natTy_HO_typing.
 Qed.
 
 Lemma model_zero (Γ : ctx) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) :

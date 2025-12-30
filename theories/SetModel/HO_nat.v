@@ -13,12 +13,6 @@ Proof.
     + apply empty_in_univ.
 Qed.
 
-Lemma natTy_HO_typing' {Γ : ZFSet} : ∀ γ ∈ Γ, natTy_HO γ ∈ 𝕌el 1 (univTy_HO 0 γ).
-Proof.
-  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (natTy_HO_typing γ Hγ)).
-  now apply el_univTy.
-Qed.
-
 Lemma el_natTy {n : nat} {γ : ZFSet} : 𝕌el n (natTy_HO γ) ≡ ω.
 Proof.
   apply setPairβ1.

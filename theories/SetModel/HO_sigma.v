@@ -22,14 +22,6 @@ Proof.
     + apply (typeTelescope2_typing nA nB (Γ := Γ)) ; try assumption. 
 Qed.
 
-Lemma sigmaTy_HO_typing' {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) :
-  ∀ γ ∈ Γ, sigmaTy_HO nA nB A B γ ∈ 𝕌el (S (max nA nB)) (univTy_HO (max nA nB) γ).
-Proof.
-  intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (sigmaTy_HO_typing HA HB γ Hγ)).
-  now apply el_univTy.
-Qed.
-
 Lemma el_sigmaTy {nA nB : nat} {Γ γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) (Hγ : γ ∈ Γ) :
   𝕌el (max nA nB) (sigmaTy_HO nA nB A B γ) ≡ setSigma (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩)).

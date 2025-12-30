@@ -65,7 +65,74 @@ Definition model_conv (Γ : ctx) (l : level) (t u A : term) : Prop :=
   | ty l => model_conv_rel Γ l t u A
   end.
 
-(* We assume that the extra assumptions are validated by the model *)
-Axiom valid_assm : forall c A iA, nth_error assm_sig c = Some A
-                                  -> interp_tm ∙ (ty 0) A iA
-                                  -> ∅ ∈ iA ∅.
+(* Useful shortcut *)
+
+Inductive model_typing_type (Γ : ctx) (l : nat) (A : term) : Prop :=
+| mkModelTypingType (iΓ : ZFSet)
+    (fΓ : interp_ctx Γ iΓ)
+    (iA : ZFSet -> ZFSet)
+    (fA : interp_tm Γ (Ax (ty l)) A iA)
+    (vA : ∀ γ ∈ iΓ, iA γ ∈ 𝕌 l).
+
+Inductive model_typing_prop (Γ : ctx) (A : term) : Prop :=
+| mkModelTypingProp (iΓ : ZFSet)
+    (fΓ : interp_ctx Γ iΓ)
+    (iA : ZFSet -> ZFSet)
+    (fA : interp_tm Γ (Ax prop) A iA)
+    (vA : ∀ γ ∈ iΓ, iA γ ∈ Ω).
+
+Definition model_typing_univ (Γ : ctx) (l : level) (A : term) : Prop :=
+  match l with
+  | prop => model_typing_prop Γ A
+  | ty l => model_typing_type Γ l A
+  end.
+
+Lemma of_model_type (Γ : ctx) (l : nat) (A : term) : model_typing_rel Γ (S l) A (Sort (ty l)) -> model_typing_type Γ l A.
+Proof.
+  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS. econstructor.
+  + exact fΓ.
+  + exact fA.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy.
+Qed.
+
+Lemma of_model_prop (Γ : ctx) (A : term) : model_typing_rel Γ 0 A (Sort prop) -> model_typing_prop Γ A.
+Proof.
+  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS. econstructor.
+  + exact fΓ.
+  + exact fA.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy.
+Qed.
+
+Lemma of_model_univ (Γ : ctx) (l : level) (A : term) : model_typing Γ (Ax l) A (Sort l) -> model_typing_univ Γ l A.
+Proof.
+  destruct l as [ l | ].
+  - apply of_model_type.
+  - apply of_model_prop.
+Qed.
+
+Lemma to_model_type (Γ : ctx) (l : nat) (A : term) : model_typing_type Γ l A -> model_typing_rel Γ (S l) A (Sort (ty l)).
+Proof.
+  intros [ iΓ fΓ iA fA vA ]. econstructor.
+  + exact fΓ.
+  + apply interp_type.
+  + exact fA.
+  + apply univTy_HO_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy.
+Qed.
+
+Lemma to_model_prop (Γ : ctx) (A : term) : model_typing_prop Γ A -> model_typing_rel Γ 0 A (Sort prop).
+Proof.
+  intros [ iΓ fΓ iA fA vA ]. econstructor.
+  + exact fΓ.
+  + apply interp_prop.
+  + exact fA.
+  + apply propTy_HO_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy.
+Qed.
+
+Lemma to_model_univ (Γ : ctx) (l : level) (A : term) : model_typing_univ Γ l A -> model_typing Γ (Ax l) A (Sort l).
+Proof.
+  destruct l as [ l | ].
+  - apply to_model_type.
+  - apply to_model_prop.
+Qed.
