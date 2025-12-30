@@ -65,28 +65,28 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< ty 0 > n : Nat ->
     Γ ⊢< l > rec l P p_zero p_succ (succ n) --> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ]
 
-| red_accel Γ i l A R a q P p :
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+| red_accel Γ n l A R a q P p :
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< prop > q : acc i A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
     let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
     let t3 := lam prop l t2 P'' t1 in
     let t4 := Pi prop l t2 P'' in
-    let t5 := lam i l A t4 t3 in
-    Γ ⊢< l > accel i l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
+    let t5 := lam (ty n) l A t4 t3 in
+    Γ ⊢< l > accel (ty n) l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
 
 | red_conv Γ l t u A B :
     Γ ⊢< l > t --> u : A ->
@@ -147,27 +147,27 @@ Proof.
 Qed.
 
 
-Lemma red_accel' Γ i l A R a q P p X Y :
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+Lemma red_accel' Γ n l A R a q P p X Y :
+    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
-    Γ ⊢< prop > q : acc i A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
     let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
     let t3 := lam prop l t2 P'' t1 in
     let t4 := Pi prop l t2 P'' in
-    let t5 := lam i l A t4 t3 in
+    let t5 := lam (ty n) l A t4 t3 in
     X = p <[ t5 .: a ..] ->
     Y = P <[a ..] ->
-    Γ ⊢< l > accel i l A R P p a q --> X : Y.
+    Γ ⊢< l > accel (ty n) l A R P p a q --> X : Y.
 Proof.
     intros. subst.
     eapply validity_ty_ty in H1 as temp.
@@ -397,7 +397,8 @@ Definition red_inv_type Γ t v :=
         Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
         Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' /\
         Γ ⊢< i > a : A /\
-        Γ ⊢< prop > q : acc i A R a
+        Γ ⊢< prop > q : acc i A R a /\ 
+        exists n, i = ty n
     | cast _ Nat Nat e t =>
         v = t /\
         Γ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat /\
@@ -483,7 +484,7 @@ Proof.
       all: eexists; eauto.
     - simpl. split; eauto.
     - simpl. split; eauto.
-    - simpl. split; eauto. split; eauto.
+    - simpl. split; eauto. split; eauto 8.
     - eapply IHred. eauto.
     - destruct A.
       1,3,5,6,8-21: simpl;left;eexists; split; eauto.

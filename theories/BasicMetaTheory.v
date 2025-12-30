@@ -1650,9 +1650,9 @@ Proof.
           all : try solve [ (eapply meta_conv_conv + eapply meta_conv) ; [
         eauto 12 using ctx_typing, typing, WellSubst_up, conv_substs_up, subst_conv_meta_conv_ctx, subst_meta_conv_ctx | rasimpl ; reflexivity]].
     + rasimpl; reflexivity.
-  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+  - assert (Δ ⊢< Ax (ty n) > A <[σ] : Sort (ty n)).
     { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
-    assert (⊢ (Δ,, (i, A <[ σ])),, (i, (S ⋅ A) <[ up_term σ])).
+    assert (⊢ (Δ,, (ty n, A <[ σ])),, (ty n, (S ⋅ A) <[ up_term σ])).
     { econstructor. 1:econstructor; eauto. rasimpl. eapply typing_conversion_ren in H. 
       3:eapply WellRen_S. 1:rasimpl in H; eassumption. econstructor; eauto. } rasimpl in H0.
     eapply meta_conv_conv.
@@ -1663,9 +1663,9 @@ Proof.
     2:eapply conv_substs_up_two; eauto.
     4:eapply WellSubst_up_two; eauto.
     all:rasimpl; eauto.
-  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+  - assert (Δ ⊢< Ax (ty n) > A <[σ] : Sort (ty n)).
     { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
-    assert (⊢ (Δ,, (i, A <[ σ])),, (i, (S ⋅ A) <[ up_term σ])).
+    assert (⊢ (Δ,, (ty n, A <[ σ])),, (ty n, (S ⋅ A) <[ up_term σ])).
     { econstructor. 1:econstructor; eauto. rasimpl. eapply typing_conversion_ren in H. 
       3:eapply WellRen_S. 1:rasimpl in H; eassumption. econstructor; eauto. } rasimpl in H0.
     econstructor; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty.
@@ -1675,9 +1675,9 @@ Proof.
     2:eapply conv_substs_up_two; eauto.
     4:eapply WellSubst_up_two; eauto.
     all:rasimpl; eauto.
-  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+  - assert (Δ ⊢< Ax (ty n) > A <[σ] : Sort (ty n)).
     { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
-    assert (⊢ (Δ,, (i, A <[ σ])),, (i, (S ⋅ A) <[ up_term σ])).
+    assert (⊢ (Δ,, (ty n, A <[ σ])),, (ty n, (S ⋅ A) <[ up_term σ])).
     { econstructor. 1:econstructor; eauto. rasimpl. eapply typing_conversion_ren in H. 
       3:eapply WellRen_S. 1:rasimpl in H; eassumption. econstructor; eauto. } rasimpl in H0.
     econstructor; eauto 10 using conv_substs_up, WellSubst_up, ctx_typing, subst_ty.
@@ -1687,12 +1687,12 @@ Proof.
     6:eapply meta_conv_conv.
     6:eapply IHht6;eauto.
     all:rasimpl; eauto.
-  - assert (Δ ⊢< Ax i > A <[σ] : Sort i).
+  - assert (Δ ⊢< Ax (ty n) > A <[σ] : Sort (ty n)).
     { eapply typing_conversion_subst in ht1; eauto using typing, ctx_typing, WellSubst_up. }
-    assert (⊢ (Δ,, (i, A <[ σ])),, (i, (S ⋅ A) <[ up_term σ])).
+    assert (⊢ (Δ,, (ty n, A <[ σ])),, (ty n, (S ⋅ A) <[ up_term σ])).
     { econstructor. 1:econstructor; eauto. rasimpl. eapply typing_conversion_ren in H. 
       3:eapply WellRen_S. 1:rasimpl in H; eassumption. econstructor; eauto. } rasimpl in H0.
-    assert ((Δ,, (i, A <[ σ])),, (i, A <[ σ >> ren_term S]) ⊢< Ax prop > R <[ var 1 .: (var 0 .: σ >> ren_term (S >> S))] : Sort prop).
+    assert ((Δ,, (ty n, A <[ σ])),, (ty n, A <[ σ >> ren_term S]) ⊢< Ax prop > R <[ var 1 .: (var 0 .: σ >> ren_term (S >> S))] : Sort prop).
     { eapply typing_conversion_subst in ht2; simpl in ht2; rasimpl; eauto.
       1:econstructor. 1:econstructor.
       1:eapply WellSubst_weak_two; eauto.
@@ -1700,7 +1700,7 @@ Proof.
       2:econstructor. 1:eauto. 1:rasimpl; reflexivity.
       1:eapply meta_conv. 1:econstructor.
       1:eauto. 1:econstructor. 1:econstructor. 1:rasimpl; reflexivity. }
-    assert (⊢ (Δ,, (i, A <[ σ])),, (Ru i l, B <[ up_term σ])).
+    assert (⊢ (Δ,, ((ty n), A <[ σ])),, (Ru (ty n) l, B <[ up_term σ])).
     { econstructor. 1:econstructor; eauto. unfold B. unfold R', P'.
       simpl. econstructor. 1:inversion H0; eauto.
       1:rasimpl;eauto.
@@ -1775,12 +1775,12 @@ Qed.
 
 Section AccCompValidity.
 
-  Context (Γ : ctx) (i : level) (A R : term) 
-    (AWt : Γ ⊢< Ax i > A : Sort i)
-    (RWt : Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop).
+  Context (Γ : ctx) (n : nat) (A R : term) 
+    (AWt : Γ ⊢< Ax (ty n) > A : Sort (ty n))
+    (RWt : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop).
   Let R0 := (1 .: (0 .: (S >> S))) ⋅ R.
 
-  Lemma R0Wt : Γ,, (i, A),, (i, S ⋅ A) ⊢< Ax prop > R0 : Sort prop.
+  Lemma R0Wt : Γ,, (ty n, A),, (ty n, S ⋅ A) ⊢< Ax prop > R0 : Sort prop.
   Proof.
     unfold R0.
     eapply type_ren; eauto using validity_ty_ctx.
@@ -1790,12 +1790,12 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl;reflexivity.
   Qed.
 
-  Context (l : level) (P : term) (PWt : Γ ,, (i, A) ⊢< Ax l > P : Sort l).  
+  Context (l : level) (P : term) (PWt : Γ ,, (ty n, A) ⊢< Ax l > P : Sort l).  
   Let P0 := (1 .: (S >> S >> S)) ⋅ P.
-  Let B := Pi i l (S ⋅ A) (Pi prop l R0 P0).
+  Let B := Pi (ty n) l (S ⋅ A) (Pi prop l R0 P0).
   Let P00 := (1.: (S >> S)) ⋅ P.
 
-  Lemma P0Wt : Γ,, (i, A),, (i, S ⋅ A),, (prop, R0) ⊢< Ax l > P0 : Sort l.
+  Lemma P0Wt : Γ,, (ty n, A),, (ty n, S ⋅ A),, (prop, R0) ⊢< Ax l > P0 : Sort l.
   Proof.
     unfold P0.
     eapply type_ren;eauto.
@@ -1805,7 +1805,7 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
   Qed.
 
-  Lemma BWt : Γ,, (i, A)⊢< Ax (Ru i l) > B : Sort (Ru i l).
+  Lemma BWt : Γ,, (ty n, A)⊢< Ax (Ru (ty n) l) > B : Sort (Ru (ty n) l).
   Proof.
     unfold B.
     econstructor.
@@ -1816,7 +1816,7 @@ Section AccCompValidity.
     all: destruct l; reflexivity.
   Qed.
 
-  Lemma P00Wt : Γ ,, (i, A) ,, (Ru i l, B) ⊢< Ax l > P00 : Sort l.
+  Lemma P00Wt : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< Ax l > P00 : Sort l.
   Proof.
     unfold P00.
     eapply type_ren; eauto.
@@ -1827,21 +1827,21 @@ Section AccCompValidity.
   Qed.
 
   Context (p a q : term)
-    (pWt : Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P00)
-    (aWt : Γ ⊢< i > a : A)
-    (qWt : Γ ⊢< prop > q : acc i A R a).
+    (pWt : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P00)
+    (aWt : Γ ⊢< ty n > a : A)
+    (qWt : Γ ⊢< prop > q : acc (ty n) A R a).
   Let Awk := (S >> S) ⋅ A.
   Let Rwk := (up_ren (up_ren (S >> S))) ⋅ R.
   Let Pwk := (up_ren (S >> S)) ⋅ P.
   Let pwk := (up_ren (up_ren (S >> S))) ⋅ p.
-  Let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
-  Let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0.
+  Let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
+  Let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0.
   Let t2 := R<[S ⋅ a .: (var 0 .: S >> var)].
   Let t3 := lam prop l t2 P00 t1.
   Let t4 := Pi prop l t2 P00.
-  Let t5 := lam i l A t4 t3.
+  Let t5 := lam (ty n) l A t4 t3.
 
-  Lemma t2Wt : Γ ,, (i, A) ⊢< Ax prop > t2 : Sort prop.
+  Lemma t2Wt : Γ ,, (ty n, A) ⊢< Ax prop > t2 : Sort prop.
   Proof.
     unfold t2.
     eapply subst_ty; eauto using validity_ty_ctx.
@@ -1853,7 +1853,7 @@ Section AccCompValidity.
   Qed.
 
 
-  Lemma AwkWt : Γ ,, (i, A) ,, (prop, t2) ⊢< Ax i > Awk : Sort i.
+  Lemma AwkWt : Γ ,, (ty n, A) ,, (prop, t2) ⊢< Ax (ty n) > Awk : Sort (ty n).
   Proof.
     unfold Awk.
     eapply type_ren; eauto using validity_ty_ctx.
@@ -1861,7 +1861,7 @@ Section AccCompValidity.
     eapply WellRen_weak, WellRen_S.
   Qed.
 
-  Lemma RwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ,, (i, S ⋅ Awk) ⊢< Ax prop > Rwk : Sort prop.
+  Lemma RwkWt : Γ ,, (ty n, A) ,, (prop, t2),, (ty n, Awk) ,, (ty n, S ⋅ Awk) ⊢< Ax prop > Rwk : Sort prop.
   Proof.
     unfold Rwk, Awk.
     eapply type_ren; eauto.
@@ -1871,7 +1871,7 @@ Section AccCompValidity.
     eapply WellRen_up. 1:eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. all:rasimpl; reflexivity.
   Qed.
 
-  Lemma PwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ⊢< Ax l > Pwk : Sort l.
+  Lemma PwkWt : Γ ,, (ty n, A) ,, (prop, t2),, (ty n, Awk) ⊢< Ax l > Pwk : Sort l.
   Proof.
     unfold Pwk, Awk.
     eapply type_ren; eauto.
@@ -1879,7 +1879,7 @@ Section AccCompValidity.
     eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. reflexivity.
   Qed.
 
-  Lemma pwkWt : Γ ,, (i, A) ,, (prop, t2) ,, (i, Awk) ,, (Ru i l, (up_ren (S >> S)) ⋅ B) ⊢< l > pwk : (up_ren (up_ren (S >> S))) ⋅ P00.
+  Lemma pwkWt : Γ ,, (ty n, A) ,, (prop, t2) ,, (ty n, Awk) ,, (Ru (ty n) l, (up_ren (S >> S)) ⋅ B) ⊢< l > pwk : (up_ren (up_ren (S >> S))) ⋅ P00.
   Proof.
     unfold pwk, Awk. eapply type_ren; eauto.
     1:econstructor; eauto using PwkWt, validity_ty_ctx.
@@ -1892,7 +1892,7 @@ Section AccCompValidity.
     all: ssimpl; reflexivity.
   Qed.
 
-  Lemma t0Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< prop > t0 : acc i Awk Rwk (var 1).
+  Lemma t0Wt : Γ ,, (ty n, A) ,, (prop, t2) ⊢< prop > t0 : acc (ty n) Awk Rwk (var 1).
   Proof.
     unfold t0.
     econstructor; eauto using AwkWt, RwkWt, PwkWt.
@@ -1902,18 +1902,18 @@ Section AccCompValidity.
     - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:unfold Rwk, t2; rasimpl; simpl; reflexivity.
   Qed.
 
-  Lemma t1Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< l > t1 : Pwk <[ (var 1) .. ].
+  Lemma t1Wt : Γ ,, (ty n, A) ,, (prop, t2) ⊢< l > t1 : Pwk <[ (var 1) .. ].
   Proof.
     unfold t1.
     econstructor; eauto using AwkWt, RwkWt, PwkWt, t0Wt.
-    - assert (Pi i l (S ⋅ Awk) (Pi prop l ((1 .: (0 .: S >> S)) ⋅ Rwk) ((1 .: (S >> S) >> S) ⋅ Pwk)) = (up_ren (S >> S)) ⋅ B).
+    - eassert (Pi _ l (S ⋅ Awk) (Pi prop l ((1 .: (0 .: S >> S)) ⋅ Rwk) ((1 .: (S >> S) >> S) ⋅ Pwk)) = (up_ren (S >> S)) ⋅ B).
       1: {unfold B, Awk, Rwk, Pwk, R0, P0. rasimpl. reflexivity. }
       rewrite H; eapply meta_conv.
       1: eapply pwkWt. unfold P00, Pwk; rasimpl; reflexivity.
     - econstructor; eauto using t0Wt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. unfold Awk; rasimpl; reflexivity.
   Qed.
 
-  Lemma P00Wt2 : (Γ,, (i, A)),, (prop, t2) ⊢< Ax l > P00 : Sort l.
+  Lemma P00Wt2 : (Γ,, (ty n, A)),, (prop, t2) ⊢< Ax l > P00 : Sort l.
   Proof.
     unfold P00. eapply type_ren; eauto using t1Wt, validity_ty_ctx.
     econstructor.
@@ -1921,7 +1921,7 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
   Qed.
 
-  Lemma t3Wt : Γ ,, (i, A) ⊢< l > t3 : Pi prop l t2 P00.
+  Lemma t3Wt : Γ ,, (ty n, A) ⊢< l > t3 : Pi prop l t2 P00.
   Proof. 
     unfold t3. eapply meta_lvl.
     1:econstructor; eauto using t2Wt, P00Wt2.
@@ -1930,21 +1930,21 @@ Section AccCompValidity.
     destruct l; eauto.
   Qed.
 
-  Lemma t4Wt : Γ ,, (i, A) ⊢< Ax l > t4 : Sort l.
+  Lemma t4Wt : Γ ,, (ty n, A) ⊢< Ax l > t4 : Sort l.
   Proof.
     unfold t4. eapply meta_conv. 1:eapply meta_lvl.
     1:econstructor; eauto using t2Wt, P00Wt2.
     all:destruct l; reflexivity.
   Qed.
   
-  Lemma t5Wt : Γ ⊢< Ru i l > t5 : Pi i l A t4.
+  Lemma t5Wt : Γ ⊢< Ru (ty n) l > t5 : Pi (ty n) l A t4.
   Proof.
     unfold t5. econstructor; eauto using t3Wt, t4Wt.
   Qed.
 
-  Context (A' : term) (A'Wt : Γ ⊢< Ax i > A' : Sort i) (A_conv_A' : Γ ⊢< Ax i > A ≡ A' : Sort i).
+  Context (A' : term) (A'Wt : Γ ⊢< Ax (ty n) > A' : Sort (ty n)) (A_conv_A' : Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n)).
 
-  Lemma Γ_A_SA' : ⊢ Γ ,, (i, A') ,, (i, S ⋅ A').
+  Lemma Γ_A_SA' : ⊢ Γ ,, (ty n, A') ,, (ty n, S ⋅ A').
   Proof.
     econstructor. 1:econstructor; eauto using validity_ty_ctx.
     eapply type_ren; eauto. 1:econstructor; eauto using validity_ty_ctx.
@@ -1952,22 +1952,22 @@ Section AccCompValidity.
   Qed.
 
 
-  Lemma Γ_A_SA_conv : ⊢ Γ ,, (i, A') ,, (i, S ⋅ A') ≡ Γ ,, (i, A) ,, (i, S ⋅ A).
+  Lemma Γ_A_SA_conv : ⊢ Γ ,, (ty n, A') ,, (ty n, S ⋅ A') ≡ Γ ,, (ty n, A) ,, (ty n, S ⋅ A).
   Proof.
     econstructor. 1:econstructor; eauto using ctx_conv_refl, validity_ty_ctx, conv_sym.
     eapply conv_ren; eauto using validity_ty_ctx, conv_sym. 2: eapply WellRen_S.
     econstructor; eauto using validity_ty_ctx.
   Qed.
 
-  Context (R' : term) (R_conv_R' : Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop).
-  Context (P' : term) (P_conv_P' : Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l).
+  Context (R' : term) (R_conv_R' : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop).
+  Context (P' : term) (P_conv_P' : Γ ,, (ty n, A) ⊢< Ax l > P ≡ P' : Sort l).
   Let R0' := (1 .: (0 .: (S >> S))) ⋅ R'.
   Let P0' := (1 .: (S >> S >> S)) ⋅ P'.
-  Let B' := Pi i l (S ⋅ A') (Pi prop l R0' P0').
+  Let B' := Pi (ty n) l (S ⋅ A') (Pi prop l R0' P0').
   Let P00' := (1.: (S >> S)) ⋅ P'.
 
 
-  Lemma R0_conv_R0' : Γ,, (i, A),, (i, S ⋅ A) ⊢< Ax prop > R0 ≡ R0' : Sort prop.
+  Lemma R0_conv_R0' : Γ,, (ty n, A),, (ty n, S ⋅ A) ⊢< Ax prop > R0 ≡ R0' : Sort prop.
   Proof.
     unfold R0.
     eapply conv_ren; eauto using validity_ty_ctx.
@@ -1977,7 +1977,7 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl;reflexivity.
   Qed.
 
-  Lemma P0_conv_P0' : Γ,, (i, A),, (i, S ⋅ A),, (prop, R0) ⊢< Ax l > P0 ≡ P0' : Sort l.
+  Lemma P0_conv_P0' : Γ,, (ty n, A),, (ty n, S ⋅ A),, (prop, R0) ⊢< Ax l > P0 ≡ P0' : Sort l.
   Proof.
     unfold P0.
     eapply conv_ren;eauto.
@@ -1987,7 +1987,7 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
   Qed.
 
-  Lemma B_conv_B' : Γ,, (i, A)⊢< Ax (Ru i l) > B ≡ B' : Sort (Ru i l).
+  Lemma B_conv_B' : Γ,, (ty n, A)⊢< Ax (Ru (ty n) l) > B ≡ B' : Sort (Ru (ty n) l).
   Proof.
     unfold B.
     econstructor.
@@ -2000,7 +2000,7 @@ Section AccCompValidity.
     all: destruct l; reflexivity.
   Qed.
 
-  Lemma P00_conv_P00' : Γ ,, (i, A) ,, (Ru i l, B) ⊢< Ax l > P00 ≡ P00' : Sort l.
+  Lemma P00_conv_P00' : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< Ax l > P00 ≡ P00' : Sort l.
   Proof.
     unfold P00.
     eapply conv_ren; eauto using validity_ty_ctx.
@@ -2015,7 +2015,7 @@ Section AccCompValidity.
 
     eapply BWt. *)
 
-  Lemma Γ_A_B_conv : ⊢ Γ ,, (i, A') ,, (Ru i l, B') ≡ Γ ,, (i, A) ,, (Ru i l, B).
+  Lemma Γ_A_B_conv : ⊢ Γ ,, (ty n, A') ,, (Ru (ty n) l, B') ≡ Γ ,, (ty n, A) ,, (Ru (ty n) l, B).
   Proof.
     econstructor. 1:econstructor.
     all:eauto using A_conv_A', B_conv_B', ctx_conv_refl, validity_ty_ctx, conv_sym, pre_conv_in_ctx_conv.
@@ -2174,24 +2174,24 @@ Proof.
     1:eapply type_ren; eauto using WellRen_S.
     2:eapply conv_ren; eauto using WellRen_S, conv_sym.
     all:econstructor; eauto using validity_ty_ctx.
-  - assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A')).
+  - assert (⊢ (Γ,, (ty n, A')),, (ty n, S ⋅ A')).
     { intuition eauto. econstructor. 1:econstructor.
       all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
       1:eapply type_ren; eauto using WellRen_S. econstructor; eauto using validity_ty_ctx. } 
-    assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A') ≡ (Γ,, (i, A)),, (i, S ⋅ A)).
+    assert (⊢ (Γ,, (ty n, A')),, (ty n, S ⋅ A') ≡ (Γ,, (ty n, A)),, (ty n, S ⋅ A)).
     { intuition eauto. econstructor. 1:econstructor.
       all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
       eapply conv_ren; eauto using WellRen_S, conv_sym.
       econstructor; eauto using validity_ty_ctx. } 
-    assert (⊢ Γ,, (i, A)) by (econstructor; eauto using validity_ty_ctx).
-    assert (Γ,, (i, A) ⊢s (S ⋅ a .: (var 0 .: S >> var)) : (Γ,, (i, A)),, (i, S ⋅ A)).
+    assert (⊢ Γ,, (ty n, A)) by (econstructor; eauto using validity_ty_ctx).
+    assert (Γ,, (ty n, A) ⊢s (S ⋅ a .: (var 0 .: S >> var)) : (Γ,, (ty n, A)),, (ty n, S ⋅ A)).
     { intuition eauto. econstructor.
       2:ssimpl. 2:eapply type_ren; eauto.
       1:ssimpl; rewrite subst_id_reduce1; eapply subst_id; econstructor; eauto using validity_ty_ctx.
       1,2:rasimpl; eauto using WellRen_S. } 
-    assert (Γ,, (i, A) ⊢< Ax prop > RR : Sort prop).
+    assert (Γ,, (ty n, A) ⊢< Ax prop > RR : Sort prop).
     { intuition eauto. unfold RR. eapply subst_ty; eauto. } 
-    assert (⊢ (Γ,, (i, A)),, (prop, RR)).
+    assert (⊢ (Γ,, (ty n, A)),, (prop, RR)).
     { econstructor; eauto. }
     split.
     1:econstructor.
@@ -2230,17 +2230,17 @@ Proof.
     1:econstructor; eauto.
     1:eapply type_ren; eauto. 1:eapply WellRen_weak, WellRen_S.
     eapply WellRen_weak. eapply WellRen_weak. eapply WellRen_S.
-  - assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A')).
+  - assert (⊢ (Γ,, (ty n, A')),, (ty n, S ⋅ A')).
     { intuition eauto. econstructor. 1:econstructor.
       all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
       1:eapply type_ren; eauto using WellRen_S. econstructor; eauto using validity_ty_ctx. } 
-    assert (⊢ (Γ,, (i, A')),, (i, S ⋅ A') ≡ (Γ,, (i, A)),, (i, S ⋅ A)).
+    assert (⊢ (Γ,, (ty n, A')),, (ty n, S ⋅ A') ≡ (Γ,, (ty n, A)),, (ty n, S ⋅ A)).
     { intuition eauto. econstructor. 1:econstructor.
       all:eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
       eapply conv_ren; eauto using WellRen_S, conv_sym.
       econstructor; eauto using validity_ty_ctx. } 
-    assert (⊢ Γ,, (i, A)) by (econstructor; eauto using validity_ty_ctx).
-    assert (Γ,, (i, A) ⊢s (S ⋅ a .: (var 0 .: S >> var)) : (Γ,, (i, A)),, (i, S ⋅ A)).
+    assert (⊢ Γ,, (ty n, A)) by (econstructor; eauto using validity_ty_ctx).
+    assert (Γ,, (ty n, A) ⊢s (S ⋅ a .: (var 0 .: S >> var)) : (Γ,, (ty n, A)),, (ty n, S ⋅ A)).
     { intuition eauto. econstructor.
       2:ssimpl. 2:eapply type_ren; eauto.
       1:ssimpl; rewrite subst_id_reduce1; eapply subst_id; econstructor; eauto using validity_ty_ctx.
@@ -2286,7 +2286,7 @@ Proof.
       all:eauto.
     * eapply pre_conv_in_ctx_conv.
       1:unfold P''. 1:eapply conv_ren; eauto.
-      Unshelve. 5:exact ((Γ,, (i, A)),, (Ru i l, B)).
+      Unshelve. 5:exact ((Γ,, (ty n, A)),, (Ru (ty n) l, B)).
       1:eauto using validity_ty_ctx.
       1:econstructor. 
       1:ssimpl; eapply WellRen_weak, WellRen_S.
@@ -2864,13 +2864,13 @@ Proof.
     subst. repeat split; eauto using conv_trans, conv_sym.
 Qed.
 
-Lemma type_accinv' Γ i A R a p b r l T :
-    Γ ⊢< prop > p : acc i A R a →
-    Γ ⊢< i > b : A →
+Lemma type_accinv' Γ n A R a p b r l T :
+    Γ ⊢< prop > p : acc (ty n) A R a →
+    Γ ⊢< ty n > b : A →
     Γ ⊢< prop > r : R <[a.:b..] →
-    T = acc i A R b →
+    T = acc (ty n) A R b →
     l = prop →
-    Γ ⊢< l > accinv i A R a p b r : T.
+    Γ ⊢< l > accinv (ty n) A R a p b r : T.
 Proof.
   intros. subst. eapply validity_ty_ty in H as temp.
   eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
@@ -3033,19 +3033,19 @@ Qed.
 
 
 Lemma conv_accel' :
-    ∀ Γ i l A A' R R' a a' q q' P P' p p' P0,
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
+    ∀ Γ n l A A' R R' a a' q q' P P' p p' P0,
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax l > P ≡ P' : Sort l ->
     let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
     let P_ := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R_ P_) in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
-    Γ ⊢< i > a ≡ a': A ->
-    Γ ⊢< prop > q ≡ q' : acc i A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p ≡ p' : P'' ->
+    Γ ⊢< ty n > a ≡ a': A ->
+    Γ ⊢< prop > q ≡ q' : acc (ty n) A R a ->
     P0 = P <[a ..] ->
-    Γ ⊢< l > accel i l A R P p a q ≡ accel i l A' R' P' p' a' q' : P0.
+    Γ ⊢< l > accel (ty n) l A R P p a q ≡ accel (ty n) l A' R' P' p' a' q' : P0.
 Proof.
   intros. subst.
   eapply conv_accel; eauto using validity_conv_left.
