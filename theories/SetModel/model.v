@@ -41,7 +41,25 @@ Lemma model_conversion (Γ : ctx) (l : level) (A B t : term)
   (tAB : Γ ⊢< Ax l > A ≡ B : Sort l) (mAB : model_conv Γ (Ax l) A B (Sort l)) :
   model_typing Γ l t B.
 Proof.
-Admitted.
+  apply of_model_conv_univ in mAB. destruct l as [ l | ].
+  - destruct mAB as [ iΓ fΓ iA fA iB fB vA vB ].
+    destruct ma as [ iΓ' fΓ' iA' fA' ia fa _ va ].
+    destruct (functional_ctx Γ fΓ fΓ') ; clear fΓ'. destruct (functional_tm A fA fA') ; clear fA'.
+    econstructor.
+    + exact fΓ.
+    + exact fB.
+    + exact fa.
+    + intros γ Hγ. exact (transpS (fun X => X ∈ 𝕌 l) (vB γ Hγ) (vA γ Hγ)).
+    + intros γ Hγ. exact (transpS (fun X => ia γ ∈ 𝕌el l X) (vB γ Hγ) (va γ Hγ)).
+  - destruct mAB as [ iΓ fΓ iA fA iB fB vA vB ].
+    destruct ma as [ iΓ' fΓ' iA' fA' _ va ].
+    destruct (functional_ctx Γ fΓ fΓ') ; clear fΓ'. destruct (functional_tm A fA fA') ; clear fA'.
+    econstructor.
+    + exact fΓ.
+    + exact fB.
+    + intros γ Hγ. exact (transpS (fun X => X ∈ Ω) (vB γ Hγ) (vA γ Hγ)).
+    + intros γ Hγ. exact (transpS (fun X => ∅ ∈ X) (vB γ Hγ) (va γ Hγ)).
+Qed.
 
 (* Fundamental lemma *)
 
@@ -72,6 +90,10 @@ Proof.
   - apply model_injpi2.
   - apply model_conversion.
   - econstructor. apply interp_empty.
+  - admit. (* Context extension *)
+  - admit. (* Variable congruence *)
+  - apply model_univ_cong.
+  - 
 Admitted.
 
 (* Corollary : the theory is consistent *)

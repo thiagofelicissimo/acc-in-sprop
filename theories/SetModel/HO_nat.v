@@ -66,6 +66,26 @@ Qed.
 Definition natrecTm_HO (n : nat) (P pz ps m : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => natrec2 n (fun m => 𝕌el n (P ⟨ γ ; m ⟩)) (pz γ) (fun m pm => ps ⟨ ⟨ γ ; m ⟩ ; pm ⟩) (m γ).
 
+Lemma natrecTm_HO_cong (l : nat) {Γ : ZFSet} {P1 P2 pz1 pz2 ps1 ps2 m1 m2 : ZFSet -> ZFSet} 
+  (HPe : ∀ γa ∈ ctxExt 0 Γ natTy_HO, P1 γa ≡ P2 γa)
+  (Hpze : ∀ γ ∈ Γ, pz1 γ ≡ pz2 γ)
+  (Hpse : ∀ γaa ∈ ctxExt l (ctxExt 0 Γ natTy_HO) P1, ps1 γaa ≡ ps2 γaa)
+  (Hme : ∀ γ ∈ Γ, m1 γ ≡ m2 γ) :
+  ∀ γ ∈ Γ, natrecTm_HO l P1 pz1 ps1 m1 γ ≡ natrecTm_HO l P2 pz2 ps2 m2 γ.
+Proof.
+  intros γ Hγ. unfold natrecTm_HO. apply natrec2_cong.
+  - intros n Hn. refine (fequal (𝕌el l) _). apply HPe. apply setMkSigma_typing ; try assumption.
+    + intros. now apply 𝕌el_typing'.
+    + refine (transpS (fun X => n ∈ X) (sym _) Hn). now apply el_natTy.
+  - now apply Hpze.
+  - intros n Hn p Hp. apply Hpse. apply setMkSigma_typing ; try assumption.
+    { intros. now apply 𝕌el_typing'. }
+    apply setMkSigma_typing ; try assumption.
+    { intros. now apply 𝕌el_typing'. }
+    refine (transpS (fun X => n ∈ X) (sym _) Hn). now apply el_natTy.
+  - now apply Hme.
+Qed.
+
 Lemma natrecTm_HO_typing_aux {n : nat} {Γ γ : ZFSet} {P ps : ZFSet -> ZFSet}
   (HP : ∀ γm ∈ ctxExt 0 Γ natTy_HO, P γm ∈ 𝕌 n)
   (Hps : ∀ γmp ∈ ctxExt n (ctxExt 0 Γ natTy_HO) P,

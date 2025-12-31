@@ -26,3 +26,21 @@ Proof.
     * apply interp_prop.
     * apply propTy_HO_typing.
 Qed.
+
+Lemma model_univ_cong (Γ : ctx) (l : level) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) :
+  model_conv Γ (Ax (Ax l)) (Sort l) (Sort l) (Sort (Ax l)).
+Proof.
+  apply to_model_conv_univ. destruct mΓ as [ iΓ fΓ ]. destruct l as [ l | ].
+  + econstructor.
+    * exact fΓ.
+    * apply interp_type.
+    * apply interp_type.
+    * apply univTy_HO_typing.
+    * easy.
+  + econstructor.
+    * exact fΓ.
+    * apply interp_prop.
+    * apply interp_prop.
+    * apply propTy_HO_typing.
+    * easy.
+Qed.

@@ -65,7 +65,7 @@ Definition model_conv (Γ : ctx) (l : level) (t u A : term) : Prop :=
   | ty l => model_conv_rel Γ l t u A
   end.
 
-(* Useful shortcut *)
+(* Useful shortcuts *)
 
 Inductive model_typing_type (Γ : ctx) (l : nat) (A : term) : Prop :=
 | mkModelTypingType (iΓ : ZFSet)
@@ -85,6 +85,32 @@ Definition model_typing_univ (Γ : ctx) (l : level) (A : term) : Prop :=
   match l with
   | prop => model_typing_prop Γ A
   | ty l => model_typing_type Γ l A
+  end.
+
+Inductive model_conv_type (Γ : ctx) (l : nat) (A B : term) : Prop :=
+| mkModelConvType (iΓ : ZFSet)
+    (fΓ : interp_ctx Γ iΓ)
+    (iA : ZFSet -> ZFSet)
+    (fA : interp_tm Γ (Ax (ty l)) A iA)
+    (iB : ZFSet -> ZFSet)
+    (fB : interp_tm Γ (Ax (ty l)) B iB)
+    (vA : ∀ γ ∈ iΓ, iA γ ∈ 𝕌 l)
+    (vu : ∀ γ ∈ iΓ, iA γ ≡ iB γ).
+
+Inductive model_conv_prop (Γ : ctx) (A B : term) : Prop :=
+| mkModelConvProp (iΓ : ZFSet)
+    (fΓ : interp_ctx Γ iΓ)
+    (iA : ZFSet -> ZFSet)
+    (fA : interp_tm Γ (Ax prop) A iA)
+    (iB : ZFSet -> ZFSet)
+    (fB : interp_tm Γ (Ax prop) B iB)
+    (vA : ∀ γ ∈ iΓ, iA γ ∈ Ω)
+    (vu : ∀ γ ∈ iΓ, iA γ ≡ iB γ).
+
+Definition model_conv_univ (Γ : ctx) (l : level) (A B : term) : Prop :=
+  match l with
+  | prop => model_conv_prop Γ A B
+  | ty l => model_conv_type Γ l A B
   end.
 
 Lemma of_model_type (Γ : ctx) (l : nat) (A : term) : model_typing_rel Γ (S l) A (Sort (ty l)) -> model_typing_type Γ l A.
@@ -136,3 +162,64 @@ Proof.
   - apply to_model_type.
   - apply to_model_prop.
 Qed.
+
+Lemma of_model_conv_type (Γ : ctx) (l : nat) (A B : term) : model_conv_rel Γ (S l) A B (Sort (ty l)) -> model_conv_type Γ l A B.
+Proof.
+  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS. econstructor.
+  + exact fΓ.
+  + exact fA.
+  + exact fB.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy.
+  + exact vB.
+Qed.
+
+Lemma of_model_conv_prop (Γ : ctx) (A B : term) : model_conv_rel Γ 0 A B (Sort prop) -> model_conv_prop Γ A B.
+Proof.
+  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS. econstructor.
+  + exact fΓ.
+  + exact fA.
+  + exact fB.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy.
+  + exact vB.
+Qed.
+
+Lemma of_model_conv_univ (Γ : ctx) (l : level) (A B : term) : model_conv Γ (Ax l) A B (Sort l) -> model_conv_univ Γ l A B.
+Proof.
+  destruct l as [ l | ].
+  - apply of_model_conv_type.
+  - apply of_model_conv_prop.
+Qed.
+
+Lemma to_model_conv_type (Γ : ctx) (l : nat) (A B : term) : model_conv_type Γ l A B -> model_conv_rel Γ (S l) A B (Sort (ty l)).
+Proof.
+  intros [ iΓ fΓ iA fA iB fB vA vB ]. econstructor.
+  + exact fΓ.
+  + apply interp_type.
+  + exact fA.
+  + exact fB.
+  + apply univTy_HO_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy.
+  + exact vB.
+Qed.
+
+Lemma to_model_conv_prop (Γ : ctx) (A B : term) : model_conv_prop Γ A B -> model_conv_rel Γ 0 A B (Sort prop).
+Proof.
+  intros [ iΓ fΓ iA fA iB fB vA vB ]. econstructor.
+  + exact fΓ.
+  + apply interp_prop.
+  + exact fA.
+  + exact fB.
+  + apply propTy_HO_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy.
+  + exact vB.
+Qed.
+
+Lemma to_model_conv_univ (Γ : ctx) (l : level) (A B : term) : model_conv_univ Γ l A B -> model_conv Γ (Ax l) A B (Sort l).
+Proof.
+  destruct l as [ l | ].
+  - apply to_model_conv_type.
+  - apply to_model_conv_prop.
+Qed.
+
+
+  

@@ -44,6 +44,44 @@ Proof.
       ** exact vA0. 
 Qed.
 
+Lemma model_pi_cong (Γ : ctx) (i j : level) (A B A' B' : term)
+  (tAA' : Γ ⊢< Ax i > A ≡ A' : Sort i) (mAA' : model_conv Γ (Ax i) A A' (Sort i))
+  (tB' : Γ,, (i, A') ⊢< Ax j > B' : Sort j) (mB' : model_typing (Γ,, (i, A')) (Ax j) B' (Sort j))
+  (tBB' : Γ,, (i, A) ⊢< Ax j > B ≡ B' : Sort j) (mBB' : model_conv (Γ,, (i, A)) (Ax j) B B' (Sort j)) :
+  model_conv Γ (Ax (Ru i j)) (Pi i j A B) (Pi i j A' B') (Sort (Ru i j)).
+Proof.
+  apply of_model_conv_univ in mAA'. apply of_model_conv_univ in mBB'. apply of_model_univ in mB'.
+  destruct i as [ i | ] ; destruct j as [ j | ]. all: destruct mAA' ; destruct mBB' ; destruct mB'.
+  all: inversion fΓ0 ; subst ; clear fΓ0. all:inversion fΓ1 ; subst ; clear fΓ1.
+  1,2: destruct (functional_ctx Γ fΓ H3) ; clear H3. 1,2: destruct (functional_ctx Γ fΓ H5) ; clear H5.
+  3,4: destruct (functional_ctx Γ fΓ H1) ; clear H1. 3,4: destruct (functional_ctx Γ fΓ H2) ; clear H2.
+  1,2: destruct (functional_tm A fA H4) ; clear H4. 1,2: destruct (functional_tm A' fB H6) ; clear H6.
+  3,4: destruct (functional_tm A fA H3) ; clear H3. 3,4: destruct (functional_tm A' fB H5) ; clear H5.
+  (* Pi (relevant relevant) *)
+  + apply to_model_conv_univ. econstructor.
+    * exact fΓ.
+    * apply interp_pi_rr. exact fA. exact fA0.
+    * apply interp_pi_rr. exact fB. exact fA1.
+    * apply piTy_HO_typing. exact vA. exact vA0.
+    * apply piTy_HO_cong. exact vA. exact vA0. exact vu. exact 
+  (* Pi (relevant irrelevant) *)
+  + apply to_model_univ. econstructor.
+    * exact fΓ.
+    * apply interp_pi_ri. exact fA. exact fA0.
+    * apply forallTy_HO_typing. exact vA. exact vA0.
+  (* Pi (irrelevant relevant) *)
+  + apply to_model_univ. econstructor.
+    * exact fΓ.
+    * apply interp_pi_ir. exact fA. exact fA0.
+    * apply piTy_HO_typing_ir. exact vA. exact vA0.
+  (* Pi (irrelevant irrelevant) *)
+  + apply to_model_univ. econstructor.
+    * exact fΓ.
+    * apply interp_pi_ii. exact fA. exact fA0.
+    * apply forallTy_HO_typing.
+      ** apply boxTy_HO_typing. exact vA.
+      ** exact vA0.
+
 Lemma model_lambda (Γ : ctx) (i j : level) (A B t : term) (tA : Γ ⊢< Ax i > A : Sort i) (mA : model_typing Γ (Ax i) A (Sort i))
   (tB : Γ,, (i, A) ⊢< Ax j > B : Sort j) (mB : model_typing (Γ,, (i, A)) (Ax j) B (Sort j))
   (tt : Γ,, (i, A) ⊢< j > t : B) (mt : model_typing (Γ,, (i, A)) j t B) :

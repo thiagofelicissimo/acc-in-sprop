@@ -12,6 +12,12 @@ Proof.
   intro HA. now apply setFstPair_typing. 
 Qed.
 
+(* Somewhat sketchier (makes use of ZFuniv_descr), use only if necessary *)
+Lemma 𝕌el_typing' {n : nat} {A : ZFSet} : 𝕌el n A ∈ 𝕍 n. 
+Proof.
+  unfold 𝕌el. unfold setFstPair. apply ZFuniv_descr. intros x Hx. apply ZFincomp in Hx. now destruct Hx.
+Qed.
+
 Lemma 𝕌hd_typing {n : nat} {A : ZFSet} : A ∈ 𝕌 n -> 𝕌hd n A ∈ ω.
 Proof.
   intro HA. apply setFstPair_typing. now apply setSndPair_typing.
@@ -182,6 +188,29 @@ Definition typeToGraph (nA nB : nat) (A : ZFSet) (B : ZFSet -> ZFSet) :=
 
 Definition typeTelescope2 (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) :=
   fun γ => ⟨ ⟨ nat_to_ω nA ; A γ ⟩ ; ⟨ nat_to_ω nB ; typeToGraph nA nB (A γ) (fun a => B ⟨ γ ; a ⟩) ⟩ ⟩. 
+
+Lemma typeToGraph_cong (nA nB : nat) (A : ZFSet) {B1 B2 : ZFSet -> ZFSet} (HB : ∀ a ∈ 𝕌el nA A, B1 a ≡ B2 a) :
+  typeToGraph nA nB A B1 ≡ typeToGraph nA nB A B2.
+Proof.
+  unfold typeToGraph. unfold HO_rel. unfold relToGraph. apply ZFext.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    + assumption.
+    + refine (trans (sym _) Hx2). apply HB. apply setFstPair_typing. assumption.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    + assumption.
+    + refine (trans _ Hx2). apply HB. apply setFstPair_typing. assumption.
+Qed.
+
+Lemma typeTelescope2_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
+  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HBe : ∀ γa ∈ ctxExt nA Γ A1, B1 γa ≡ B2 γa) :
+  ∀ γ ∈ Γ, typeTelescope2 nA nB A1 B1 γ ≡ typeTelescope2 nA nB A2 B2 γ.
+Proof.
+  intros γ Hγ. cbn. unfold typeTelescope2. destruct (HAe γ Hγ).
+  refine (fequal (fun X => ⟨ ⟨ nat_to_ω nA; A1 γ ⟩; ⟨ nat_to_ω nB; X ⟩ ⟩) _).
+  apply typeToGraph_cong. intros a Ha. apply HBe.
+  apply setMkSigma_typing ; try assumption. clear γ Hγ a Ha. 
+  intros γ Hγ. apply 𝕌el_typing'. 
+Qed.
 
 Lemma typeToGraph_sorting (nA nB : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕌 nA)
   (HB : ∀ a ∈ 𝕌el nA A, B a ∈ 𝕌 nB) : typeToGraph nA nB A B ∈ 𝕍 (max nA nB).

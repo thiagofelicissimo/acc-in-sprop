@@ -400,6 +400,18 @@ Proof.
   apply ZFuniv_union. assumption. now apply HO_rel_typing.
 Qed.
 
+Lemma setFamUnion_cong {l : nat} (A : ZFSet) {B1 B2 : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B1 a ≡ B2 a) :
+  setFamUnion l A B1 ≡ setFamUnion l A B2.
+Proof.
+  unfold setFamUnion. refine (fequal ⋃ _). unfold setIm. unfold setRelIm. apply ZFext.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx [ y [ Hy1 Hy2 ] ] ].
+    apply ZFincomp. split ; try assumption. exists y. split ; try assumption. unfold HO_rel in *.
+    refine (trans (sym _) Hy2). now apply HB.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx [ y [ Hy1 Hy2 ] ] ].
+    apply ZFincomp. split ; try assumption. exists y. split ; try assumption. unfold HO_rel in *.
+    refine (trans _ Hy2). now apply HB.
+Qed.
+
 (* Sigma types *)
 
 Definition setSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
@@ -410,6 +422,20 @@ Definition setFstSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) (x : ZFSet) : 
   setFstPair A (setFamUnion n A B) x.
 Definition setSndSigma (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) (x : ZFSet) : ZFSet :=
   setSndPair A (setFamUnion n A B) x.
+
+Lemma setSigma_cong (n : nat) (A : ZFSet) {B1 B2 : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B1 a ≡ B2 a) :
+  setSigma n A B1 ≡ setSigma n A B2.
+Proof.
+  unfold setSigma. apply ZFext.
+  - intros f Hf. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFincomp. split.
+    + refine (transpS (fun X => f ∈ A × X) _ Hf1). now apply setFamUnion_cong.
+    + refine (transp2S (fun X Y => setSndPair A X f ∈ Y) _ _ Hf2). now apply setFamUnion_cong.
+      apply HB. apply setFstPair_typing. refine (transpS (fun X => f ∈ A × X) _ Hf1). now apply setFamUnion_cong.
+  - intros f Hf. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFincomp. split.
+    + refine (transpS (fun X => f ∈ A × X) (sym _) Hf1). now apply setFamUnion_cong.
+    + refine (transp2S (fun X Y => setSndPair A X f ∈ Y) (sym _) (sym _) Hf2). now apply setFamUnion_cong.
+      apply HB. apply setFstPair_typing. refine (transpS (fun X => f ∈ A × X) _ Hf1). now apply setFamUnion_cong.
+Qed.
 
 Lemma setMkSigma_typing {n : nat} {A a b : ZFSet} {B : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ B a)
   : ⟨ a ; b ⟩ ∈ setSigma n A B.
@@ -721,6 +747,18 @@ Definition setPi (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
 
 Definition setPi' (n : nat) (A : ZFSet) (B : ZFSet -> ZFSet) : ZFSet :=
   { R ϵ 𝒫 (setSigma n A B) ∣ isFunRel A (𝕍 n) (graphToRel R) }.
+
+Lemma setPi_cong (n : nat) (A : ZFSet) {B1 B2 : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B1 a ≡ B2 a) :
+  setPi n A B1 ≡ setPi n A B2.
+Proof.
+  unfold setPi. apply ZFext.
+  - intros f Hf. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFincomp. split.
+    + exact Hf1.
+    + intros a Ha. destruct (HB a Ha). now apply Hf2.
+  - intros f Hf. apply ZFincomp in Hf. destruct Hf as [ Hf1 Hf2 ]. apply ZFincomp. split.
+    + exact Hf1.
+    + intros a Ha. destruct (sym (HB a Ha)). now apply Hf2.
+Qed.
 
 Lemma setPi_in_setPi' (n : nat) {A f : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
   f ∈ setPi n A B -> f ∈ setPi' n A B.

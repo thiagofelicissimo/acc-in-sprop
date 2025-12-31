@@ -9,6 +9,17 @@ Definition piTy_HO (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFS
   fun γ => ⟨ setPi (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩))
            ; ⟨ ZFone ; typeTelescope2 nA nB A B γ ⟩ ⟩.
 
+Definition piTy_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
+  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HBe : ∀ γa ∈ ctxExt nA Γ A1, B1 γa ≡ B2 γa) :
+  ∀ γ ∈ Γ, piTy_HO nA nB A1 B1 γ ≡ piTy_HO nA nB A2 B2 γ.
+Proof.
+  intros γ Hγ. unfold piTy_HO. refine (fequal2 (fun X Y => ⟨ X ; ⟨ ZFone ; Y ⟩ ⟩) _ _).
+  - destruct (HAe γ Hγ). apply setPi_cong. intros a Ha. refine (fequal (𝕌el nB) _).
+    apply HBe. apply setMkSigma_typing ; try assumption. clear γ Hγ a Ha. unfold 𝕌el.
+    intros γ Hγ. apply 𝕌el_typing'.
+  - now apply (typeTelescope2_cong (Γ := Γ)).
+Qed.
+
 Lemma piTy_HO_typing {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) :
   ∀ γ ∈ Γ, piTy_HO nA nB A B γ ∈ 𝕌 (max nA nB).
@@ -228,6 +239,24 @@ Qed.
 Definition lamTm_HO (nA nB : nat) (A t : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => relToGraph (𝕌el nA (A γ)) (𝕍 (max nA nB)) (HO_rel (fun a => t ⟨ γ ; a ⟩)).
 
+Definition lamTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 : ZFSet -> ZFSet} 
+  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (Hte : ∀ γa ∈ ctxExt nA Γ A1, t1 γa ≡ t2 γa) :
+  ∀ γ ∈ Γ, lamTm_HO nA nB A1 t1 γ ≡ lamTm_HO nA nB A2 t2 γ.
+Proof.
+  intros γ Hγ. unfold lamTm_HO. destruct (HAe γ Hγ). unfold relToGraph. unfold HO_rel. apply ZFext.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    + assumption.
+    + refine (trans (sym _) Hx2). apply Hte. apply setMkSigma_typing ; try assumption.
+      * intros. apply 𝕌el_typing'.
+      * now apply setFstPair_typing. 
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    + assumption.
+    + refine (trans _ Hx2). apply Hte. apply setMkSigma_typing ; try assumption.
+      * intros. apply 𝕌el_typing'.
+      * now apply setFstPair_typing. 
+Qed.
+    
+
 Lemma lamTm_HO_typing {nA nB : nat} {Γ : ZFSet} {A B t : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB)
   (Ht : ∀ γa ∈ ctxExt nA Γ A, t γa ∈ 𝕌el nB (B γa)) :
@@ -258,6 +287,13 @@ Qed.
 
 Definition appTm_HO (nA nB : nat) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => setAppArr (𝕌el nA (A γ)) (𝕍 (max nA nB)) (t γ) (u γ).
+
+Definition appTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 u1 u2 : ZFSet -> ZFSet} 
+  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (Hte : ∀ γ ∈ Γ, t1 γ ≡ t2 γ) (Hue : ∀ γ ∈ Γ, u1 γ ≡ u2 γ) :
+  ∀ γ ∈ Γ, appTm_HO nA nB A1 t1 u1 γ ≡ appTm_HO nA nB A2 t2 u2 γ.
+Proof.
+  intros γ Hγ. unfold appTm_HO. destruct (HAe γ Hγ). destruct (Hte γ Hγ). destruct (Hue γ Hγ). reflexivity.
+Qed.
 
 Lemma appTm_HO_typing {nA nB : nat} {Γ : ZFSet} {A B t u : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB)

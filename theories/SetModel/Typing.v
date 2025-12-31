@@ -235,19 +235,23 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 | conv_pi :
     ∀ Γ i j A B A' B',
       Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A') ⊢< Ax j > B' : Sort j → (* superfluous assumption *)
       Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j →
       Γ ⊢< Ax (Ru i j) > Pi i j A B ≡ Pi i j A' B' : Sort (Ru i j)
 
 | conv_lam :
     ∀ Γ i j A B t A' B' t',
       Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A') ⊢< Ax j > B' : Sort j → (* superfluous assumption *)
       Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
+      Γ ,, (i , A') ⊢< j > t' : B' → (* superfluous assumption *)
       Γ ,, (i , A) ⊢< j > t ≡ t' : B →
       Γ ⊢< Ru i j > lam i j A B t ≡ lam i j A' B' t' : Pi i j A B
 
 | conv_app :
     ∀ Γ i j A B t u A' B' t' u',
       Γ ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A') ⊢< Ax j > B' : Sort j → (* superfluous assumption *)
       Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
       Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
       Γ ⊢< i > u ≡ u' : A →

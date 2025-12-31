@@ -7,6 +7,17 @@ Require Import HO HO_prop HO_univ HO_box.
 Definition forallTy_HO (n : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => subsingl (∀ a ∈ 𝕌el n (A γ), ∅ ∈ B ⟨ γ ; a ⟩).
 
+Definition forallTy_HO_cong {n : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
+  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HBe : ∀ γa ∈ ctxExt n Γ A1, B1 γa ≡ B2 γa) :
+  ∀ γ ∈ Γ, forallTy_HO n A1 B1 γ ≡ forallTy_HO n A2 B2 γ.
+Proof.
+  intros γ Hγ. unfold forallTy_HO. destruct (HAe γ Hγ). apply (fstS subsingl_ext). split.
+  - intros H a Ha. refine (transpS (fun X => ∅ ∈ X) _ (H a Ha)). apply HBe.
+    apply setMkSigma_typing ; try assumption. clear γ Hγ H a Ha. intros γ Hγ. apply 𝕌el_typing'.
+  - intros H a Ha. refine (transpS (fun X => ∅ ∈ X) (sym _) (H a Ha)). apply HBe.
+    apply setMkSigma_typing ; try assumption. clear γ Hγ H a Ha. intros γ Hγ. apply 𝕌el_typing'.
+Qed.
+
 Lemma forallTy_HO_typing {n : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω) :
   ∀ γ ∈ Γ, forallTy_HO n A B γ ∈ Ω.

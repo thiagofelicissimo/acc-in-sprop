@@ -321,6 +321,55 @@ Qed.
 Definition natrec (n : nat) (P : ZFSet -> ZFSet) (pz : ZFSet) (ps : ZFSet -> ZFSet) (x : ZFSet) : ZFSet :=
   funRelApp ω (setFamUnion n ω P) (graphToRel (natrel n P pz ps)) x.
 
+Lemma natrel_cong {l : nat} {P1 P2 : ZFSet -> ZFSet} {pz1 pz2 : ZFSet} {ps1 ps2 : ZFSet -> ZFSet} 
+  (HPe : ∀ n ∈ ω, P1 n ≡ P2 n)
+  (Hpze : pz1 ≡ pz2)
+  (Hpse : ∀ n ∈ ω, ∀ p ∈ P1 n, ps1 p ≡ ps2 p) :
+  natrel l P1 pz1 ps1 ≡ natrel l P2 pz2 ps2.
+Proof.
+  unfold natrel. apply ZFext.
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    { refine (transpS (fun X => x ∈ X) _ Hx1). now apply setSigma_cong. }
+    intros y Hy1 Hy2 Hy3. apply Hx2.
+    + refine (transpS (fun X => y ∈ 𝒫 X) (sym _) Hy1). now apply setSigma_cong.
+    + destruct Hpze. assumption.
+    + intros z Hz. refine (transp2S (fun X Y => ⟨ ZFsuc X ; Y ⟩ ∈ y) (sym _) (sym _) (Hy3 z Hz)).
+      unfold setFstSigma. refine (fequal (fun X => setFstPair ω X z) _). now apply setFamUnion_cong.
+      assert (setSndSigma l ω P1 z ≡ setSndSigma l ω P2 z).
+      { unfold setSndSigma. refine (fequal (fun X => setSndPair ω X z) _). now apply setFamUnion_cong. }
+      destruct H. assert (z ∈ setSigma l ω P1) as Hz2.
+      { apply ZFinpower in Hy1. apply Hy1 in Hz. refine (transpS (fun X => z ∈ X) (sym _) Hz). now apply setSigma_cong. }
+      refine (Hpse (setFstSigma l ω P1 z) _ _ _). unfold setFstSigma. apply setFstPair_typing.
+      * unfold setSigma in Hz2. apply ZFincomp in Hz2. now destruct Hz2.
+      * unfold setSndSigma. unfold setSigma in Hz2. apply ZFincomp in Hz2. now destruct Hz2. 
+  - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+    { refine (transpS (fun X => x ∈ X) (sym _) Hx1). now apply setSigma_cong. }
+    intros y Hy1 Hy2 Hy3. apply Hx2.
+    + refine (transpS (fun X => y ∈ 𝒫 X) _ Hy1). now apply setSigma_cong.
+    + destruct Hpze. assumption.
+    + intros z Hz. refine (transp2S (fun X Y => ⟨ ZFsuc X ; Y ⟩ ∈ y) _ _ (Hy3 z Hz)).
+      unfold setFstSigma. refine (fequal (fun X => setFstPair ω X z) _). now apply setFamUnion_cong.
+      assert (setSndSigma l ω P1 z ≡ setSndSigma l ω P2 z).
+      { unfold setSndSigma. refine (fequal (fun X => setSndPair ω X z) _). now apply setFamUnion_cong. }
+      destruct H. assert (z ∈ setSigma l ω P1) as Hz2.
+      { apply ZFinpower in Hy1. apply Hy1 in Hz. refine (transpS (fun X => z ∈ X) (sym _) Hz). now apply setSigma_cong. }
+      refine (Hpse (setFstSigma l ω P1 z) _ _ _). unfold setFstSigma. apply setFstPair_typing.
+      * unfold setSigma in Hz2. apply ZFincomp in Hz2. now destruct Hz2.
+      * unfold setSndSigma. unfold setSigma in Hz2. apply ZFincomp in Hz2. now destruct Hz2.
+Qed.
+
+Lemma natrec_cong {l : nat} {P1 P2 : ZFSet -> ZFSet} {pz1 pz2 m1 m2 : ZFSet} {ps1 ps2 : ZFSet -> ZFSet} 
+  (HPe : ∀ n ∈ ω, P1 n ≡ P2 n)
+  (Hpze : pz1 ≡ pz2)
+  (Hpse : ∀ n ∈ ω, ∀ p ∈ P1 n, ps1 p ≡ ps2 p)
+  (Hme : m1 ≡ m2) :
+  natrec l P1 pz1 ps1 m1 ≡ natrec l P2 pz2 ps2 m2.
+Proof.
+  unfold natrec. destruct Hme. refine (fequal2 (fun X Y => funRelApp ω X (graphToRel Y) m1) _ _).
+  - now apply setFamUnion_cong.
+  - now apply natrel_cong.
+Qed.
+
 Lemma natrec_inrel {n : nat} {P : ZFSet -> ZFSet} {pz : ZFSet} {ps : ZFSet -> ZFSet} {x : ZFSet}
   (HP : ∀ m ∈ ω, P m ∈ 𝕍 n) (Hpz : pz ∈ P ∅) (Hps : ∀ m ∈ ω, ∀ pm ∈ P m, ps pm ∈ P (ZFsuc m)) (Hx : x ∈ ω) :
   ⟨ x ; natrec n P pz ps x ⟩ ∈ natrel n P pz ps.
@@ -369,6 +418,37 @@ Definition natrec2_aux (n : nat) (P : ZFSet -> ZFSet) (pz : ZFSet) (ps : ZFSet -
 
 Definition natrec2 (n : nat) (P : ZFSet -> ZFSet) (pz : ZFSet) (ps : ZFSet -> ZFSet -> ZFSet) (m : ZFSet) : ZFSet :=
   setSndSigma n ω P (natrec2_aux n P pz ps m).
+
+Lemma natrec2_cong {l : nat} {P1 P2 : ZFSet -> ZFSet} {pz1 pz2 m1 m2 : ZFSet} {ps1 ps2 : ZFSet -> ZFSet -> ZFSet} 
+  (HPe : ∀ n ∈ ω, P1 n ≡ P2 n)
+  (Hpze : pz1 ≡ pz2)
+  (Hpse : ∀ n ∈ ω, ∀ p ∈ P1 n, ps1 n p ≡ ps2 n p)
+  (Hme : m1 ≡ m2) :
+  natrec2 l P1 pz1 ps1 m1 ≡ natrec2 l P2 pz2 ps2 m2.
+Proof.
+  unfold natrec2. unfold setSndSigma. refine (fequal2 (setSndPair ω) _ _).
+  - now apply setFamUnion_cong.
+  - unfold natrec2_aux. apply natrec_cong ; try assumption.
+    + intros n Hn. unfold natrec2_pred. apply ZFext.
+      * intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+        refine (transpS (fun X => x ∈ X) _ Hx1). now apply setSigma_cong.
+        refine (trans (sym _) Hx2). unfold setFstSigma. refine (fequal (fun X => setFstPair ω X x) _).
+        now apply setFamUnion_cong.
+      * intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx1 Hx2 ]. apply ZFincomp. split.
+        refine (transpS (fun X => x ∈ X) (sym _) Hx1). now apply setSigma_cong.
+        refine (trans (sym _) Hx2). unfold setFstSigma. refine (fequal (fun X => setFstPair ω X x) (sym _)).
+        now apply setFamUnion_cong.
+    + now destruct Hpze.
+    + intros n Hn p Hp. assert (setFstSigma l ω P1 p ≡ setFstSigma l ω P2 p) as H1.
+      { unfold setFstSigma. refine (fequal (fun X => setFstPair ω X p) _). now apply setFamUnion_cong. }
+      assert (setSndSigma l ω P1 p ≡ setSndSigma l ω P2 p) as H2.
+      { unfold setFstSigma. refine (fequal (fun X => setSndPair ω X p) _). now apply setFamUnion_cong. }
+      refine (fequal2 (fun X Y => ⟨ ZFsuc X ; Y ⟩) _ _).
+      * apply H1.
+      * destruct H1. destruct H2. unfold natrec2_pred in Hp. apply ZFincomp in Hp.
+        destruct Hp as [ Hp1 Hp2 ]. apply ZFincomp in Hp1. destruct Hp1 as [ Hp0 Hp1 ].
+        apply Hpse ; try assumption. unfold setFstSigma. now apply setFstPair_typing. 
+Qed.
 
 Lemma natrec2_typing_aux1 {n : nat} {P : ZFSet -> ZFSet} {pz : ZFSet} {ps : ZFSet -> ZFSet -> ZFSet} 
   (HP : ∀ m ∈ ω, P m ∈ 𝕍 n) (Hpz : pz ∈ P ∅) (Hps : ∀ m ∈ ω, ∀ pm ∈ P m, ps m pm ∈ P (ZFsuc m)) :

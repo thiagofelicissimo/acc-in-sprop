@@ -92,3 +92,4 @@ Axiom ZFuniv_pair : forall n x y, x ∈ 𝕍 n -> y ∈ 𝕍 n -> { x ; y } ∈ 
 Axiom ZFuniv_power : forall n x, x ∈ 𝕍 n -> 𝒫 x ∈ 𝕍 n.
 Axiom ZFuniv_union : forall n I (φ : ZFSet -> ZFSet -> SProp), I ∈ 𝕍 n -> (∀ i ∈ I, ∃! x ∈ 𝕍 n, φ i x)
                                                                -> ⋃ { x ϵ 𝕍 n ∣ ∃ i ∈ I, φ i x } ∈ 𝕍 n.
+Axiom ZFuniv_descr : forall n x, x ⊂ 𝕍 n -> ι x ∈ 𝕍 n.
