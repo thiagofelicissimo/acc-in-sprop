@@ -116,94 +116,94 @@ Inductive typing : ctx -> level -> term → term → Prop :=
       Γ ⊢< l > rec l P p_zero p_succ t : P <[ t .. ]
 
 | type_acc :
-    ∀ Γ i A R a,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< Ax prop > acc i A R a : Sort prop
+    ∀ Γ n A R a,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< Ax prop > acc (ty n) A R a : Sort prop
 
 | type_accin :
-    ∀ Γ i A R a p,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ⊢< i > a : A ->
+    ∀ Γ n A R a p,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ⊢< ty n > a : A ->
     let A_wk := (S >> S) ⋅ A in
     let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
-    let acc_wk := acc i A_wk R_wk (var 1)  in
+    let acc_wk := acc (ty n) A_wk R_wk (var 1)  in
     let R' := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
-    Γ ⊢< prop > p : Pi i prop A (Pi prop prop R' acc_wk) ->
-    Γ ⊢< prop > accin i A R a p : acc i A R a
+    Γ ⊢< prop > p : Pi (ty n) prop A (Pi prop prop R' acc_wk) ->
+    Γ ⊢< prop > accin (ty n) A R a p : acc (ty n) A R a
 
 | type_accinv :
-    ∀ Γ i A R a p b r,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< prop > p : acc i A R a ->
-    Γ ⊢< i > b : A ->
+    ∀ Γ n A R a p b r,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< prop > p : acc (ty n) A R a ->
+    Γ ⊢< ty n > b : A ->
     Γ ⊢< prop > r : R <[a.:b..] ->
-    Γ ⊢< prop > accinv i A R a p b r : acc i A R b
+    Γ ⊢< prop > accinv (ty n) A R a p b r : acc (ty n) A R b
 
 | type_accel :
-    ∀ Γ i l A R a q P p,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+    ∀ Γ n l A R a q P p,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< prop > q : acc i A R a ->
-    Γ ⊢< l > accel i l A R P p a q : P <[a ..]
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
+    Γ ⊢< l > accel (ty n) l A R P p a q : P <[a ..]
 
 | type_accelcomp :
-    ∀ Γ i l A R a q P p,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
+    ∀ Γ n m A R a q P p,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax (ty m) > P : Sort (ty m) ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi (ty n) (ty m) (S ⋅ A) (Pi prop (ty m) R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< prop > q : acc i A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) (ty m), B) ⊢< ty m > p : P'' ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
     let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) (ty m) Awk Rwk Pwk pwk (var 1) t0 in
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
-    let t3 := lam prop l t2 P'' t1 in
-    let t4 := Pi prop l t2 P'' in
-    let t5 := lam i l A t4 t3 in
-    Γ ⊢< prop > accelcomp i l A R P p a q : obseq l (P <[a ..]) (accel i l A R P p a q) (p <[ t5 .: a ..])
+    let t3 := lam prop (ty m) t2 P'' t1 in
+    let t4 := Pi prop (ty m) t2 P'' in
+    let t5 := lam (ty n) (ty m) A t4 t3 in
+    Γ ⊢< prop > accelcomp (ty n) (ty m) A R P p a q : obseq (ty m) (P <[a ..]) (accel (ty n) (ty m) A R P p a q) (p <[ t5 .: a ..])
 
 | type_obseq :
-    ∀ Γ i A a b,
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > b : A ->
-    Γ ⊢< Ax prop > obseq i A a b : Sort prop
+    ∀ Γ n A a b,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< ty n > b : A ->
+    Γ ⊢< Ax prop > obseq (ty n) A a b : Sort prop
 
 | type_obsrefl :
-    ∀ l Γ A a,
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< l > a : A ->
-      Γ ⊢< prop > obsrefl l A a : obseq l A a a
+    ∀ n Γ A a,
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< ty n > a : A ->
+      Γ ⊢< prop > obsrefl (ty n) A a : obseq (ty n) A a a
 
 | type_J :
-    ∀ Γ l A a P p b e,
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< l > a : A ->
-      Γ ,, (l , A) ⊢< Ax prop > P : Sort prop ->
+    ∀ Γ n A a P p b e,
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< ty n > a : A ->
+      Γ ,, (ty n , A) ⊢< Ax prop > P : Sort prop ->
       Γ ⊢< prop > p : P <[a..] ->
-      Γ ⊢< l > b : A ->
-      Γ ⊢< prop > e : obseq l A a b ->
-      Γ ⊢< prop > J l A a P p b e : P <[b..]
+      Γ ⊢< ty n > b : A ->
+      Γ ⊢< prop > e : obseq (ty n) A a b ->
+      Γ ⊢< prop > J (ty n) A a P p b e : P <[b..]
 
 | type_cast :
   ∀ Γ i A B e a,
@@ -214,24 +214,24 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< i > cast i A B e a : B
 
 | type_injpi1 :
-  ∀ Γ i j A1 A2 B1 B2 e,
+  ∀ Γ i n A1 A2 B1 B2 e,
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< prop > injpi1 i j A1 A2 B1 B2 e : obseq (Ax i) (Sort i) A2 A1
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< prop > injpi1 i (ty n) A1 A2 B1 B2 e : obseq (Ax i) (Sort i) A2 A1
 
 | type_injpi2 :
-  ∀ Γ i j A1 A2 B1 B2 e a2,
+  ∀ Γ i n A1 A2 B1 B2 e a2,    
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
     Γ ⊢< i > a2 : A2 ->
-    let a1 := cast i A2 A1 (injpi1 i j A1 A2 B1 B2 e) a2 in
-    Γ ⊢< prop > injpi2 i j A1 A2 B1 B2 e a2 : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
+    let a1 := cast i A2 A1 (injpi1 i (ty n) A1 A2 B1 B2 e) a2 in
+    Γ ⊢< prop > injpi2 i (ty n) A1 A2 B1 B2 e a2 : obseq (Ax (ty n)) (Sort (ty n)) (B1<[a1..]) (B2 <[a2..])
 
 | type_conv :
     ∀ Γ l A B t,
@@ -322,78 +322,78 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
 
 
 | conv_acc :
-    ∀ Γ i A A' R R' a a',
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ⊢< i > a ≡ a' : A ->
-    Γ ⊢< Ax prop > acc i A R a ≡ acc i A' R' a' : Sort prop
+    ∀ Γ n A A' R R' a a',
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< Ax prop > acc (ty n) A R a ≡ acc (ty n) A' R' a' : Sort prop
 
 | conv_accin :
-    ∀ Γ i A A' R R' a a' p p',
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ⊢< i > a ≡ a' : A ->
+    ∀ Γ n A A' R R' a a' p p',
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ⊢< ty n > a ≡ a' : A ->
     let A_wk := (S >> S) ⋅ A in
     let R_wk := (up_ren (up_ren (S >> S))) ⋅ R in
-    let acc_wk := acc i A_wk R_wk (var 1)  in
+    let acc_wk := acc (ty n) A_wk R_wk (var 1)  in
     let RR := R <[(S ⋅ a) .: (var 0 .: (S >> var))] in
-    Γ ⊢< prop > p ≡ p' : Pi i prop A (Pi prop prop RR acc_wk) ->
-    Γ ⊢< prop > accin i A R a p ≡ accin i A' R' a' p' : acc i A R a
+    Γ ⊢< prop > p ≡ p' : Pi (ty n) prop A (Pi prop prop RR acc_wk) ->
+    Γ ⊢< prop > accin (ty n) A R a p ≡ accin (ty n) A' R' a' p' : acc (ty n) A R a
 
 | conv_accinv :
-    ∀ Γ i A A' R R' a a' p p' b b' r r',
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ⊢< i > a ≡ a' : A ->
-    Γ ⊢< prop > p ≡ p' : acc i A R a ->
-    Γ ⊢< i > b ≡ b' : A ->
+    ∀ Γ n A A' R R' a a' p p' b b' r r',
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< prop > p ≡ p' : acc (ty n) A R a ->
+    Γ ⊢< ty n > b ≡ b' : A ->
     Γ ⊢< prop > r ≡ r' : R <[a.:b..] ->
-    Γ ⊢< prop > accinv i A R a p b r ≡ accinv i A' R' a' p' b' r' : acc i A R b
+    Γ ⊢< prop > accinv (ty n) A R a p b r ≡ accinv (ty n) A' R' a' p' b' r' : acc (ty n) A R b
 
 | conv_accel :
-    ∀ Γ i l A A' R R' a a' q q' P P' p p',
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
+    ∀ Γ n l A A' R R' a a' q q' P P' p p',
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
+    Γ ,, (ty n, A) ⊢< Ax l > P ≡ P' : Sort l ->
     let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
     let P_ := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R_ P_) in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
-    Γ ⊢< i > a ≡ a': A ->
-    Γ ⊢< prop > q ≡ q' : acc i A R a ->
-    Γ ⊢< l > accel i l A R P p a q ≡ accel i l A' R' P' p' a' q' : P <[a ..]
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p ≡ p' : P'' ->
+    Γ ⊢< ty n > a ≡ a': A ->
+    Γ ⊢< prop > q ≡ q' : acc (ty n) A R a ->
+    Γ ⊢< l > accel (ty n) l A R P p a q ≡ accel (ty n) l A' R' P' p' a' q' : P <[a ..]
 
 
 | conv_obseq :
-    ∀ Γ i A A' a a' b b',
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ⊢< i > a ≡ a' : A ->
-    Γ ⊢< i > b ≡ b' : A ->
-    Γ ⊢< Ax prop > obseq i A a b ≡ obseq i A' a' b' : Sort prop
+    ∀ Γ n A A' a a' b b',
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< ty n > b ≡ b' : A ->
+    Γ ⊢< Ax prop > obseq (ty n) A a b ≡ obseq (ty n) A' a' b' : Sort prop
 
 | conv_obsrefl :
-  ∀ l Γ A A' a a',
-    Γ ⊢< Ax l > A ≡ A' : Sort l ->
-    Γ ⊢< l > a ≡ a' : A ->
-    Γ ⊢< prop > obsrefl l A a ≡ obsrefl l A' a' : obseq l A a a
+  ∀ n Γ A A' a a',
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< prop > obsrefl (ty n) A a ≡ obsrefl (ty n) A' a' : obseq (ty n) A a a
 
 | conv_J :
-    ∀ Γ l A A' a a' P P' p p' b b' e e',
-      Γ ⊢< Ax l > A : Sort l ->
-      Γ ⊢< Ax l > A ≡ A' : Sort l ->
-      Γ ⊢< l > a ≡ a' : A ->
-      Γ ,, (l , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
+    ∀ Γ n A A' a a' P P' p p' b b' e e',
+      Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+      Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+      Γ ⊢< ty n > a ≡ a' : A ->
+      Γ ,, (ty n , A) ⊢< Ax prop > P ≡ P' : Sort prop ->
       Γ ⊢< prop > p ≡ p' : P <[a..] ->
-      Γ ⊢< l > b ≡ b' : A ->
-      Γ ⊢< prop > e ≡ e' : obseq l A a b ->
-      Γ ⊢< prop > J l A a P p b e ≡ J l A' a' P' p' b' e' : P <[b..]
+      Γ ⊢< ty n > b ≡ b' : A ->
+      Γ ⊢< prop > e ≡ e' : obseq (ty n) A a b ->
+      Γ ⊢< prop > J (ty n) A a P p b e ≡ J (ty n) A' a' P' p' b' e' : P <[b..]
 
 | conv_cast :
   ∀ Γ i A A' B B' e e' a a',
@@ -404,57 +404,56 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     Γ ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B
 
 | conv_injpi1 :
-  ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e',
+  ∀ Γ i n A1 A1' A2 A2' B1 B1' B2 B2' e e',
     Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 ≡ B1' : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
-    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< prop > injpi1 i j A1 A2 B1 B2 e ≡ injpi1 i j A1' A2' B1' B2' e' : obseq (Ax i) (Sort i) A2 A1
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 ≡ B2' : Sort (ty n) ->
+    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< prop > injpi1 i (ty n) A1 A2 B1 B2 e ≡ injpi1 i (ty n) A1' A2' B1' B2' e' : obseq (Ax i) (Sort i) A2 A1
 
 | conv_injpi2 :
-  ∀ Γ i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
+  ∀ Γ i n A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2',
     Γ ⊢< Ax i > A1 : Sort i ->
     Γ ⊢< Ax i > A1 ≡ A1' : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 ≡ B1' : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 ≡ B1' : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
     Γ ⊢< Ax i > A2 ≡ A2' : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 ≡ B2' : Sort j ->
-    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 ≡ B2' : Sort (ty n) ->
+    Γ ⊢< prop > e ≡ e' : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
     Γ ⊢< i > a2 ≡ a2' : A2 ->
-    let a1 := cast i A2 A1 (injpi1 i j A1 A2 B1 B2 e) a2 in
-    Γ ⊢< prop > injpi2 i j A1 A2 B1 B2 e a2 ≡ injpi2 i j A1' A2' B1' B2' e' a2' : obseq (Ax j) (Sort j) (B1<[a1..]) (B2 <[a2..])
+    let a1 := cast i A2 A1 (injpi1 i (ty n) A1 A2 B1 B2 e) a2 in
+    Γ ⊢< prop > injpi2 i (ty n) A1 A2 B1 B2 e a2 ≡ injpi2 i (ty n) A1' A2' B1' B2' e' a2' : obseq (Ax (ty n)) (Sort (ty n)) (B1<[a1..]) (B2 <[a2..])
 
 | conv_accelcomp :
-    ∀ Γ i l A R a q P p A' R' a' q' P' p',
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ,, (i, A) ⊢< Ax l > P ≡ P' : Sort l ->
+    ∀ Γ n m A R a q P p A' R' a' q' P' p',
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax (ty m) > P : Sort (ty m) ->
+    Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax (ty m) > P ≡ P' : Sort (ty m) ->
     let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
     let P_ := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R_ P_) in
+    let B := Pi (ty n) (ty m) (S ⋅ A) (Pi prop (ty m) R_ P_) in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P'' ->
-    Γ ⊢< i > a ≡ a' : A ->
-    Γ ⊢< prop > q ≡ q' : acc i A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) (ty m), B) ⊢< (ty m) > p ≡ p' : P'' ->
+    Γ ⊢< ty n > a ≡ a' : A ->
+    Γ ⊢< prop > q ≡ q' : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
     let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
-    let t0 := accinv i Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel i l Awk Rwk Pwk pwk (var 1) t0 in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) (ty m) Awk Rwk Pwk pwk (var 1) t0 in
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
-    let t3 := lam prop l t2 P'' t1 in
-    let t4 := Pi prop l t2 P'' in
-    let t5 := lam i l A t4 t3 in
-    Γ ⊢< prop > accelcomp i l A R P p a q ≡ accelcomp i l A' R' P' p' a' q' 
-      : obseq l (P <[a ..]) (accel i l A R P p a q) (p <[ t5 .: a ..])
-
+    let t3 := lam prop (ty m) t2 P'' t1 in
+    let t4 := Pi prop (ty m) t2 P'' in
+    let t5 := lam (ty n) (ty m) A t4 t3 in
+    Γ ⊢< prop > accelcomp (ty n) (ty m) A R P p a q ≡ accelcomp (ty n) (ty m) A' R' P' p' a' q' 
+      : obseq (ty m) (P <[a ..]) (accel (ty n) (ty m) A R P p a q) (p <[ t5 .: a ..])
 
 | conv_cast_refl :
     ∀ Γ i A e a,
@@ -464,22 +463,22 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
       Γ ⊢< i > cast i A A e a ≡ a : A
 
 | conv_cast_pi :
-  ∀ Γ i j A1 A2 B1 B2 e f,
+  ∀ Γ i n A1 A2 B1 B2 e f,
     Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) ->
-    Γ ⊢< Ru i j > f : Pi i j A1 B1 ->
+    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
     let B2' := (up_ren S) ⋅ B2 in
-    let t1 := cast i A2' A1' (injpi1 i j A1' A2' B1' B2' (S ⋅ e)) (var 0) in
-    let t2 := app i j A1' B1' (S ⋅ f) t1 in
-    let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
-    let t4 := lam i j A2 B2 t3 in
-    Γ ⊢< Ru i j > cast (Ru i j) (Pi i j A1 B1) (Pi i j A2 B2) e f ≡ t4 : Pi i j A2 B2
+    let t1 := cast i A2' A1' (injpi1 i (ty n) A1' A2' B1' B2' (S ⋅ e)) (var 0) in
+    let t2 := app i (ty n) A1' B1' (S ⋅ f) t1 in
+    let t3 := cast (ty n) (B1 <[t1.: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
+    let t4 := lam i (ty n) A2 B2 t3 in
+    Γ ⊢< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f ≡ t4 : Pi i (ty n) A2 B2
 
 
 | conv_conv :
