@@ -485,7 +485,7 @@ Proof.
         - eauto 6 with sidecond.
         - eauto 7 with sidecond.
       }
-      all: destruct l ; reflexivity.
+      all: reflexivity.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: try reflexivity.
       all: f_equal.
@@ -1285,10 +1285,10 @@ Proof.
                   subst_ih.
             }
       }
-      all: destruct l ; reflexivity.
+      all: reflexivity.
     + eapply WellSubst_up. all: eauto with sidecond.
       repeat subst_def. cbn. rasimpl.
-      econstructor. 1: subst_ih.
+      eapply meta_lvl.  1:econstructor. 3:reflexivity. 1: subst_ih.
       meta_conv. 1: eapply meta_lvl.
       { econstructor.
         - subst_ih. unfold ">>". cbn.
@@ -1362,7 +1362,7 @@ Proof.
                   subst_ih.
             }
       }
-      all: destruct l ; reflexivity.
+      all:  reflexivity.
     + repeat subst_def. rasimpl. f_equal. f_equal. f_equal.
       all: rasimpl. all: reflexivity.
 Qed.
@@ -3050,3 +3050,39 @@ Proof.
   intros. subst.
   eapply conv_accel; eauto using validity_conv_left.
 Qed.
+
+Lemma conv_accel_accin' :
+    ∀ Γ n l A R a q P p,
+    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
+    let P'' := (1.: (S >> S)) ⋅ P in
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
+    Γ ⊢< ty n > a : A ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
+    let Awk := (S >> S) ⋅ A in
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
+    let Pwk := (up_ren (S >> S)) ⋅ P in
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
+    let t3 := lam prop l t2 P'' t1 in
+    let t4 := Pi prop l t2 P'' in
+    let t5 := lam (ty n) l A t4 t3 in
+    Γ ⊢< l > accel (ty n) l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..].
+Proof.
+  intros. destruct l.
+  - eapply conv_accel_accin; eauto.
+  - eapply conv_irrel. 
+    + eapply type_accel; eauto.
+    + eapply subst_ty; eauto using validity_ty_ctx. 2:unfold P'';rasimpl;reflexivity.
+      econstructor. 1:econstructor. all:ssimpl; eauto.
+      1:eapply subst_id; eauto using validity_ty_ctx.
+      eapply meta_conv. 1:eapply t5Wt; eauto.
+      unfold B, R', P'. rasimpl. f_equal. f_equal. substify. ssimpl. reflexivity.
+Qed.
+    

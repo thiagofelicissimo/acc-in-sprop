@@ -477,15 +477,15 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
           p_succ <[(rec l P p_zero p_succ t) .: t ..] : P <[ (succ t) .. ]
 
 | conv_accel_accin :
-    ∀ Γ n l A R a q P p,
+    ∀ Γ n m A R a q P p,
     Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
     Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
+    Γ ,, (ty n, A) ⊢< Ax (ty m) > P : Sort (ty m) ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
+    let B := Pi (ty n) (ty m) (S ⋅ A) (Pi prop (ty m) R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) (ty m), B) ⊢< ty m > p : P'' ->
     Γ ⊢< ty n > a : A ->
     Γ ⊢< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
@@ -493,12 +493,12 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let Pwk := (up_ren (S >> S)) ⋅ P in
     let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
     let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
+    let t1 := accel (ty n) (ty m) Awk Rwk Pwk pwk (var 1) t0 in
     let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
-    let t3 := lam prop l t2 P'' t1 in
-    let t4 := Pi prop l t2 P'' in
-    let t5 := lam (ty n) l A t4 t3 in
-    Γ ⊢< l > accel (ty n) l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..]
+    let t3 := lam prop (ty m) t2 P'' t1 in
+    let t4 := Pi prop (ty m) t2 P'' in
+    let t5 := lam (ty n) (ty m) A t4 t3 in
+    Γ ⊢< ty m > accel (ty n) (ty m) A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..]
 
 | conv_sym :
     ∀ Γ l t u A,
