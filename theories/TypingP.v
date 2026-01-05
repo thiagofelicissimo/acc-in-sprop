@@ -90,7 +90,7 @@ Inductive typing : ctx -> level -> term → term → Prop :=
       Γ ,, (i , A) ⊢< Ax j > B : Sort j →
       Γ ⊢< Ru i j > t : Pi i j A B →
       Γ ⊢< i > u : A →
-      Γ ⊢< j > app i j A B  t u : B <[ u .. ]
+      Γ ⊢< j > app i j A B t u : B <[ u .. ]
 
 | type_nat :
     ∀ Γ,
@@ -223,7 +223,7 @@ Inductive typing : ctx -> level -> term → term → Prop :=
     Γ ⊢< prop > injpi1 i (ty n) A1 A2 B1 B2 e : obseq (Ax i) (Sort i) A2 A1
 
 | type_injpi2 :
-  ∀ Γ i n A1 A2 B1 B2 e a2,    
+  ∀ Γ i n A1 A2 B1 B2 e a2,
     Γ ⊢< Ax i > A1 : Sort i ->
     Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
     Γ ⊢< Ax i > A2 : Sort i ->
@@ -452,12 +452,12 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let t3 := lam prop (ty m) t2 P'' t1 in
     let t4 := Pi prop (ty m) t2 P'' in
     let t5 := lam (ty n) (ty m) A t4 t3 in
-    Γ ⊢< prop > accelcomp (ty n) (ty m) A R P p a q ≡ accelcomp (ty n) (ty m) A' R' P' p' a' q' 
+    Γ ⊢< prop > accelcomp (ty n) (ty m) A R P p a q ≡ accelcomp (ty n) (ty m) A' R' P' p' a' q'
       : obseq (ty m) (P <[a ..]) (accel (ty n) (ty m) A R P p a q) (p <[ t5 .: a ..])
 
 | conv_cast_refl :
     ∀ Γ i A e a,
-      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A A ->  
+      Γ ⊢< prop > e : obseq (Ax i) (Sort i) A A ->
       Γ ⊢< Ax i > A : Sort i ->
       Γ ⊢< i > a : A ->
       Γ ⊢< i > cast i A A e a ≡ a : A
