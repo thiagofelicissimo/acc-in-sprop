@@ -1,8 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
-From TypedConfluence
-Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence
-Require Import Util BasicAST Contexts BasicMetaTheory BasicMetaTheoryP.
+From TypedConfluence Require Import
+core unscoped AST SubstNotations RAsimpl AST_rasimpl
+Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -266,4 +265,118 @@ Proof.
   all: solve [ econstructor ; eauto ].
 Qed.
 
-(* I guess we won't be doing packed parametricty *)
+(* Σ types using an impredicative encoding
+
+  Σ A B := Π (P : Prop). (Π (x : A). B x → P) → P
+
+  TODO FIX, at least the levels are wrong
+
+*)
+
+Definition Sig i A B :=
+  Pi (ty 0) prop (Sort prop) (
+    Pi prop prop (Pi (Ax i) prop (S ⋅ S ⋅ A) (Pi prop prop (app (Ax i) (ty 0) (S ⋅ S ⋅ S ⋅ A) (Sort prop) (S ⋅ S ⋅ S ⋅ B) (var 0)) (var 2))) (var 1)
+  ).
+
+Definition sig_ex (i : level) (A B a b : term) : term.
+Admitted.
+
+Lemma type_Sig Γ i A B :
+  Γ ⊢< Ax i > A : Sort i →
+  Γ ⊢< ty 0 > B : Pi (Ax i) (ty 0) A (Sort prop) →
+  Γ ⊢< ty 0 > Sig i A B : Sort prop.
+Proof.
+Admitted.
+
+Lemma type_sig_ex Γ i A B a b :
+  Γ ⊢< Ax i > A : Sort i →
+  Γ ⊢< ty 0 > B : Pi (Ax i) (ty 0) A (Sort prop) →
+  Γ ⊢< i > a : A →
+  Γ ⊢< prop > b : app (Ax i) (ty 0) A (Sort prop) B a →
+  Γ ⊢< ty 0 > sig_ex i A B a b : Sig i A B.
+Proof.
+Admitted.
+
+(* Heterogenous equality
+
+  heq A B a b := Σ (A = B) (λ p. cast p a = b)
+
+*)
+
+Definition heq i A B a b :=
+  Sig prop (obseq (ty (S i)) (Sort (ty i)) A B) (
+    lam prop (ty 0) (obseq (ty (S i)) (Sort (ty i)) A B) (Sort prop) (
+      obseq (ty i) (S ⋅ B) (cast (ty i) (S ⋅ A) (S ⋅ B) (var 0) (S ⋅ a)) (S ⋅ b)
+    )
+  ).
+
+Lemma type_heq Γ i A B a b :
+  Γ ⊢< ty (S i) > A : Sort (ty i) →
+  Γ ⊢< ty (S i) > B : Sort (ty i) →
+  Γ ⊢< ty i > a : A →
+  Γ ⊢< ty i > b : B →
+  Γ ⊢< ty 0 > heq i A B a b : Sort prop.
+Proof.
+Admitted.
+
+Lemma conv_heq Γ i A A' B B' a a' b b' :
+  Γ ⊢< ty (S i) > A ≡ A' : Sort (ty i) →
+  Γ ⊢< ty (S i) > B ≡ B' : Sort (ty i) →
+  Γ ⊢< ty i > a ≡ a' : A →
+  Γ ⊢< ty i > b ≡ b' : B →
+  Γ ⊢< ty 0 > heq i A B a b ≡ heq i A' B' a' b' : Sort prop.
+Proof.
+Admitted.
+
+Definition heq_refl (i : nat) (A a : term) : term.
+Admitted.
+
+Lemma type_heq_refl Γ i A a :
+  Γ ⊢< ty (S i) > A : Sort (ty i) →
+  Γ ⊢< ty i > a : A →
+  Γ ⊢< prop > heq_refl i A a : heq i A A a a.
+Proof.
+Admitted.
+
+Definition heq_cast (i : nat) (A B e a : term) : term.
+Admitted.
+
+Lemma type_heq_cast Γ i A B e a :
+  Γ ⊢< ty (S i) > A : Sort (ty i) →
+  Γ ⊢< ty (S i) > B : Sort (ty i) →
+  Γ ⊢< prop > e : obseq (ty (S i)) (Sort (ty i)) A B →
+  Γ ⊢< ty i > a : A →
+  Γ ⊢< prop > heq_cast i A B e a : heq i A B a (cast (ty i) A B e a).
+Proof.
+Admitted.
+
+(* Uniqueness of type *)
+
+Lemma unique_type Γ i u A B :
+  Γ ⊢< i > u : A →
+  Γ ⊢< i > u : B →
+  Γ ⊢< Ax i > A ≡ B : Sort i.
+Proof.
+Admitted.
+
+(* Fundamental lemma *)
+
+Lemma sim_heq i Γ u v A B :
+  u ~ v →
+  Γ ⊢< ty i > u : A →
+  Γ ⊢< ty i > v : B →
+  ∑ e, Γ ⊢< prop > e : heq i A B u v.
+Proof.
+  intros hsim hu hv.
+  induction hsim in Γ, A, B, hu, hv |- *.
+  - eapply type_inv_cast in hv as hv'.
+    destruct hv' as (hA & hB & he & ha & -> & hBB).
+    eexists. eapply type_conv.
+    + eapply type_heq_cast. 3: exact he. all: eassumption.
+    + apply conv_sym. eapply conv_heq. all: try (apply conv_refl ; assumption).
+      2: assumption.
+      eapply meta_lvl_conv.
+      { eapply unique_type. all: eassumption. }
+      reflexivity.
+  - (* I was hoping to find a way to avoid parametricity but maybe it's needed *)
+Admitted.
