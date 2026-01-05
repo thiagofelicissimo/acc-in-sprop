@@ -261,6 +261,8 @@ Proof.
     split; eauto using redd_trans.
 Qed.
 
+Derive Signature for redd.
+
 Lemma redd_app Γ i j A B t t' u :
     Γ ⊢< Ru i j > t -->> t' : Pi i j A B ->
     Γ ⊢< i > u : A ->
@@ -398,7 +400,7 @@ Definition red_inv_type Γ t v :=
         Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
         Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' /\
         Γ ⊢< i > a : A /\
-        Γ ⊢< prop > q : acc i A R a /\ 
+        Γ ⊢< prop > q : acc i A R a /\
         exists n, i = ty n
     | cast _ Nat Nat e t =>
         v = t /\
@@ -429,7 +431,7 @@ Definition red_inv_type Γ t v :=
         l = Ru i j /\
         i' = i /\
         exists n,
-        j = ty n /\ 
+        j = ty n /\
         j' = ty n
 
     | cast i A B e t =>
@@ -627,6 +629,9 @@ Proof.
     eapply aconv_conv; eauto using conv_pi, validity_ty_ctx, validity_conv_left.
     eauto 7 using conv_trans, subst_conv, substs_one, conv_refl, validity_ty_ctx.
 Qed.
+
+Derive Signature for red.
+Derive Signature for ann_conv.
 
 Lemma sim_left_red Γ l t t' u A :
     Γ ⊢< l > t ~ u : A ->

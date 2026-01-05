@@ -676,6 +676,8 @@ Proof.
     eapply LR_sym_tm in H1; eauto. eapply LR_sym in H0. eauto using LR_subst.
 Qed.
 
+Derive Signature for LR_subst.
+
 Lemma LR_subst_trans σ τ θ Δ : ⊩s σ ≡ τ : Δ -> ⊩s τ ≡ θ : Δ -> ⊩s σ ≡ θ : Δ.
 Proof.
     intros. generalize θ H0. clear θ H0. induction H. eauto using LR_subst.

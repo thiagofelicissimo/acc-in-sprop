@@ -28,18 +28,18 @@ Definition obsequ A a b := obseq boxlvl A a b.
 
 
 Fixpoint erasure t :=
-    match t with 
-    | var i => var i 
+    match t with
+    | var i => var i
     | assm c => assm c
     | lam _ _ _ _ t => lamu (erasure t)
     | app _ _ _ _ t u => appu (erasure t) (erasure u)
     | Pi _ _ A B => Piu (erasure A) (erasure B)
-    | zero => zero 
+    | zero => zero
     | succ t => succ (erasure t)
-    | rec _ P pzero psucc t => 
+    | rec _ P pzero psucc t =>
         recu (erasure P) (erasure pzero) (erasure psucc) (erasure t)
     | Nat => Nat
-    | accel _ _ _ _ P p a _ => 
+    | accel _ _ _ _ P p a _ =>
         accelu (erasure P) (erasure p) (erasure a)
     | Sort i => Sort i
     | acc _ A R a => accu (erasure A) (erasure R) (erasure a)
@@ -106,33 +106,33 @@ Lemma ren_erasure t ρ :
 Proof.
     generalize ρ. clear ρ.
     induction t; simpl; intuition eauto.
-    all: try rewrite IHt; try rewrite IHt1; 
+    all: try rewrite IHt; try rewrite IHt1;
     try rewrite IHt2; try rewrite IHt3;
-    try rewrite IHt4; try rewrite IHt4; 
+    try rewrite IHt4; try rewrite IHt4;
     try rewrite IHt5; try rewrite IHt6; try reflexivity.
 Qed.
 
 Lemma ren_term_erasure ρ :
-    pointwise_relation _ eq 
+    pointwise_relation _ eq
     (ren_term ρ >> erasure) (erasure >> ren_term ρ).
 Proof.
-    unfold pointwise_relation. intros. unfold ">>". 
+    unfold pointwise_relation. intros. unfold ">>".
     rewrite ren_erasure. reflexivity.
 Qed.
 
 Lemma subst_erasure t σ :
     erasure (t <[ σ ]) = (erasure t) <[ fun x => erasure (σ x)].
 Proof.
-    assert (pointwise_relation _ eq 
+    assert (pointwise_relation _ eq
             (ren_term S >> (ren_term S >> erasure))
             (ren_term (S >> S) >> erasure)) as aux.
         { unfold pointwise_relation. intros.  unfold ">>".
-          ssimpl. reflexivity. } 
+          ssimpl. reflexivity. }
 
     generalize σ. clear σ.
     induction t; intros; simpl; eauto.
-    - unfold Piu. f_equal.  
-      rewrite IHt1; eauto. 
+    - unfold Piu. f_equal.
+      rewrite IHt1; eauto.
       rewrite IHt2; eauto. unfold up_term_term. ssimpl. simpl.
       setoid_rewrite ren_term_erasure. reflexivity.
     - unfold lamu. f_equal.
@@ -146,18 +146,18 @@ Proof.
       * rewrite IHt1. unfold up_term_term. ssimpl. simpl.
         setoid_rewrite ren_term_erasure. reflexivity.
       * rewrite IHt2. reflexivity.
-      * rewrite IHt3. unfold up_term_term. ssimpl. fold erasure. 
+      * rewrite IHt3. unfold up_term_term. ssimpl. fold erasure.
         setoid_rewrite aux. setoid_rewrite ren_term_erasure. reflexivity.
       * rewrite IHt4. reflexivity.
     - unfold accu. f_equal.
       * rewrite IHt1. reflexivity.
-      * rewrite IHt2. unfold up_term_term. ssimpl. fold erasure. 
+      * rewrite IHt2. unfold up_term_term. ssimpl. fold erasure.
         setoid_rewrite aux. setoid_rewrite ren_term_erasure. reflexivity.
       * rewrite IHt3. reflexivity.
     - unfold accelu. f_equal.
       * rewrite IHt3. unfold up_term_term. ssimpl. simpl.
       setoid_rewrite ren_term_erasure. reflexivity.
-      * rewrite IHt4. unfold up_term_term. ssimpl. fold erasure. 
+      * rewrite IHt4. unfold up_term_term. ssimpl. fold erasure.
         setoid_rewrite aux. setoid_rewrite ren_term_erasure. reflexivity.
       * rewrite IHt5. reflexivity.
     - unfold obsequ. f_equal.
@@ -194,14 +194,14 @@ Proof.
     intros. subst. auto.
 Qed.
 
-Lemma red_erasure Γ i t u A : 
-    Γ ⊢< ty i > t --> u : A -> 
+Lemma red_erasure Γ i t u A :
+    Γ ⊢< ty i > t --> u : A ->
     (erasure t) ---> (erasure u).
 Proof.
-    intros. dependent induction H; unfold Ru in *; 
+    intros. dependent induction H; unfold Ru in *;
     intros; simpl;
     try rewrite subst_erasure;
-    try setoid_rewrite erasure_cons;  
+    try setoid_rewrite erasure_cons;
     try setoid_rewrite erasure_cons2;
     eauto using red_untyped.
     - eapply redu_meta. econstructor.
@@ -216,12 +216,12 @@ Proof.
     - econstructor. eapply IHred. reflexivity.
     - econstructor. 2:eapply IHred; reflexivity.
       destruct A; unfold val in *; eauto.
-    - unfold Piu, t1, A1', A2', B1', B2', castu. eapply redu_meta. 
+    - unfold Piu, t1, A1', A2', B1', B2', castu. eapply redu_meta.
       eapply redu_cast_pi. unfold castu. simpl.
       f_equal.  f_equal.
       eapply subst_term_morphism; eauto.
-      unfold pointwise_relation. intros a. 
-      destruct a. simpl. unfold castu. 
+      unfold pointwise_relation. intros a.
+      destruct a. simpl. unfold castu.
       setoid_rewrite ren_erasure. reflexivity.
       reflexivity.
       setoid_rewrite ren_erasure. reflexivity.
@@ -235,24 +235,26 @@ Inductive reddu : term -> term -> Prop :=
   | reddu_step t u v : t ---> v -> v -->> u -> t -->> u
 where "t -->> t'" := (reddu t t').
 
-Lemma redd_erasure Γ i t u A : 
-    Γ ⊢< ty i > t -->> u : A -> 
+Lemma redd_erasure Γ i t u A :
+    Γ ⊢< ty i > t -->> u : A ->
     (erasure t) -->> (erasure u).
 Proof.
     intros. dependent induction H; eauto using reddu, red_erasure.
 Qed.
 
-Lemma redu_fun t u v : 
-    t ---> u -> 
+Derive Signature for red_untyped.
+
+Lemma redu_fun t u v :
+    t ---> u ->
     t ---> v ->
     u = v.
 Proof.
-    intro. generalize v. clear v. 
+    intro. generalize v. clear v.
     dependent induction H; intros; eauto using red_untyped.
     - dependent destruction H0.
       + erewrite IHred_untyped; eauto.
       + dependent destruction H.
-    - dependent destruction H. 
+    - dependent destruction H.
       dependent destruction H.
       reflexivity.
     - dependent destruction H0.
@@ -278,21 +280,21 @@ Proof.
       + dependent destruction H0.
       + dependent destruction H0.
       + dependent destruction H0.
-    - dependent destruction H. 
+    - dependent destruction H.
       + dependent destruction H.
       + dependent destruction H0.
       + reflexivity.
-    - dependent destruction H. 
+    - dependent destruction H.
       + dependent destruction H.
       + dependent destruction H0.
       + reflexivity.
-    - dependent destruction H. 
+    - dependent destruction H.
       + dependent destruction H.
       + dependent destruction H0.
       + reflexivity.
 Qed.
 
-Lemma reddu_fun t u v : 
+Lemma reddu_fun t u v :
     t -->> u -> val u ->
     t -->> v -> val v ->
     u = v.
@@ -309,9 +311,9 @@ Proof.
 Qed.
 
 
-Inductive eval : term -> nat -> Prop := 
+Inductive eval : term -> nat -> Prop :=
 | eval_0 t :
-    t -->> zero -> 
+    t -->> zero ->
     eval t 0
 | eval_S t u n :
     t -->> succ u ->
@@ -319,8 +321,8 @@ Inductive eval : term -> nat -> Prop :=
     eval t (S n).
 
 
-Theorem eval_red_untyped n : 
-    ∙ ⊢< ty 0 > n : Nat -> 
+Theorem eval_red_untyped n :
+    ∙ ⊢< ty 0 > n : Nat ->
     exists k, eval (erasure n) k.
 Proof.
     intros.
@@ -334,13 +336,16 @@ Proof.
       econstructor; eauto.
 Qed.
 
-Theorem eval_red_untyped_correct k n : 
-    ∙ ⊢< ty 0 > n : Nat -> 
+Derive Signature for LRDef.ϵNat.
+Derive Signature for ReductionUntyped.eval.
+
+Theorem eval_red_untyped_correct k n :
+    ∙ ⊢< ty 0 > n : Nat ->
     eval (erasure n) k ->
     ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat.
 Proof.
     intros nWt eval.
-    dependent induction eval; 
+    dependent induction eval;
     eapply canonicity_red in nWt as temp;
     destruct temp as (k' & lr).
     - dependent destruction lr.
@@ -349,12 +354,12 @@ Proof.
         eapply reddu_fun in H; eauto. 2:simpl;eauto.
         inversion H.
     - dependent destruction lr.
-      * destruct H0. eapply redd_erasure in H0. 
+      * destruct H0. eapply redd_erasure in H0.
         eapply reddu_fun in H; eauto. 2:simpl;eauto.
         inversion H.
       * destruct H0. eapply redd_erasure in H0 as H0'.
-        eapply reddu_fun in H as temp; eauto.       
-        2:simpl;eauto. 
+        eapply reddu_fun in H as temp; eauto.
+        2:simpl;eauto.
         dependent destruction temp.
         eapply redd_to_conv in H0 as H0''.
         eapply conv_trans.
