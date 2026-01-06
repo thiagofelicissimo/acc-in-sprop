@@ -113,7 +113,7 @@ Admitted.
 
 *)
 
-Reserved Notation " t ⊏ t' " (at level 20).
+Reserved Notation " t ⊏ t' " (at level 19).
 
 Inductive decoration : term → term → Type :=
 | add_cast i A B e a :
@@ -232,7 +232,7 @@ Inductive decoration : term → term → Type :=
 
 where "u ⊏ v" := (decoration u v).
 
-Reserved Notation " t ~ t' " (at level 20).
+Reserved Notation " t ~ t' " (at level 19).
 
 Inductive simdec : term → term → Type :=
 | sim_cast i A B e a :
@@ -359,7 +359,14 @@ Proof.
   all: solve [ econstructor ; eauto ].
 Qed.
 
-(* Fundamental lemma *)
+(* Fundamental lemma
+
+  We're going to prove a more general statement with cast substitutions, but
+  for now, we'll admit this version.
+  In ETT to ITT/WTT, we used the more general version too in the final
+  translation so we'll have to check whether it's needed.
+
+*)
 
 Lemma sim_heq i Γ u v A B :
   u ~ v →
@@ -378,5 +385,45 @@ Proof.
       eapply meta_lvl_conv.
       { eapply unique_type. all: eassumption. }
       reflexivity.
-  - (* I was hoping to find a way to avoid parametricity but maybe it's needed *)
 Admitted.
+
+(* TODO MOVE to util *)
+Inductive All2 {A B} (R : A → B → Type) | : list A → list B → Type :=
+| All2_nil : All2 [] []
+| All2_cons x y l l' : R x y → All2 l l' → All2 (x :: l) (y :: l').
+
+(* Potential translations *)
+
+Definition ctx_dec (Γ Δ : ctx) :=
+  All2 (λ u v, snd u ⊏ snd v) Γ Δ.
+
+Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 9).
+
+Definition tr_ctx Γ Δ :=
+  ((⊢ Δ) * Γ ⊂ Δ)%type.
+
+Definition tr_ty l t A Γ' t' A' :=
+  ((Γ' ⊢< l > t' : A') * t ⊏ t' * A ⊏ A')%type.
+
+Notation "D ⊨< l $ t : A ∈ ⟦ u : B ⟧" :=
+  (tr_ty l u B D t A)
+  (at level 8, t, A, u, B at next level).
+
+(* Translation of derivations *)
+
+Lemma typing_conversion_trans :
+  (∀ Γ l t A,
+    Γ ⊢< l > t : A →
+    ∀ Γ',
+      tr_ctx Γ Γ' →
+      ∑ t' A', Γ' ⊨< l $ t' : A' ∈ ⟦ t : A ⟧
+  ) *
+  (∀ Γ l u v A,
+    Γ ⊢< l > u ≡ v : A →
+    ∀ Δ σ,
+      ⊢ Δ →
+      Δ ⊢s σ : Γ →
+      Δ ⊢< l > u <[ σ ] ≡ v <[ σ ] : A <[ σ ]).
+Proof.
+  (* TODO MOVE everything to Prop!! *)
+Abort.
