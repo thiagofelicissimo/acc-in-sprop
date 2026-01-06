@@ -115,7 +115,7 @@ Admitted.
 
 Reserved Notation " t ⊏ t' " (at level 19).
 
-Inductive decoration : term → term → Type :=
+Inductive decoration : term → term → Prop :=
 | add_cast i A B e a :
     a ⊏ cast i A B e a
 
@@ -234,7 +234,7 @@ where "u ⊏ v" := (decoration u v).
 
 Reserved Notation " t ~ t' " (at level 19).
 
-Inductive simdec : term → term → Type :=
+Inductive simdec : term → term → Prop :=
 | sim_cast i A B e a :
     a ~ cast i A B e a
 
@@ -372,7 +372,7 @@ Lemma sim_heq i Γ u v A B :
   u ~ v →
   Γ ⊢< ty i > u : A →
   Γ ⊢< ty i > v : B →
-  ∑ e, Γ ⊢< prop > e : heq i A B u v.
+  ∃ e, Γ ⊢< prop > e : heq i A B u v.
 Proof.
   intros hsim hu hv.
   induction hsim in Γ, A, B, hu, hv |- *.
@@ -387,43 +387,104 @@ Proof.
       reflexivity.
 Admitted.
 
-(* TODO MOVE to util *)
-Inductive All2 {A B} (R : A → B → Type) | : list A → list B → Type :=
-| All2_nil : All2 [] []
-| All2_cons x y l l' : R x y → All2 l l' → All2 (x :: l) (y :: l').
-
 (* Potential translations *)
 
 Definition ctx_dec (Γ Δ : ctx) :=
-  All2 (λ u v, snd u ⊏ snd v) Γ Δ.
+  Forall2 (λ u v, snd u ⊏ snd v) Γ Δ.
 
-Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 9).
+Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 19).
 
 Definition tr_ctx Γ Δ :=
-  ((⊢ Δ) * Γ ⊂ Δ)%type.
+  ⊢ Δ ∧ Γ ⊂ Δ.
 
 Definition tr_ty l t A Γ' t' A' :=
-  ((Γ' ⊢< l > t' : A') * t ⊏ t' * A ⊏ A')%type.
+  Γ' ⊢< l > t' : A' ∧ t ⊏ t' ∧ A ⊏ A'.
 
-Notation "D ⊨< l $ t : A ∈ ⟦ u : B ⟧" :=
+Notation "D ⊨⟨ l ⟩ t : A ∈ ⟦ u : B ⟧" :=
   (tr_ty l u B D t A)
   (at level 8, t, A, u, B at next level).
 
+Definition eqtrans l A u v Γ' A' A'' u' v' e :=
+  match l with
+  | prop => True
+  | ty i =>
+    A ⊏ A' ∧
+    A ⊏ A'' ∧
+    u ⊏ u' ∧
+    v ⊏ v' ∧
+    Γ' ⊢< prop > e : heq i A' A'' u' v'
+  end.
+
+(* New notations for source derivations *)
+
+Notation "Γ ∋< l >× x : T" :=
+  (Typing.varty Γ x l T) (at level 50, l, x, T at next level).
+
+Notation "Γ ⊢< l >× t : A" :=
+  (Typing.typing Γ l t A) (at level 50, l, t, A at next level).
+
+Notation "Γ ⊢< l >× t ≡ u : T" :=
+ (Typing.conversion Γ l t u T) (at level 50, l, t, u, T at next level).
+
+Notation "⊢× Γ" :=
+  (Typing.ctx_typing Γ) (at level 50).
+
 (* Translation of derivations *)
+
+(* TODO MOVE *)
+Lemma Forall2_inv_l A B (R : A → B → Prop) a la lb :
+  Forall2 R (a :: la) lb →
+  ∃ b lb', Forall2 R la lb' ∧ R a b ∧ lb = b :: lb'.
+Proof.
+  inversion 1. subst.
+  firstorder eauto.
+Qed.
+
+Lemma tr_ctx_inv Γ l A Δ :
+  tr_ctx (Γ ,, (l, A)) Δ →
+  ∃ Γ' A', tr_ctx Γ Γ' ∧ A ⊏ A' ∧ Δ = Γ',, (l, A').
+Proof.
+  intros [h1 h2].
+  eapply Forall2_inv_l in h2 as ((l' & A') & Γ' & ? & ? & ->).
+  inversion h1. subst.
+  cbn in *.
+  unfold tr_ctx. firstorder eauto.
+Abort.
+
+(* Lemma varty_trans Γ Γ' x l A :
+  Γ ∋< l >× x : A →
+  tr_ctx Γ Γ' →
+  ∃ A', Γ' ∋< l > x : A'.
+Proof.
+  intros hx [hc hs].
+  induction hx in Γ', hc, hs |- *.
+  - inversion hs. subst. cbn in *.
+    eexists. econstructor.
+  -
+
+
+
+  induction hs as [| σ Γ i B h ih ho] in x, l, A, hx |- *.
+  1: inversion hx.
+  inversion hx. all: subst.
+  - rasimpl. assumption.
+  - rasimpl. apply ih. assumption.
+Qed. *)
 
 Lemma typing_conversion_trans :
   (∀ Γ l t A,
-    Γ ⊢< l > t : A →
+    Γ ⊢< l >× t : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
-      ∑ t' A', Γ' ⊨< l $ t' : A' ∈ ⟦ t : A ⟧
-  ) *
+      ∃ t' A', Γ' ⊨⟨ l ⟩ t' : A' ∈ ⟦ t : A ⟧
+  ) ∧
   (∀ Γ l u v A,
-    Γ ⊢< l > u ≡ v : A →
-    ∀ Δ σ,
-      ⊢ Δ →
-      Δ ⊢s σ : Γ →
-      Δ ⊢< l > u <[ σ ] ≡ v <[ σ ] : A <[ σ ]).
+    Γ ⊢< l >× u ≡ v : A →
+    ∀ Γ',
+      tr_ctx Γ Γ' →
+      ∃ A' A'' u' v' e, eqtrans l A u v Γ' A' A'' u' v' e
+  ).
 Proof.
-  (* TODO MOVE everything to Prop!! *)
+  apply Typing.typing_mutind.
+  - intros * ? hx ? hc.
 Abort.
