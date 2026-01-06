@@ -293,6 +293,14 @@ Proof.
   induction 1. all: subst ; eauto.
 Qed.
 
+Lemma Forall2_inv_l A B (R : A → B → Prop) a la lb :
+  Forall2 R (a :: la) lb →
+  ∃ b lb', Forall2 R la lb' ∧ R a b ∧ lb = b :: lb'.
+Proof.
+  inversion 1. subst.
+  firstorder eauto.
+Qed.
+
 Fixpoint rForall [A] (P : A → Prop) l :=
   match l with
   | [] => True
