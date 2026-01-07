@@ -1,9 +1,9 @@
 Set Universe Polymorphism.
 
 
-(* In this file, we work internally in the system of TypingP. 
-   However, we only postulate the conversions associated with cast
-   propositionally, in order to avoid rewrite rules. *)
+(* In this file, we work internally in the type theory defined in TypingP. 
+   However, we will only need to postulate the conversions associated 
+   with cast propositionally, allowing us to avoid declaring rewrite rules. *)
 
 
 (* --- START OF THE DEF OF OBS EQ --- *)

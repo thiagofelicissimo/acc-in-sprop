@@ -13,99 +13,61 @@ Import CombineNotations.
 
 Open Scope subst_scope.
 
-(* Σ types using an impredicative encoding
 
-  Σ A B := Π (P : Prop). (Π (x : A). B x → P) → P
+(* the following axioms are justified in the file HEq.v *)
+Axiom heq : level -> term -> term -> term -> term -> term.
 
-  TODO FIX, at least the levels are wrong
+Axiom type_heq : forall Γ n A B a b,
+  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
+  Γ ⊢< Ax (ty n) > B : Sort (ty n) →
+  Γ ⊢< ty n > a : A →
+  Γ ⊢< ty n > b : B →
+  Γ ⊢< ty 0 > heq (ty n) A B a b : Sort prop.
 
-*)
+Axiom conv_heq : forall Γ n A B a b A' B' a' b',
+  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
+  Γ ⊢< Ax (ty n) > B ≡ B' : Sort (ty n) →
+  Γ ⊢< ty n > a ≡ a' : A →
+  Γ ⊢< ty n > b ≡ b' : B →
+  Γ ⊢< ty 0 > heq (ty n) A B a b ≡ heq (ty n) A' B' a' b' : Sort prop.
 
-Definition Sig i A B :=
-  Pi (ty 0) prop (Sort prop) (
-    Pi prop prop (Pi (Ax i) prop (S ⋅ S ⋅ A) (Pi prop prop (app (Ax i) (ty 0) (S ⋅ S ⋅ S ⋅ A) (Sort prop) (S ⋅ S ⋅ S ⋅ B) (var 0)) (var 2))) (var 1)
-  ).
+Axiom heq_refl : level -> term -> term -> term.
 
-Definition sig_ex (i : level) (A B a b : term) : term.
-Admitted.
+Axiom type_heq_refl : forall Γ n A a,
+  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
+  Γ ⊢< ty n > a : A →
+  Γ ⊢< prop > heq_refl (ty n) A a : heq (ty n) A A a a.
 
-Lemma type_Sig Γ i A B :
-  Γ ⊢< Ax i > A : Sort i →
-  Γ ⊢< ty 0 > B : Pi (Ax i) (ty 0) A (Sort prop) →
-  Γ ⊢< ty 0 > Sig i A B : Sort prop.
-Proof.
-Admitted.
+Axiom conv_heq_refl : forall Γ n A A' a a',
+  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
+  Γ ⊢< ty n > a ≡ a' : A →
+  Γ ⊢< prop > heq_refl (ty n) A a ≡ heq_refl (ty n) A' a' : heq (ty n) A A a a.  
 
-Lemma type_sig_ex Γ i A B a b :
-  Γ ⊢< Ax i > A : Sort i →
-  Γ ⊢< ty 0 > B : Pi (Ax i) (ty 0) A (Sort prop) →
-  Γ ⊢< i > a : A →
-  Γ ⊢< prop > b : app (Ax i) (ty 0) A (Sort prop) B a →
-  Γ ⊢< ty 0 > sig_ex i A B a b : Sig i A B.
-Proof.
-Admitted.
+Axiom heq_cast : forall (l : level) (A B e a : term), term.
 
-(* Heterogenous equality
+Axiom type_heq_cast : forall Γ n A B e a,
+  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
+  Γ ⊢< Ax (ty n) > B : Sort (ty n) →
+  Γ ⊢< prop > e : obseq (Ax (ty n)) (Sort (ty n)) A B →
+  Γ ⊢< ty n > a : A →
+  Γ ⊢< prop > heq_cast (ty n) A B e a : B.
 
-  heq A B a b := Σ (A = B) (λ p. cast p a = b)
-
-*)
-
-Definition heq i A B a b :=
-  Sig prop (obseq (ty (S i)) (Sort (ty i)) A B) (
-    lam prop (ty 0) (obseq (ty (S i)) (Sort (ty i)) A B) (Sort prop) (
-      obseq (ty i) (S ⋅ B) (cast (ty i) (S ⋅ A) (S ⋅ B) (var 0) (S ⋅ a)) (S ⋅ b)
-    )
-  ).
-
-Lemma type_heq Γ i A B a b :
-  Γ ⊢< ty (S i) > A : Sort (ty i) →
-  Γ ⊢< ty (S i) > B : Sort (ty i) →
-  Γ ⊢< ty i > a : A →
-  Γ ⊢< ty i > b : B →
-  Γ ⊢< ty 0 > heq i A B a b : Sort prop.
-Proof.
-Admitted.
-
-Lemma conv_heq Γ i A A' B B' a a' b b' :
-  Γ ⊢< ty (S i) > A ≡ A' : Sort (ty i) →
-  Γ ⊢< ty (S i) > B ≡ B' : Sort (ty i) →
-  Γ ⊢< ty i > a ≡ a' : A →
-  Γ ⊢< ty i > b ≡ b' : B →
-  Γ ⊢< ty 0 > heq i A B a b ≡ heq i A' B' a' b' : Sort prop.
-Proof.
-Admitted.
-
-Definition heq_refl (i : nat) (A a : term) : term.
-Admitted.
-
-Lemma type_heq_refl Γ i A a :
-  Γ ⊢< ty (S i) > A : Sort (ty i) →
-  Γ ⊢< ty i > a : A →
-  Γ ⊢< prop > heq_refl i A a : heq i A A a a.
-Proof.
-Admitted.
-
-Definition heq_cast (i : nat) (A B e a : term) : term.
-Admitted.
-
-Lemma type_heq_cast Γ i A B e a :
-  Γ ⊢< ty (S i) > A : Sort (ty i) →
-  Γ ⊢< ty (S i) > B : Sort (ty i) →
-  Γ ⊢< prop > e : obseq (ty (S i)) (Sort (ty i)) A B →
-  Γ ⊢< ty i > a : A →
-  Γ ⊢< prop > heq_cast i A B e a : heq i A B a (cast (ty i) A B e a).
-Proof.
-Admitted.
+Axiom conv_heq_cast : forall Γ n A A' B B' e e' a a',
+  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
+  Γ ⊢< Ax (ty n) > B ≡ B' : Sort (ty n) →
+  Γ ⊢< prop > e ≡ e' : obseq (Ax (ty n)) (Sort (ty n)) A B →
+  Γ ⊢< ty n > a ≡ a' : A →
+  Γ ⊢< prop > heq_cast (ty n) A B e a ≡ heq_cast (ty n) A' B' e' a' : B.
 
 (* Uniqueness of type *)
 
-Lemma unique_type Γ i u A B :
+(* The following can now be found in UnicityP.v *)
+(* Lemma unique_type Γ i u A B :
   Γ ⊢< i > u : A →
   Γ ⊢< i > u : B →
   Γ ⊢< Ax i > A ≡ B : Sort i.
 Proof.
-Admitted.
+Admitted. *)
 
 (* Potential translations
 
