@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP.
+Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -43,21 +43,21 @@ Axiom conv_heq_refl : forall Γ n A A' a a',
   Γ ⊢< ty n > a ≡ a' : A →
   Γ ⊢< prop > heq_refl (ty n) A a ≡ heq_refl (ty n) A' a' : heq (ty n) A A a a.  
 
-Axiom heq_cast : forall (l : level) (A B e a : term), term.
+Axiom heq_cast : forall (i : level) (A B e a : term), term.
 
-Axiom type_heq_cast : forall Γ n A B e a,
-  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
-  Γ ⊢< Ax (ty n) > B : Sort (ty n) →
-  Γ ⊢< prop > e : obseq (Ax (ty n)) (Sort (ty n)) A B →
-  Γ ⊢< ty n > a : A →
-  Γ ⊢< prop > heq_cast (ty n) A B e a : B.
+Axiom type_heq_cast : forall Γ i A B e a,
+  Γ ⊢< Ax (ty i) > A : Sort (ty i) →
+  Γ ⊢< Ax (ty i) > B : Sort (ty i) →
+  Γ ⊢< prop > e : obseq (Ax (ty i)) (Sort (ty i)) A B →
+  Γ ⊢< ty i > a : A →
+  Γ ⊢< prop > heq_cast (ty i) A B e a : heq (ty i) A B a (cast (ty i) A B e a).
 
-Axiom conv_heq_cast : forall Γ n A A' B B' e e' a a',
-  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
-  Γ ⊢< Ax (ty n) > B ≡ B' : Sort (ty n) →
-  Γ ⊢< prop > e ≡ e' : obseq (Ax (ty n)) (Sort (ty n)) A B →
-  Γ ⊢< ty n > a ≡ a' : A →
-  Γ ⊢< prop > heq_cast (ty n) A B e a ≡ heq_cast (ty n) A' B' e' a' : B.
+Axiom conv_heq_cast : forall Γ i A A' B B' e e' a a',
+  Γ ⊢< Ax (ty i) > A ≡ A' : Sort (ty i) →
+  Γ ⊢< Ax (ty i) > B ≡ B' : Sort (ty i) →
+  Γ ⊢< prop > e ≡ e' : obseq (Ax (ty i)) (Sort (ty i)) A B →
+  Γ ⊢< ty i > a ≡ a' : A →
+  Γ ⊢< prop > heq_cast (ty i) A B e a : heq (ty i) A B a (cast (ty i) A B e a).
 
 (* Uniqueness of type *)
 
@@ -352,7 +352,7 @@ Lemma sim_heq i Γ u v A B :
   u ~ v →
   Γ ⊢< ty i > u : A →
   Γ ⊢< ty i > v : B →
-  ∃ e, Γ ⊢< prop > e : heq i A B u v.
+  ∃ e, Γ ⊢< prop > e : heq (ty i) A B u v.
 Proof.
   intros hsim hu hv.
   induction hsim in Γ, A, B, hu, hv |- *.
@@ -393,7 +393,7 @@ Definition eqtrans l A u v Γ' A' A'' u' v' e :=
     A ⊏ A'' ∧
     u ⊏ u' ∧
     v ⊏ v' ∧
-    Γ' ⊢< prop > e : heq i A' A'' u' v'
+    Γ' ⊢< prop > e : heq (ty i) A' A'' u' v'
   end.
 
 (* Type heads *)

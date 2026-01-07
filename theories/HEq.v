@@ -138,7 +138,13 @@ Proof.
     destruct e1. destruct e2. eapply obseq_sym. eapply cast_refl.
 Qed.
 
-Definition cast_heq {A B : Type} (e : A == B) (a : A) : B := hetero_to_homo e # a.
+Lemma heq_cast {A B} {e : A ~ B} {a} : a == (e # a).
+Proof.
+    destruct e. 
+    eapply homo_to_hetero, obseq_sym, cast_refl.
+Qed.
+
+(* Definition cast_heq {A B : Type} (e : A == B) (a : A) : B := hetero_to_homo e # a. *)
 
 Lemma heq_ap : forall {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
     {f : forall x : A1, B1 x} {g : forall x : A2, B2 x} {t : A1} {u : A2} (p : f == g) (q : t == u), (f t) == (g u).
@@ -149,18 +155,6 @@ Proof.
     destruct q1. destruct q2. 
 Admitted.
 
-
-Definition heq_cast_left {A B C : Type} {t : A} {u : C} (e : A ~ B) (p : t == u) : e # t == u. 
-Admitted.
-
-Definition heq_cast_right {A B C : Type} {t : A} {u : B} (e : B ~ C) (p : t == u) : t == e # u.
-Admitted.
-
-Definition heq_cast_left' {A B C : Type} {t : A} {u : C} (e : A ~ B) (p : e # t == u) : t == u.
-Admitted.
-
-Definition heq_cast_right' {A B C : Type} {t : A} {u : B} (e : B ~ C) (p : t == e # u) : t == u.
-Admitted.
 
 Definition heq_funext : forall {A : Type} {B1 B2 : A -> Type} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x == g x), f == g.
 Admitted.

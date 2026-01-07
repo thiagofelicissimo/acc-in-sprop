@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
 From TypedConfluence
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory. (*  Env Inst. *)
+From TypedConfluence Require Import Util BasicAST Contexts TypingP BasicMetaTheoryP. (*  Env Inst. *)
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 
 Require Import Equations.Prop.DepElim.
@@ -227,20 +227,20 @@ Lemma type_inv Γ l t T :
 Proof.
   intros.
   apply validity_ty_ty in H as T_Wt.
-  induction H. 1-20:econstructor; eauto using conv_refl.
+  induction H. 1-21:econstructor; eauto using conv_refl.
   eapply validity_conv_left in H0 as AWt.
   eapply IHtyping in AWt as IH.
   depelim IH; econstructor; subst; eauto using conv_sym, conv_trans.
 Qed.
 
-Theorem type_sort_unicity Γ l l' t A B :
+Theorem unique_type_sort Γ l l' t A B :
   Γ ⊢< l > t : A ->
   Γ ⊢< l' > t : B ->
   Γ ⊢< Ax l > A ≡ B : Sort l /\ l = l'.
 Proof.
   intros.
   induction H.
-  2-20:eapply type_inv in H0; dependent destruction H0; subst; eauto 13 using conv_sym.
+  2-21:eapply type_inv in H0; dependent destruction H0; subst; eauto 13 using conv_sym.
   - eapply type_inv in H0. dependent destruction H0.
     eapply var_unicity in H1 as (HA & HB); eauto. subst. eauto using conv_sym.
   - rewrite H1 in assm_in_sig. dependent destruction assm_in_sig.
@@ -248,19 +248,19 @@ Proof.
   - eapply IHtyping in H0 as (HA & HB). subst. eauto using conv_sym, conv_trans.
 Qed.
 
-Corollary type_unicity Γ l l' t A B :
+Corollary unique_type Γ l l' t A B :
   Γ ⊢< l > t : A ->
   Γ ⊢< l' > t : B ->
   Γ ⊢< Ax l > A ≡ B : Sort l.
 Proof.
-  intros. eapply type_sort_unicity in H as (HA & HB); eauto. subst.
+  intros. eapply unique_type_sort in H as (HA & HB); eauto. subst.
   eauto using conv_sym.
 Qed.
 
-Corollary sort_unicity Γ l l' t A B :
+Corollary unique_sort Γ l l' t A B :
   Γ ⊢< l > t : A ->
   Γ ⊢< l' > t : B ->
   l = l'.
 Proof.
-  intros. eapply type_sort_unicity in H as (HA & HB); eauto.
+  intros. eapply unique_type_sort in H as (HA & HB); eauto.
 Qed.
