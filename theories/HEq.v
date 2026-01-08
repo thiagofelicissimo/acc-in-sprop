@@ -183,7 +183,6 @@ Proof.
 Qed.
 
 
-
 Definition heq_funext : forall {A : Type} {B1 B2 : A -> Type} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x == g x), f == g.
 Proof.
     intros. unshelve eapply mkΣ.

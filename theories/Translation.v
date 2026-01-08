@@ -15,6 +15,7 @@ Open Scope subst_scope.
 
 
 (* the following axioms are justified in the file HEq.v *)
+
 Axiom heq : level -> term -> term -> term -> term -> term.
 
 Axiom type_heq : forall Γ n A B a b,
@@ -31,6 +32,8 @@ Axiom conv_heq : forall Γ n A B a b A' B' a' b',
   Γ ⊢< ty n > b ≡ b' : B →
   Γ ⊢< ty 0 > heq (ty n) A B a b ≡ heq (ty n) A' B' a' b' : Sort prop.
 
+
+
 Axiom heq_refl : level -> term -> term -> term.
 
 Axiom type_heq_refl : forall Γ n A a,
@@ -42,6 +45,44 @@ Axiom conv_heq_refl : forall Γ n A A' a a',
   Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
   Γ ⊢< ty n > a ≡ a' : A →
   Γ ⊢< prop > heq_refl (ty n) A a ≡ heq_refl (ty n) A' a' : heq (ty n) A A a a.  
+
+
+
+Axiom heq_sym : level -> term -> term -> term -> term -> term -> term.
+
+Axiom type_heq_sym : forall Γ n A B b a e,
+  Γ ⊢< ty n > a : A ->
+  Γ ⊢< ty n > b : B ->
+  Γ ⊢< prop > e : heq (ty n) A B a b →
+  Γ ⊢< prop > heq_sym (ty n) A B a b e : heq (ty n) A B a b.
+
+Axiom conv_heq_sym : forall Γ n A B b a e A' B' b' a' e',
+  Γ ⊢< ty n > a ≡ a' : A ->
+  Γ ⊢< ty n > b ≡ b' : B ->
+  Γ ⊢< prop > e ≡ e' : heq (ty n) A B a b →
+  Γ ⊢< prop > heq_sym (ty n) A B a b e ≡ heq_sym (ty n) A' B' a' b' e' : heq (ty n) A B a b.
+
+
+
+Axiom heq_trans : level -> term -> term -> term -> term -> term -> term -> term -> term -> term.
+
+Axiom type_heq_trans : forall Γ n A B C c b a e1 e2,
+  Γ ⊢< ty n > a : A ->
+  Γ ⊢< ty n > b : B ->
+  Γ ⊢< ty n > c : C ->
+  Γ ⊢< prop > e1 : heq (ty n) A B a b →
+  Γ ⊢< prop > e2 : heq (ty n) B C b c → 
+  Γ ⊢< prop > heq_trans (ty n) A B C a b c e1 e2 : heq (ty n) A C a c.
+
+Axiom conv_heq_trans : forall Γ n A B C c b a e1 e2 A' B' C' c' b' a' e1' e2',
+  Γ ⊢< ty n > a ≡ a' : A ->
+  Γ ⊢< ty n > b ≡ b' : B ->
+  Γ ⊢< ty n > c ≡ c' : C ->
+  Γ ⊢< prop > e1 ≡ e1' : heq (ty n) A B a b →
+  Γ ⊢< prop > e2 ≡ e2' : heq (ty n) B C b c → 
+  Γ ⊢< prop > heq_trans (ty n) A B C a b c e1 e2 ≡ heq_trans (ty n) A' B' C' a' b' c' e1' e2' : heq (ty n) A C a c.
+
+
 
 Axiom heq_cast : forall (i : level) (A B e a : term), term.
 
@@ -58,6 +99,39 @@ Axiom conv_heq_cast : forall Γ i A A' B B' e e' a a',
   Γ ⊢< prop > e ≡ e' : obseq (Ax (ty i)) (Sort (ty i)) A B →
   Γ ⊢< ty i > a ≡ a' : A →
   Γ ⊢< prop > heq_cast (ty i) A B e a : heq (ty i) A B a (cast (ty i) A B e a).
+
+
+
+Axiom heq_app : level -> level -> term -> term -> term -> term -> term -> term -> term -> term -> term -> term -> term.
+
+Axiom type_heq_app : forall Γ n m A1 A2 B1 B2 f1 f2 a1 a2 p q,
+  Γ ,, (ty n, A1) ⊢< ty m > f1 : B1 ->
+  Γ ,, (ty n, A2) ⊢< ty m > f2 : B2 ->
+  Γ ⊢< ty n > a1 : A1 ->
+  Γ ⊢< ty n > a2 : A2 ->
+  Γ ⊢< prop > p : heq (Ru (ty n) (ty m)) (Pi (ty n) (ty m) A1 B1) (Pi (ty n) (ty m) A2 B2) f1 f2 -> 
+  Γ ⊢< prop > q : heq (ty n) A1 A2 a1 a2 ->
+  Γ ⊢< prop > heq_app (ty n) (ty m) A1 A2 B1 B2 f1 f2 a1 a2 p q 
+    : heq (ty m) (B1 <[a1..]) (B2 <[a2..]) (app (ty n) (ty m) A1 B1 f1 a1) (app (ty n) (ty m) A2 B2 f2 a2).
+
+
+
+
+Axiom heq_pi : level -> level -> term -> term -> term -> term -> term -> term -> term.
+
+(* I think we will need another heq_pi which replaces (ty n) by prop, but this cannot be the same symbol *)
+Axiom type_heq_pi : forall Γ n m A1 A2 B1 B2 p q,
+  Γ ⊢< Ax (ty n) > A1 : Sort (ty n) ->
+  Γ ⊢< Ax (ty n) > A2 : Sort (ty n) ->
+  Γ ,, (ty n, A1) ⊢< Ax (ty m) > B1 : Sort (ty m) ->
+  Γ ,, (ty n, A2) ⊢< Ax (ty m) > B2 : Sort (ty m) ->
+  Γ ⊢< prop > p : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A1 A2 ->
+  let Aeq := heq (ty n) ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  Γ ,, (ty n, A1) ,, (ty n, S ⋅ A2) ,, (prop, Aeq)
+    ⊢< prop > q : heq (Ax (ty m)) (Sort (ty m)) (Sort (ty m)) (((S >> S >> S) ⋅ B1) <[(var 2)..]) (((S >> S >> S) ⋅ B2) <[(var 1)..]) -> 
+  Γ ⊢< prop > heq_pi (ty n) (ty m) A1 A2 B1 B2 p q 
+    : heq (Ax (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Pi (ty n) (ty m) A1 B1) (Pi (ty n) (ty m) A2 B2).
+
 
 (* Uniqueness of type *)
 
