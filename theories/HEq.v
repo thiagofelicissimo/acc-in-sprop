@@ -71,7 +71,7 @@ Parameter funext : forall {A B} (f g : forall (x : A), B x), (forall (x : A), f 
 
 Axiom cast_pi : forall A B A' B' e f, 
     cast (forall (x : A), B x) (forall (x : A'), B' x) e f 
-    = fun (x : A') => cast (B (cast A' A (obseq_forall_1 e) x))
+    ~ fun (x : A') => cast (B (cast A' A (obseq_forall_1 e) x))
                             (B' x)
                             (obseq_forall_2 e x)
                             (f (cast A' A (obseq_forall_1 e) x)).
@@ -146,20 +146,61 @@ Qed.
 
 (* Definition cast_heq {A B : Type} (e : A == B) (a : A) : B := hetero_to_homo e # a. *)
 
+Lemma ap' {A B} (f g : forall x : A, B x) (t : A): f ~ g -> f t ~ g t.
+Proof.
+    intros. destruct H. eapply obseq_refl.
+Qed.
+
 Lemma heq_ap : forall {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
     {f : forall x : A1, B1 x} {g : forall x : A2, B2 x} {t : A1} {u : A2} (p : f == g) (q : t == u), (f t) == (g u).
 Proof.  
     intros.
     eapply fst in p as p1. pose proof (p2 := snd p).
     eapply fst in q as q1. pose proof (q2 := snd q). simpl in p2,q2.
-    destruct q1. destruct q2. 
-Admitted.
+    destruct q1. destruct q2.
+    unshelve eapply heq_trans.
+    2:exact (g t).
+    - unshelve eapply mkΣ.
+      * pose (e := obseq_forall_2 p1 t). destruct e. eapply ap. eapply obseq_sym, cast_refl.
+      * destruct p2. eapply obseq_trans.
+        2:eapply ap', obseq_sym, cast_pi.
+        simpl. eapply hetero_to_homo. 
+        eapply heq_trans. eapply heq_sym, heq_cast.
+        eapply heq_trans. 2:eapply heq_cast.
+        pose proof (e := cast_refl _ (obseq_forall_1 (fst p)) t).
+        unshelve eapply (obseq_sind _ _ (fun t' _ => f t' == f (cast A1 A1 (obseq_forall_1 (fst p)) t)) _ _).
+        2:eapply heq_refl. eapply cast_refl.
+    - unshelve eapply (obseq_sind _ _ (fun t' _ => g t' == g (cast A1 A1 (fst q) t)) _ _).
+      2:eapply heq_refl. eapply cast_refl.
+Qed.
+
 
 
 Definition heq_funext : forall {A : Type} {B1 B2 : A -> Type} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x == g x), f == g.
-Admitted.
+Proof.
+    intros. unshelve eapply mkΣ.
+    - eapply (ap (fun B => forall x : A, B x)). 
+      eapply funext. intros. pose proof (px := p x).
+      pose (px1 := fst px). assumption.
+    - eapply funext. intros.
+      pose proof (px := p x).
+      pose (px1 := fst px). pose (px2 := snd px). simpl in px2.
+      destruct px2. eapply obseq_trans.
+      eapply ap'. eapply cast_pi. simpl.
+      eapply hetero_to_homo.
+      eapply heq_trans.
+      eapply heq_sym, heq_cast.
+      eapply heq_trans. 2:eapply heq_cast.
+      eapply heq_ap. eapply heq_refl. eapply homo_to_hetero, cast_refl.
+Qed.
 
 Definition heq_funext' {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
     {f : forall x : A1, B1 x} {g : forall x : A2, B2 x} (e : A1 ~ A2) (p : forall x, f x == g (e # x)) : f == g.   
 Proof.
-Admitted.
+    destruct e.
+    eapply heq_funext.
+    intros.
+    eapply heq_trans.
+    exact (p x).
+    eapply heq_ap. eapply heq_refl. eapply homo_to_hetero, cast_refl.
+Qed.
