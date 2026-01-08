@@ -612,29 +612,65 @@ Proof.
   apply hc.
 Qed.
 
-Lemma tr_subst_one i j Γ Γ' t t' u u' A A' B B' :
+Lemma tr_zero Γ Γ' :
+  tr_ctx Γ Γ' →
+  Γ' ⊨⟨ ty 0 ⟩ zero : Nat ∈ ⟦ zero : Nat ⟧.
+Proof.
+  intros hc.
+  split. 2: intuition constructor.
+  constructor. apply hc.
+Qed.
+
+Definition tr_subst Γ' σ σ' Δ' :=
+  Γ' ⊢s σ' : Δ' ∧ dec_subst σ σ'.
+
+Lemma tr_substitution i Γ Γ' t t' A A' Δ' σ σ' :
+  tr_ctx Γ Γ' →
+  Δ' ⊨⟨ i ⟩ t' : A' ∈ ⟦ t : A ⟧ →
+  tr_subst Γ' σ σ' Δ' →
+  Γ' ⊨⟨ i ⟩ (t' <[ σ' ]) : (A' <[ σ' ]) ∈ ⟦ (t <[ σ ]) : (A <[ σ ]) ⟧.
+Proof.
+  intros hc ht hs.
+  destruct ht as (? & ? & ?), hs as (? & ?).
+  split. 2: intuition eauto using substs_decs.
+  eapply typing_conversion_subst.
+  - eassumption.
+  - apply hc.
+  - assumption.
+Qed.
+
+Corollary tr_substitution_sort i Γ Γ' A A' l Δ' σ σ' :
+  tr_ctx Γ Γ' →
+  Δ' ⊨⟨ i ⟩ A' : (Sort l) ∈ ⟦ A : (Sort l) ⟧ →
+  tr_subst Γ' σ σ' Δ' →
+  Γ' ⊨⟨ i ⟩ (A' <[ σ' ]) : (Sort l) ∈ ⟦ (A <[ σ ]) : (Sort l) ⟧.
+Proof.
+  intros hc ht hs.
+  eapply tr_substitution in hs. 2,3: eassumption.
+  assumption.
+Qed.
+
+Corollary tr_substitution_one i j Γ Γ' t t' u u' A A' B B' :
   tr_ctx Γ Γ' →
   (Γ',, (j,B')) ⊨⟨ i ⟩ t' : A' ∈ ⟦ t : A ⟧ →
   Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
   Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (A' <[ u' .. ]) ∈ ⟦ (t <[ u .. ]) : (A <[ u .. ]) ⟧.
 Proof.
   intros hc ht hu.
-  destruct ht as (? & ? & ?), hu as (? & ? & ?).
-  split. 2: intuition eauto using substs_decs_one.
-  eapply typing_conversion_subst.
-  - eassumption.
-  - apply hc.
-  - apply subst_one. assumption.
+  eapply tr_substitution. 1,2: eassumption.
+  split.
+  - apply subst_one. apply hu.
+  - apply dec_subst_one. apply hu.
 Qed.
 
-Corollary tr_subst_one_sort i j Γ Γ' t t' u u' l B B' :
+Corollary tr_substitution_one_sort i j Γ Γ' t t' u u' l B B' :
   tr_ctx Γ Γ' →
   (Γ',, (j,B')) ⊨⟨ i ⟩ t' : (Sort l) ∈ ⟦ t : (Sort l) ⟧ →
   Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
   Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (Sort l) ∈ ⟦ (t <[ u .. ]) : (Sort l) ⟧.
 Proof.
   intros hc ht hu.
-  eapply tr_subst_one in hu. 2,3: eassumption.
+  eapply tr_substitution_one in hu. 2,3: eassumption.
   assumption.
 Qed.
 
@@ -712,8 +748,7 @@ Proof.
   - intros * ?? hc.
     eexists _,_. eapply tr_Nat. eassumption.
   - intros * ?? hc.
-    eexists _,_. split. 2: intuition constructor.
-    constructor. apply hc.
+    eexists _,_. eapply tr_zero. eassumption.
   - intros * ? iht ? hc.
     specialize iht with (1 := hc). destruct iht as (t' & N & iht).
     eapply change_type in iht. 2:{ eapply tr_Nat. all: eassumption. }
@@ -726,9 +761,67 @@ Proof.
     2:{ eapply tr_Nat. eassumption. }
     specialize ihP with (1 := hcn). destruct ihP as (P' & ?s & ihP).
     eapply keep_sort in ihP. destruct ihP as (P'' & ihP).
-    specialize ihz with (1 := hc). destruct ihz as (?z & ?T & ihz).
+    specialize ihz with (1 := hc). destruct ihz as (?z' & ?T & ihz).
     eapply change_type in ihz.
-    2:{ eapply tr_subst_one_sort. all: try eassumption. admit. }
+    2:{ eapply tr_substitution_one_sort. all: eauto using tr_zero. }
+    destruct ihz as (?z' & ihz).
+    eapply tr_ctx_cons in hcn as hcns. 2: eassumption.
+    specialize ihs with (1 := hcns). destruct ihs as (?s' & ?T' & ihs).
+    eapply change_type in ihs.
+    2:{
+      eapply tr_substitution_sort. 1,2: eassumption.
+      admit. (* Either make utility or inline, we'll see later *)
+    }
+    destruct ihs as (?s' & ihs).
+    specialize iht with (1 := hc). destruct iht as (?t' & ?T & iht).
+    eapply change_type in iht. 2:{ eapply tr_Nat. eassumption. }
+    destruct iht as (?t' & iht).
+    (* TODO LATER *)
+    admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - intros * ? iht ? ihAB ? hc.
+    admit.
 
   (* Conversion rules *)
+
+  - intros * ??? hc. admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
 Abort.
