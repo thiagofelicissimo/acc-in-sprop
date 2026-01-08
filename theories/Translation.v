@@ -375,6 +375,59 @@ Proof.
   all: solve [ cbn ; econstructor ; eauto ].
 Qed.
 
+Definition dec_subst (σ θ : nat → term) :=
+  ∀ x, σ x ⊏ θ x.
+
+Lemma dec_subst_up σ θ :
+  dec_subst σ θ →
+  dec_subst (up_term σ) (up_term θ).
+Proof.
+  intros h [].
+  - cbn. constructor.
+  - cbn. unfold ">>". apply rename_dec. apply h.
+Qed.
+
+Lemma dec_subst_one u v :
+  u ⊏ v →
+  dec_subst (u..) (v..).
+Proof.
+  intros h [].
+  - cbn. assumption.
+  - cbn. constructor.
+Qed.
+
+Lemma substs_dec σ θ u :
+  dec_subst σ θ →
+  u <[ σ ] ⊏ u <[ θ ].
+Proof.
+  intros h.
+  induction u in σ, θ, h |- *.
+  all: try solve [ cbn ; econstructor ; eauto using dec_subst_up ].
+  - cbn. eauto.
+  - cbn.
+Admitted.
+
+Lemma substs_decs σ θ u v :
+  dec_subst σ θ →
+  u ⊏ v →
+  u <[ σ ] ⊏ v <[ θ ].
+Proof.
+  intros hs hd.
+  eapply dec_trans.
+  - eapply subst_dec. eassumption.
+  - apply substs_dec. assumption.
+Qed.
+
+Lemma substs_decs_one u v a b :
+  u ⊏ v →
+  a ⊏ b →
+  u <[ a .. ] ⊏ v <[ b .. ].
+Proof.
+  intros h1 h2.
+  apply substs_decs. 2: auto.
+  apply dec_subst_one. assumption.
+Qed.
+
 (* Fundamental lemma
 
   We're going to prove a more general statement with cast substitutions, but
@@ -538,6 +591,53 @@ Proof.
     cbn. intuition auto.
 Qed.
 
+Lemma tr_Pi i j Γ' A A' B B' :
+  Γ' ⊨⟨ Ax i ⟩ A' : Sort i ∈ ⟦ A : Sort i ⟧ →
+  (Γ',, (i, A')) ⊨⟨ Ax j ⟩ B' : Sort j ∈ ⟦ B : Sort j ⟧ →
+  Γ' ⊨⟨ Ax (Ru i j) ⟩ (Pi i j A' B') : (Sort (Ru i j)) ∈ ⟦ (Pi i j A B) : (Sort (Ru i j)) ⟧.
+Proof.
+  intros ihA ihB.
+  destruct ihA as (? & ? & _), ihB as (? & ? & _).
+  split. 2: intuition (constructor ; eauto).
+  econstructor. all: eauto.
+Qed.
+
+Lemma tr_Nat Γ Γ' :
+  tr_ctx Γ Γ' →
+  Γ' ⊨⟨ ty 1 ⟩ Nat : (Sort (ty 0)) ∈ ⟦ Nat : (Sort (ty 0)) ⟧.
+Proof.
+  intro hc.
+  split. 2: intuition constructor.
+  constructor.
+  apply hc.
+Qed.
+
+Lemma tr_subst_one i j Γ Γ' t t' u u' A A' B B' :
+  tr_ctx Γ Γ' →
+  (Γ',, (j,B')) ⊨⟨ i ⟩ t' : A' ∈ ⟦ t : A ⟧ →
+  Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
+  Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (A' <[ u' .. ]) ∈ ⟦ (t <[ u .. ]) : (A <[ u .. ]) ⟧.
+Proof.
+  intros hc ht hu.
+  destruct ht as (? & ? & ?), hu as (? & ? & ?).
+  split. 2: intuition eauto using substs_decs_one.
+  eapply typing_conversion_subst.
+  - eassumption.
+  - apply hc.
+  - apply subst_one. assumption.
+Qed.
+
+Corollary tr_subst_one_sort i j Γ Γ' t t' u u' l B B' :
+  tr_ctx Γ Γ' →
+  (Γ',, (j,B')) ⊨⟨ i ⟩ t' : (Sort l) ∈ ⟦ t : (Sort l) ⟧ →
+  Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
+  Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (Sort l) ∈ ⟦ (t <[ u .. ]) : (Sort l) ⟧.
+Proof.
+  intros hc ht hu.
+  eapply tr_subst_one in hu. 2,3: eassumption.
+  assumption.
+Qed.
+
 Lemma typing_conversion_trans :
   (∀ Γ l t A,
     Γ ⊢< l >× t : A →
@@ -553,6 +653,9 @@ Lemma typing_conversion_trans :
   ).
 Proof.
   apply Typing.typing_mutind.
+
+  (* Typing rules *)
+
   - intros * ? hx ? hc.
     eapply varty_trans in hx as hx'. 2: eassumption.
     destruct hx' as (A' & hx' & hA).
@@ -573,9 +676,7 @@ Proof.
     eapply tr_ctx_cons in hc as hca. 2: eassumption.
     specialize ihB with (1 := hca). destruct ihB as (B' & s' & ihB).
     eapply keep_sort in ihB. destruct ihB as (B'' & ihB).
-    destruct ihA as (? & ? & _), ihB as (? & ? & _).
-    eexists _,_. split. 2: intuition (constructor ; eauto).
-    econstructor. all: eauto.
+    eexists _,_. eapply tr_Pi. all: eassumption.
   - intros * ? ihA ? ihB ? iht ? hc.
     specialize ihA with (1 := hc). destruct ihA as (A' & s & ihA).
     eapply keep_sort in ihA. destruct ihA as (A'' & ihA).
@@ -588,4 +689,46 @@ Proof.
     destruct ihA as (? & ? & _), ihB as (? & ? & _), iht as (? & ? & _).
     eexists _,_. split. 2: intuition (constructor ; eauto).
     econstructor. all: eauto.
+  - intros * ? ihA ? ihB ? iht ? ihu ? hc.
+    specialize ihA with (1 := hc). destruct ihA as (A' & s & ihA).
+    eapply keep_sort in ihA. destruct ihA as (A'' & ihA).
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    specialize ihB with (1 := hca). destruct ihB as (B' & s' & ihB).
+    eapply keep_sort in ihB. destruct ihB as (B'' & ihB).
+    specialize iht with (1 := hc). destruct iht as (t' & PAB & iht).
+    eapply change_type in iht. 2:{ eapply tr_Pi. all: eassumption. }
+    destruct iht as (t'' & iht).
+    specialize ihu with (1 := hc). destruct ihu as (u' & Au & ihu).
+    eapply change_type in ihu. 2: eassumption.
+    destruct ihu as (u'' & ihu).
+    destruct
+      ihA as (? & ? & _),
+      ihB as (? & ? & _),
+      iht as (? & ? & _),
+      ihu as (? & ? & _).
+    eexists _,_. split. 2: split. 2: constructor ; eauto.
+    + econstructor. all: eauto.
+    + eapply substs_decs_one. all: assumption.
+  - intros * ?? hc.
+    eexists _,_. eapply tr_Nat. eassumption.
+  - intros * ?? hc.
+    eexists _,_. split. 2: intuition constructor.
+    constructor. apply hc.
+  - intros * ? iht ? hc.
+    specialize iht with (1 := hc). destruct iht as (t' & N & iht).
+    eapply change_type in iht. 2:{ eapply tr_Nat. all: eassumption. }
+    destruct iht as (t'' & iht).
+    destruct iht as (? & ? & _).
+    eexists _,_. split. 2: intuition (constructor ; eauto).
+    constructor. assumption.
+  - intros * ? ihP ? ihz ? ihs ? iht ? hc.
+    eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
+    2:{ eapply tr_Nat. eassumption. }
+    specialize ihP with (1 := hcn). destruct ihP as (P' & ?s & ihP).
+    eapply keep_sort in ihP. destruct ihP as (P'' & ihP).
+    specialize ihz with (1 := hc). destruct ihz as (?z & ?T & ihz).
+    eapply change_type in ihz.
+    2:{ eapply tr_subst_one_sort. all: try eassumption. admit. }
+
+  (* Conversion rules *)
 Abort.
