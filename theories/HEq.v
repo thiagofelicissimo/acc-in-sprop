@@ -80,6 +80,14 @@ Parameter propext : forall {A B : SProp}, (A -> B) -> (B -> A) -> A ~ B.
 
 (* --- END OF THE DEF OF OBS EQ --- *)
 
+(* postulating Acc *)
+Axiom Acc : forall (A : Type) (R : A -> A -> SProp) (a : A), SProp.
+
+Axiom acc_in : forall A R a (f : forall y, R a y -> Acc A R y), Acc A R a.
+Axiom acc_inv : forall A R a, Acc A R a -> forall b, R a b -> Acc A R b.
+Axiom acc_el : forall A R (P : A -> Type) (p : forall (a : A) (ϵf : forall y : A, R a y -> P y), P a) (y : A) (r : Acc A R y), P y.
+(* end of Acc *)
+
 (* Constructing Sigmas *)
 Definition Σ (A : SProp) (B : A -> SProp) : SProp := 
     forall P, (forall a:A, B a -> P) -> P.
@@ -233,5 +241,83 @@ Lemma heq_obseq {A1 A2 : Type} {a1 b1 : A1} {a2 b2 : A2}
 Proof.
     pose proof (e21 := fst e2). destruct e21.
     eapply hetero_to_homo in e2, e3. destruct e2, e3.
+    eapply heq_refl.
+Qed.
+
+Lemma heq_natrec {P1 P2 : nat -> Type} {pzero1 : P1 O} {pzero2 : P2 O} 
+        {psucc1 : forall x : nat, P1 x -> P1 (S x)} {psucc2 : forall x : nat, P2 x -> P2 (S x)} {n1 n2}
+        (e1 : forall x, P1 x == P2 x) (e2 : pzero1 == pzero2) 
+        (e3 : forall x p1 p2, p1 == p2 -> psucc1 x p1 == psucc2 x p2) 
+        (e4 : n1 == n2) : (@nat_rect P1 pzero1 psucc1 n1) == (@nat_rect P2 pzero2 psucc2 n2).
+Proof.
+    eapply heq_app; eauto.
+    eapply (@heq_app _ _ _ _ (nat_rect P1 pzero1) (nat_rect P2 pzero2)).
+    eapply (@heq_app _ _ _ _ (nat_rect P1) (nat_rect P2)).
+    eapply (@heq_app _ _ _ _ nat_rect nat_rect).
+    eapply heq_refl.
+    eapply heq_funext. eapply e1.
+    eapply e2.
+    eapply heq_funext. intros.
+    unshelve eapply heq_funext'. 
+    2:{ intros. eapply e3. eapply heq_cast. }
+    eapply hetero_to_homo. eapply e1.
+Qed.
+
+Lemma heq_cast' {A1 A2 B1 B2} (e1 : A1 ~ B1) (e2 : A2 ~ B2) (a1 : A1) (a2 : A2) (e : a1 == a2) : (e1 # a1) == (e2 # a2).
+Proof.
+    destruct e1. destruct e2. 
+    pose proof (e1 := fst e). destruct e1.
+    eapply heq_trans. eapply heq_trans.
+    2:exact e.
+    eapply heq_sym. eapply (@heq_cast _ _ obseq_refl a1).
+    eapply heq_cast.
+Qed.
+
+Lemma heq_acc {A1 A2 R1 R2 a1 a2} 
+        (e1 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> R1 x1 y1 == R2 x2 y2) 
+        (e2 : a1 == a2) 
+        : (Acc A1 R1 a1) == (Acc A2 R2 a2).
+Proof.
+    pose proof (e21 := fst e2). destruct e21.
+    eapply (@heq_app _ _ _ _ (Acc A1 R1) (Acc A1 R2)).
+    2:assumption.
+    eapply (@heq_app _ _ _ _ (Acc A1) (Acc A1)).
+    eapply heq_refl.
+    eapply heq_funext. intros.
+    eapply heq_funext. intros.
+    eapply e1; eauto using heq_refl.
+Qed.
+
+Lemma heq_acc_el {A1 A2 R1 R2 a1 a2 P1 P2 p1 p2}
+    (e0 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> R1 x1 y1 == R2 x2 y2) 
+    (e1 : forall x1 x2, x1 == x2 -> P1 x1 == P2 x2)
+    (e2 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> p1 x1 y1 == p2 x2 y2)
+    (e3 : a1 == a2)
+    : (acc_el A1 R1 P1 p1 a1) == (acc_el A2 R2 P2 p2 a2).
+Proof.
+    pose proof (e31 := fst e3). destruct e31.
+    eapply (@heq_app _ _ _ _ (acc_el A1 R1 P1 p1) (acc_el A1 R2 P2 p2)).
+    2:assumption.
+    eapply (@heq_app _ _ _ _ (acc_el A1 R1 P1) (acc_el A1 R2 P2)).
+    eapply (@heq_app _ _ _ _ (acc_el A1 R1) (acc_el A1 R2)).
+    eapply (@heq_app _ _ _ _ (acc_el A1) (acc_el A1)).
+    eapply heq_refl.
+    eapply heq_funext. intros.
+    eapply heq_funext. intros.
+    eapply e0; eauto using heq_refl.
+    eapply heq_funext. intros. eapply e1; eauto using heq_refl.
+    eapply heq_funext. intros.
+    unshelve eapply heq_funext'. 
+    2:{intros.
+    eapply e2; eauto using heq_refl.
+    eapply heq_cast. }
+    eapply (ap (fun B => forall x : A1, B x)).
+    eapply hetero_to_homo.
+    eapply heq_funext.
+    intros.
+    pose proof (e0' := e0 x x (heq_refl _) x0 x0 (heq_refl _)). 
+    eapply hetero_to_homo in e0'. destruct e0'.
+    pose proof (e1' := e1 x0 x0 (heq_refl _)).
+    eapply hetero_to_homo in e1'. destruct e1'.
     eapply heq_refl.
 Qed.
