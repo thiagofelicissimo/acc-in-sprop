@@ -151,7 +151,7 @@ Proof.
     intros. destruct H. eapply obseq_refl.
 Qed.
 
-Lemma heq_ap : forall {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
+Lemma heq_app : forall {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
     {f : forall x : A1, B1 x} {g : forall x : A2, B2 x} {t : A1} {u : A2} (p : f == g) (q : t == u), (f t) == (g u).
 Proof.  
     intros.
@@ -191,7 +191,7 @@ Proof.
       eapply heq_trans.
       eapply heq_sym, heq_cast.
       eapply heq_trans. 2:eapply heq_cast.
-      eapply heq_ap. eapply heq_refl. eapply homo_to_hetero, cast_refl.
+      eapply heq_app. eapply heq_refl. eapply homo_to_hetero, cast_refl.
 Qed.
 
 Definition heq_funext' {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
@@ -202,5 +202,36 @@ Proof.
     intros.
     eapply heq_trans.
     exact (p x).
-    eapply heq_ap. eapply heq_refl. eapply homo_to_hetero, cast_refl.
+    eapply heq_app. eapply heq_refl. eapply homo_to_hetero, cast_refl.
+Qed.
+
+
+Lemma heq_pi {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} (e1 : A1 == A2) (e2 : forall x1 x2, x1 == x2 -> B1 x1 == B2 x2) 
+    : (forall x : A1, B1 x) == (forall x : A2, B2 x).
+Proof.
+    eapply hetero_to_homo in e1. destruct e1. 
+    eapply homo_to_hetero.
+    eapply (ap (fun B => forall x : A1, B x)).
+    eapply funext. intros.
+    eapply hetero_to_homo.
+    eapply e2. eapply heq_refl.
+Qed.
+
+Lemma heq_lam {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
+    {f1 : forall x : A1, B1 x} {f2 : forall x : A2, B2 x} 
+    (e1 : A1 == A2) (e2 : forall x1 x2, x1 == x2 -> f1 x1 == f2 x2) 
+    : (fun x => f1 x) == (fun x => f2 x).
+Proof.
+    eapply hetero_to_homo in e1. destruct e1.
+    eapply heq_funext. intros.
+    eapply e2. eapply heq_refl.
+Qed.
+
+
+Lemma heq_obseq {A1 A2 : Type} {a1 b1 : A1} {a2 b2 : A2} 
+    (e2 : a1 == a2) (e3 : b1 == b2) : (@obseq A1 a1 b1) == (@obseq A2 a2 b2).
+Proof.
+    pose proof (e21 := fst e2). destruct e21.
+    eapply hetero_to_homo in e2, e3. destruct e2, e3.
+    eapply heq_refl.
 Qed.
