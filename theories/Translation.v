@@ -396,6 +396,22 @@ Proof.
   - cbn. constructor.
 Qed.
 
+Lemma dec_subst_scons u v σ σ' :
+  u ⊏ v →
+  dec_subst σ σ' →
+  dec_subst (u .: σ) (v .: σ').
+Proof.
+  intros hu hs [].
+  - cbn. assumption.
+  - cbn. apply hs.
+Qed.
+
+Lemma dec_subst_refl σ :
+  dec_subst σ σ.
+Proof.
+  intro. apply dec_refl.
+Qed.
+
 Lemma substs_dec σ θ u :
   dec_subst σ θ →
   u <[ σ ] ⊏ u <[ θ ].
@@ -571,6 +587,18 @@ Proof.
     + apply rename_dec. assumption.
 Qed.
 
+(* Not sure there is something meaningful here *)
+(* Lemma tr_var_change Γ Γ' x l A A' :
+  Γ ∋< l >× x : A →
+  tr_ctx Γ Γ' →
+  Γ' ⊨⟨ Ax l ⟩ A' : (Sort l) ∈ ⟦ A : (Sort l) ⟧ →
+  Γ' ⊨⟨ l ⟩ (var x) : A' ∈ ⟦ (var x) : A ⟧.
+Proof.
+  intros hx hc hA.
+  eapply varty_trans in hx as hx'. 2: eassumption.
+  destruct hx' as (A'' & h1 & h2).
+  eapply change_type. 2: eassumption. *)
+
 (* Not ideal, but given circumstances there is not much else we can do. *)
 
 Axiom tr_assm_sig :
@@ -621,8 +649,73 @@ Proof.
   constructor. apply hc.
 Qed.
 
+Lemma tr_succ Γ' t t' :
+  Γ' ⊨⟨ ty 0 ⟩ t' : Nat ∈ ⟦ t : Nat ⟧ →
+  Γ' ⊨⟨ ty 0 ⟩ (succ t') : Nat ∈ ⟦ (succ t) : Nat ⟧.
+Proof.
+  intros iht.
+  destruct iht as (? & ? & _).
+  split. 2: intuition (constructor ; eauto).
+  constructor. assumption.
+Qed.
+
 Definition tr_subst Γ' σ σ' Δ' :=
   Γ' ⊢s σ' : Δ' ∧ dec_subst σ σ'.
+
+#[export] Instance dec_subst_morphism :
+  Proper ((`=1`) ==> (`=1`) ==> iff) dec_subst.
+Proof.
+  intros σ σ' e θ θ' e'.
+  revert σ σ' e θ θ' e'. wlog_iff. intros σ σ' e θ θ' e' h.
+  intros x. rewrite <- e, <- e'. apply h.
+Qed.
+
+#[export] Instance tr_subst_morphism :
+  Proper (eq ==> (`=1`) ==> (`=1`) ==> eq ==> iff) tr_subst.
+Proof.
+  intros Γ ? <- σ σ' e θ θ' e' Δ ? <-.
+  revert σ σ' e θ θ' e'. wlog_iff. intros σ σ' e θ θ' e' h.
+  destruct h. split.
+  - rewrite <- e'. assumption.
+  - rewrite <- e, <- e'. assumption.
+Qed.
+
+Lemma autosubst_simpl_tr_subst :
+  ∀ Γ Δ s1 s2 s3 s4,
+    SubstSimplification s1 s2 →
+    SubstSimplification s3 s4 →
+    tr_subst Γ s1 s3 Δ ↔ tr_subst Γ s2 s4 Δ.
+Proof.
+  intros * h1 h2.
+  apply tr_subst_morphism. 1,4: eauto.
+  - apply h1.
+  - apply h2.
+Qed.
+
+#[export] Hint Rewrite -> autosubst_simpl_tr_subst : rasimpl_outermost.
+
+Lemma tr_subst_scons l Γ' Δ' σ σ' A A' u u' :
+  tr_subst Γ' σ σ' Δ' →
+  Γ' ⊨⟨ l ⟩ u' : (A' <[ σ' ]) ∈ ⟦ u : (A <[ σ ]) ⟧ →
+  tr_subst Γ' (u .: σ) (u' .: σ') (Δ' ,, (l, A')).
+Proof.
+  intros [hs1 hs2] [hu1 hu2].
+  split.
+  - apply well_scons_alt. all: eauto.
+  - apply dec_subst_scons. all: intuition eauto.
+Qed.
+
+Lemma tr_subst_ren Γ Γ' Δ' ρ :
+  tr_ctx Γ Γ' →
+  Γ' ⊢r ρ : Δ' →
+  tr_subst Γ' (ρ >> var) (ρ >> var) Δ'.
+Proof.
+  intros hc hr.
+  split. 2: apply dec_subst_refl.
+  apply WellSubst_ren.
+  - assumption.
+  - apply hc.
+Qed.
 
 Lemma tr_substitution i Γ Γ' t t' A A' Δ' σ σ' :
   tr_ctx Γ Γ' →
@@ -753,9 +846,7 @@ Proof.
     specialize iht with (1 := hc). destruct iht as (t' & N & iht).
     eapply change_type in iht. 2:{ eapply tr_Nat. all: eassumption. }
     destruct iht as (t'' & iht).
-    destruct iht as (? & ? & _).
-    eexists _,_. split. 2: intuition (constructor ; eauto).
-    constructor. assumption.
+    eexists _,_. eapply tr_succ. eassumption.
   - intros * ? ihP ? ihz ? ihs ? iht ? hc.
     eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
     2:{ eapply tr_Nat. eassumption. }
@@ -770,7 +861,18 @@ Proof.
     eapply change_type in ihs.
     2:{
       eapply tr_substitution_sort. 1,2: eassumption.
-      admit. (* Either make utility or inline, we'll see later *)
+      eapply autosubst_simpl_tr_subst. 1: exact _. 1: repeat constructor.
+      eapply tr_subst_scons with (A := Nat).
+      2:{
+        cbn. eapply tr_succ.
+        (* Need tr_var or something, but can we actually do it?
+          I guess it works if we're ok with the translated term not being a
+          variable.
+        *)
+        admit.
+      }
+      eapply tr_subst_ren. 1: eassumption.
+      eapply WellRen_comp. all: eapply WellRen_S.
     }
     destruct ihs as (?s' & ihs).
     specialize iht with (1 := hc). destruct iht as (?t' & ?T & iht).
@@ -824,4 +926,4 @@ Proof.
   - admit.
   - admit.
   - admit.
-Abort.
+Admitted.
