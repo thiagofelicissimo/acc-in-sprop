@@ -2253,20 +2253,9 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl. reflexivity.
   Qed.
 
-  Context (p a q : term)
-    (pWt : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P00)
-    (aWt : Γ ⊢< ty n > a : A)
-    (qWt : Γ ⊢< prop > q : acc (ty n) A R a).
-  Let Awk := (S >> S) ⋅ A.
-  Let Rwk := (up_ren (up_ren (S >> S))) ⋅ R.
-  Let Pwk := (up_ren (S >> S)) ⋅ P.
-  Let pwk := (up_ren (up_ren (S >> S))) ⋅ p.
-  Let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
-  Let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0.
-  Let t2 := R<[S ⋅ a .: (var 0 .: S >> var)].
-  Let t3 := lam prop l t2 P00 t1.
-  Let t4 := Pi prop l t2 P00.
-  Let t5 := lam (ty n) l A t4 t3.
+  Context (a : term)
+    (aWt : Γ ⊢< ty n > a : A).
+    Let t2 := R<[S ⋅ a .: (var 0 .: S >> var)].
 
   Lemma t2Wt : Γ ,, (ty n, A) ⊢< Ax prop > t2 : Sort prop.
   Proof.
@@ -2278,6 +2267,21 @@ Section AccCompValidity.
     - ssimpl. eapply meta_conv. 1:econstructor. 2:econstructor. 1:eauto using validity_ty_ctx. rasimpl. reflexivity.
     - ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx. 1:eapply WellRen_S. rasimpl. reflexivity.
   Qed.
+
+  Context (p q : term)
+    (pWt : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P00)
+    (qWt : Γ ⊢< prop > q : acc (ty n) A R a).
+  Let Awk := (S >> S) ⋅ A.
+  Let Rwk := (up_ren (up_ren (S >> S))) ⋅ R.
+  Let Pwk := (up_ren (S >> S)) ⋅ P.
+  Let pwk := (up_ren (up_ren (S >> S))) ⋅ p.
+  Let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
+  Let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0.
+  Let t3 := lam prop l t2 P00 t1.
+  Let t4 := Pi prop l t2 P00.
+  Let t5 := lam (ty n) l A t4 t3.
+
+
 
 
   Lemma AwkWt : Γ ,, (ty n, A) ,, (prop, t2) ⊢< Ax (ty n) > Awk : Sort (ty n).
@@ -2369,7 +2373,18 @@ Section AccCompValidity.
     unfold t5. econstructor; eauto using t3Wt, t4Wt.
   Qed.
 
-  Context (A' : term) (A'Wt : Γ ⊢< Ax (ty n) > A' : Sort (ty n)) (A_conv_A' : Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n)).
+End AccCompValidity.
+Section AccCompValidityConv.
+
+  Context (Γ : ctx) (n : nat) (l : level) (A : term)
+    (AWt : Γ ⊢< Ax (ty n) > A : Sort (ty n)).
+
+  Context (A' : term)
+    (AWt' : Γ ⊢< Ax (ty n) > A' : Sort (ty n)).
+
+  Context 
+    (A_conv_A' : Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n)).
+
 
   Lemma Γ_A_SA' : ⊢ Γ ,, (ty n, A') ,, (ty n, S ⋅ A').
   Proof.
@@ -2378,7 +2393,6 @@ Section AccCompValidity.
     eapply WellRen_S.
   Qed.
 
-
   Lemma Γ_A_SA_conv : ⊢ Γ ,, (ty n, A') ,, (ty n, S ⋅ A') ≡ Γ ,, (ty n, A) ,, (ty n, S ⋅ A).
   Proof.
     econstructor. 1:econstructor; eauto using ctx_conv_refl, validity_ty_ctx, conv_sym.
@@ -2386,15 +2400,16 @@ Section AccCompValidity.
     econstructor; eauto using validity_ty_ctx.
   Qed.
 
-  Context (R' : term) (R_conv_R' : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop).
-  Context (P' : term) (P_conv_P' : Γ ,, (ty n, A) ⊢< Ax l > P ≡ P' : Sort l).
-  Let R0' := (1 .: (0 .: (S >> S))) ⋅ R'.
-  Let P0' := (1 .: (S >> S >> S)) ⋅ P'.
-  Let B' := Pi (ty n) l (S ⋅ A') (Pi prop l R0' P0').
-  Let P00' := (1.: (S >> S)) ⋅ P'.
 
 
-  Lemma R0_conv_R0' : Γ,, (ty n, A),, (ty n, S ⋅ A) ⊢< Ax prop > R0 ≡ R0' : Sort prop.
+  Context (R R' : term)
+    (RWt : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop)
+    (RWt' : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R' : Sort prop)
+    (R_conv_R' : Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R ≡ R' : Sort prop).
+    Let R0 := (1 .: (0 .: (S >> S))) ⋅ R.
+    Let R0' := (1 .: (0 .: (S >> S))) ⋅ R'.
+
+    Lemma R0_conv_R0' : Γ,, (ty n, A),, (ty n, S ⋅ A) ⊢< Ax prop > R0 ≡ R0' : Sort prop.
   Proof.
     unfold R0.
     eapply conv_ren; eauto using validity_ty_ctx.
@@ -2404,6 +2419,12 @@ Section AccCompValidity.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl;reflexivity.
   Qed.
 
+  Context (P P' : term)
+    (PWt : Γ ,, (ty n, A) ⊢< Ax l > P : Sort l)
+    (PWt' : Γ ,, (ty n, A) ⊢< Ax l > P' : Sort l)
+    (P_conv_P' : Γ ,, (ty n, A) ⊢< Ax l > P ≡ P' : Sort l).
+    Let P0 := (1 .: (S >> S >> S)) ⋅ P.
+    Let P0' := (1 .: (S >> S >> S)) ⋅ P'.
   Lemma P0_conv_P0' : Γ,, (ty n, A),, (ty n, S ⋅ A),, (prop, R0) ⊢< Ax l > P0 ≡ P0' : Sort l.
   Proof.
     unfold P0.
@@ -2413,6 +2434,14 @@ Section AccCompValidity.
     - ssimpl. eapply WellRen_weak, WellRen_weak, WellRen_S.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
   Qed.
+
+  Let B := Pi (ty n) l (S ⋅ A) (Pi prop l R0 P0).
+  Let P00 := (1.: (S >> S)) ⋅ P.
+  Let B' := Pi (ty n) l (S ⋅ A') (Pi prop l R0' P0').
+  Let P00' := (1.: (S >> S)) ⋅ P'.
+  Context (p : term)
+    (pWt : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P00).
+
 
   Lemma B_conv_B' : Γ,, (ty n, A)⊢< Ax (Ru (ty n) l) > B ≡ B' : Sort (Ru (ty n) l).
   Proof.
@@ -2450,142 +2479,152 @@ Section AccCompValidity.
     1:econstructor; eauto using validity_ty_ctx.
     econstructor; eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
   Qed.
-(*
+
+  Context (a a' : term)
+    (aWt : Γ ⊢< ty n > a : A)
+    (aWt' : Γ ⊢< ty n > a' : A)
+    (a_conv_a' : Γ ⊢< ty n > a ≡ a' : A).
+  Let t2' := R' <[S ⋅ a' .: (var 0 .: S >> var)].
+  Let t2 := R<[S ⋅ a .: (var 0 .: S >> var)].
+  Let Awk := (S >> S) ⋅ A.
   Let Awk' := (S >> S) ⋅ A'.
-  Let Rwk' := (up_ren (up_ren (S >> S))) ⋅ R'.
-  Let Pwk' := (up_ren (S >> S)) ⋅ P'.
 
-  Context (p' a' q' : term)
-    (p_conv_p' : Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p ≡ p' : P00)
-    (a_conv_a' : Γ ⊢< i > a ≡ a' : A)
-    (q_conv_q' : Γ ⊢< prop > q ≡ q' : acc i A R a).
-
-  Context
-    (RWt' : Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R' : Sort prop)
-    (PWt' : Γ ,, (i, A) ⊢< Ax l > P' : Sort l)
-    (pWt' : Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p' : P00)
-    (aWt' : Γ ⊢< i > a' : A)
-    (qWt' : Γ ⊢< prop > q' : acc i A R a).
-
-  Let pwk' := (up_ren (up_ren (S >> S))) ⋅ p'.
-  Let t0' := accinv i Awk' Rwk' ((S >> S) ⋅ a') ((S >> S) ⋅ q') (var 1) (var 0).
-  Let t1' := accel i l Awk' Rwk' Pwk' pwk' (var 1) t0'.
-  Let t2' := R'<[S ⋅ a' .: (var 0 .: S >> var)].
-  Let t3' := lam prop l t2' P00' t1'.
-  Let t4' := Pi prop l t2' P00'.
-  Let t5' := lam i l A' t4' t3'.
-
-  Lemma t2_conv_t2' : Γ ,, (i, A) ⊢< Ax prop > t2 ≡ t2' : Sort prop.
+  Lemma t2_conv_t2' : Γ ,, (ty n, A) ⊢< Ax prop > t2 ≡ t2' : Sort prop.
   Proof.
     unfold t2, t2'.
 
     eapply pre_subst_conv; eauto using validity_ty_ctx.
-
-    1:admit.
-    econstructor.
-    - ssimpl. rewrite subst_id_reduce1. eapply refl_subst, subst_id. eauto using validity_ty_ctx.
-    (* - ssimpl. change (S >> var) with (var >> ren_term S). eapply ConvSubst_weak; eauto using subst_id, validity_ty_ctx. *)
-    (* - ssimpl. eapply meta_conv_conv. 1:econstructor. 2:econstructor. 1:eauto using validity_ty_ctx. rasimpl. reflexivity. *)
-    - ssimpl. eapply meta_conv_conv. 1:eapply conv_ren; eauto using validity_ty_ctx. 1:eapply WellRen_S. rasimpl. reflexivity.
-  Admitted.
+    - econstructor. 1:{ssimpl. rewrite subst_id_reduce1. eapply subst_id. eauto using validity_ty_ctx. }
+      ssimpl. eapply type_ren; eauto using WellRen_S, validity_ty_ctx. rasimpl. reflexivity.
+    - econstructor.  1:{ssimpl. rewrite subst_id_reduce1. eapply refl_subst, subst_id. eauto using validity_ty_ctx. }
+      ssimpl. eapply conv_ren; eauto using WellRen_S, validity_ty_ctx. rasimpl. reflexivity.
+  Qed.
 
 
-  Lemma Awk_conv_Awk' : Γ ,, (i, A) ,, (prop, t2) ⊢< Ax i > Awk ≡ Awk': Sort i.
+  Lemma Awk_conv_Awk' : Γ ,, (ty n, A) ,, (prop, t2) ⊢< Ax (ty n) > Awk ≡ Awk' : Sort (ty n).
   Proof.
     unfold Awk, Awk'.
-    eapply type_ren; eauto using validity_ty_ctx.
-    1:econstructor; eauto using validity_ty_ctx, t2Wt.
-    eapply WellRen_weak, WellRen_S.
+    eapply conv_ren; eauto using validity_ty_ctx, ctx_typing, t2Wt, WellRen_weak, WellRen_S. 
   Qed.
 
-  Lemma RwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ,, (i, S ⋅ Awk) ⊢< Ax prop > Rwk : Sort prop.
-  Proof.
-    unfold Rwk, Awk.
-    eapply type_ren; eauto.
-    1:econstructor. 1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
-    1:ssimpl. 1:eapply type_ren; eauto. 1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
-    1:eapply WellRen_weak, WellRen_weak, WellRen_S.
-    eapply WellRen_up. 1:eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. all:rasimpl; reflexivity.
-  Qed.
 
-  Lemma PwkWt : Γ ,, (i, A) ,, (prop, t2),, (i, Awk) ⊢< Ax l > Pwk : Sort l.
+  Lemma P00_conv_P00'2 : (Γ,, (ty n, A)),, (prop, t2) ⊢< Ax l > P00 ≡ P00' : Sort l.
   Proof.
-    unfold Pwk, Awk.
-    eapply type_ren; eauto.
-    1:econstructor. 2:fold Awk. 1,2:eauto using validity_ty_ctx, AwkWt.
-    eapply WellRen_up. 1:eapply WellRen_weak, WellRen_S. reflexivity.
-  Qed.
-
-  Lemma pwkWt : Γ ,, (i, A) ,, (prop, t2) ,, (i, Awk) ,, (Ru i l, (up_ren (S >> S)) ⋅ B) ⊢< l > pwk : (up_ren (up_ren (S >> S))) ⋅ P00.
-  Proof.
-    unfold pwk, Awk. eapply type_ren; eauto.
-    1:econstructor; eauto using PwkWt, validity_ty_ctx.
-    1:eapply type_ren; eauto using BWt, validity_ty_ctx, PwkWt.
-    1:eapply WellRen_up.
-    1:eapply WellRen_weak, WellRen_S.
-    1:reflexivity.
-    1:eapply WellRen_up. 1:eapply WellRen_up.
-    1:eapply WellRen_weak, WellRen_S.
-    all: ssimpl; reflexivity.
-  Qed.
-
-  Lemma t0Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< prop > t0 : acc i Awk Rwk (var 1).
-  Proof.
-    unfold t0.
-    econstructor; eauto using AwkWt, RwkWt, PwkWt.
-    - eapply type_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
-    - eapply type_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
-    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. 1:unfold Awk; rasimpl; reflexivity.
-    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:unfold Rwk, t2; rasimpl; simpl; reflexivity.
-  Qed.
-
-  Lemma t1Wt : Γ ,, (i, A) ,, (prop, t2) ⊢< l > t1 : Pwk <[ (var 1) .. ].
-  Proof.
-    unfold t1.
-    econstructor; eauto using AwkWt, RwkWt, PwkWt, t0Wt.
-    - assert (Pi i l (S ⋅ Awk) (Pi prop l ((1 .: (0 .: S >> S)) ⋅ Rwk) ((1 .: (S >> S) >> S) ⋅ Pwk)) = (up_ren (S >> S)) ⋅ B).
-      1: {unfold B, Awk, Rwk, Pwk, R0, P0. rasimpl. reflexivity. }
-      rewrite H; eapply meta_conv.
-      1: eapply pwkWt. unfold P00, Pwk; rasimpl; reflexivity.
-    - econstructor; eauto using t0Wt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. unfold Awk; rasimpl; reflexivity.
-  Qed.
-
-  Lemma P00Wt2 : (Γ,, (i, A)),, (prop, t2) ⊢< Ax l > P00 : Sort l.
-  Proof.
-    unfold P00. eapply type_ren; eauto using t1Wt, validity_ty_ctx.
+    unfold P00, P00'. eapply conv_ren; eauto using t1Wt, validity_ty_ctx, AwkWt.
     econstructor.
     - ssimpl. eapply WellRen_weak, WellRen_S.
     - ssimpl. eapply varty_meta. 1:econstructor. 1:econstructor. rasimpl; reflexivity.
   Qed.
 
-  Lemma t3Wt : Γ ,, (i, A) ⊢< l > t3 : Pi prop l t2 P00.
+  Context (q : term) (p' q' : term)
+    (pWt' : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p' : P00)
+    (p_conv_p' : Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p ≡ p' : P00).
+  Context 
+    (qWt : Γ ⊢< prop > q : acc (ty n) A R a)
+    (qWt' : Γ ⊢< prop > q' : acc (ty n) A R a)
+    (q_conv_q' : Γ ⊢< prop > q ≡ q' : acc (ty n) A R a).
+  Let Rwk := (up_ren (up_ren (S >> S))) ⋅ R.
+  Let Pwk := (up_ren (S >> S)) ⋅ P.
+  Let pwk := (up_ren (up_ren (S >> S))) ⋅ p.
+  Let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0).
+  Let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0.
+  Let t3 := lam prop l t2 P00 t1.
+  Let t4 := Pi prop l t2 P00.
+  Let t5 := lam (ty n) l A t4 t3.
+
+  Let Rwk' := (up_ren (up_ren (S >> S))) ⋅ R'.
+  Let Pwk' := (up_ren (S >> S)) ⋅ P'.
+  Let pwk' := (up_ren (up_ren (S >> S))) ⋅ p'.
+  Let t0' := accinv (ty n) Awk' Rwk' ((S >> S) ⋅ a') ((S >> S) ⋅ q') (var 1) (var 0).
+  Let t1' := accel (ty n) l Awk' Rwk' Pwk' pwk' (var 1) t0'.
+  Let t3' := lam prop l t2' P00' t1'.
+  Let t4' := Pi prop l t2' P00'.
+  Let t5' := lam (ty n) l A' t4' t3'.
+
+
+
+  Lemma Rwk_conv_Rwk' : Γ ,, (ty n, A) ,, (prop, t2),, (ty n, Awk) ,, (ty n, S ⋅ Awk) ⊢< Ax prop > Rwk ≡ Rwk' : Sort prop.
   Proof.
-    unfold t3. eapply meta_lvl.
-    1:econstructor; eauto using t2Wt, P00Wt2.
-    1:eapply meta_conv. 1:eapply t1Wt.
+    unfold Rwk, Awk, Rwk'.
+    eapply conv_ren; eauto.
+    2:{ eapply WellRen_up. 2:rasimpl;reflexivity. eapply WellRen_up. 2:rasimpl;reflexivity. eauto using WellRen_weak, WellRen_S. }
+    eauto using RwkWt, validity_ty_ctx.
+  Qed.
+
+  Lemma Pwk_conv_Pwk' : Γ ,, (ty n, A) ,, (prop, t2),, (ty n, Awk) ⊢< Ax l > Pwk ≡ Pwk' : Sort l.
+  Proof.
+    unfold Pwk, Awk, Pwk'.
+    eapply conv_ren; eauto using PwkWt, validity_ty_ctx.
+    eapply WellRen_up. 2:rasimpl; reflexivity. eauto using WellRen_weak, WellRen_S.
+  Qed.
+
+  Lemma pwk_conv_pwk' : Γ ,, (ty n, A) ,, (prop, t2) ,, (ty n, Awk) ,, (Ru (ty n) l, (up_ren (S >> S)) ⋅ B) 
+    ⊢< l > pwk ≡ pwk' : (up_ren (up_ren (S >> S))) ⋅ P00.
+  Proof.
+    unfold pwk, pwk', Awk. eapply conv_ren; eauto using pwkWt, validity_ty_ctx.
+    eapply WellRen_up. 2:rasimpl;reflexivity. eapply WellRen_up. 2:rasimpl;reflexivity. eauto using WellRen_weak, WellRen_S.
+  Qed.
+
+  Lemma t0_conv_t0' : Γ ,, (ty n, A) ,, (prop, t2) ⊢< prop > t0 ≡ t0' : acc (ty n) Awk Rwk (var 1).
+  Proof.
+    unfold t0, t0'.
+    econstructor; eauto using AwkWt, Awk_conv_Awk', Pwk_conv_Pwk', Rwk_conv_Rwk'.
+    - eapply conv_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
+    - eapply conv_ren; eauto using WellRen_weak, WellRen_S, AwkWt, validity_ty_ctx.
+    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. 1:unfold Awk; rasimpl; reflexivity.
+    - econstructor; eauto using AwkWt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:unfold Rwk, t2; rasimpl; simpl; reflexivity.
+  Qed.
+
+  Lemma t1_conv_t1' : Γ ,, (ty n, A) ,, (prop, t2) ⊢< l > t1 ≡ t1' : Pwk <[ (var 1) .. ].
+  Proof.
+    unfold t1, t1'.
+    econstructor; eauto using AwkWt, RwkWt, PwkWt, t0Wt, Awk_conv_Awk', Rwk_conv_Rwk', Pwk_conv_Pwk', t0_conv_t0'.
+    - eassert (Pi _ l (S ⋅ Awk) (Pi prop l ((1 .: (0 .: S >> S)) ⋅ Rwk) ((1 .: (S >> S) >> S) ⋅ Pwk)) = (up_ren (S >> S)) ⋅ B).
+      1: {unfold B, Awk, Rwk, Pwk, R0, P0. rasimpl. reflexivity. }
+      rewrite H. eapply meta_conv_conv.
+      1: eapply pwk_conv_pwk'. unfold P00, Pwk; rasimpl; reflexivity.
+    - econstructor; eauto using t0Wt, validity_ty_ctx. eapply varty_meta. 1:econstructor. 1:econstructor. unfold Awk; rasimpl; reflexivity.
+  Qed.
+
+  Lemma t3_conv_t3' : Γ ,, (ty n, A) ⊢< l > t3 ≡ t3' : Pi prop l t2 P00.
+  Proof.
+    unfold t3, t3'. eapply meta_lvl_conv.
+    1:econstructor; eauto using t2_conv_t2', t2Wt, P00_conv_P00'2.
+    1:eapply meta_conv_conv. 1:eapply t1_conv_t1'.
     1:unfold Pwk, P00; substify; ssimpl; reflexivity.
     destruct l; eauto.
   Qed.
 
-  Lemma t4Wt : Γ ,, (i, A) ⊢< Ax l > t4 : Sort l.
+  Lemma t4_conv_t4' : Γ ,, (ty n, A) ⊢< Ax l > t4 ≡ t4' : Sort l.
   Proof.
-    unfold t4. eapply meta_conv. 1:eapply meta_lvl.
-    1:econstructor; eauto using t2Wt, P00Wt2.
+    unfold t4, t4'. eapply meta_conv_conv. 1:eapply meta_lvl_conv.
+    1:econstructor; eauto using t2Wt, P00Wt2, t2_conv_t2', P00_conv_P00'2.
     all:destruct l; reflexivity.
   Qed.
 
-  Lemma t5Wt : Γ ⊢< Ru i l > t5 : Pi i l A t4.
+  Lemma t5_conv_t5' : Γ ⊢< Ru (ty n) l > t5 ≡ t5' : Pi (ty n) l A t4.
   Proof.
-    unfold t5. econstructor; eauto using t3Wt, t4Wt.
-  Qed. *)
+    unfold t5, t5'. econstructor; eauto using t3_conv_t3', t4_conv_t4'.
+  Qed.
 
 
-End AccCompValidity.
+End AccCompValidityConv.
+
+
 
 Lemma meta_tm_conv Γ l t t' A :
   Γ ⊢< l > t : A ->
   t = t' ->
   Γ ⊢< l > t' : A.
+Proof.
+  intros. subst. eauto.
+Qed.
+
+Lemma meta_tm_conv_conv Γ l t t' u u' A :
+  Γ ⊢< l > t ≡ u : A ->
+  t = t' ->
+  u = u' ->
+  Γ ⊢< l > t' ≡ u' : A.
 Proof.
   intros. subst. eauto.
 Qed.
@@ -2850,7 +2889,7 @@ Proof.
       eapply pre_conv_in_ctx_ty; eauto.
       1:econstructor; eauto using validity_ty_ctx.
       econstructor; eauto using conv_sym, ctx_conv_refl ,validity_ty_ctx.
-    * eapply meta_ctx_conv. 1:eapply Γ_A_B_conv. 8:exact c. 8:exact c0. 8:exact c1.
+    * eapply meta_ctx_conv. 1:eapply Γ_A_B_conv. 3:exact c. 5:exact c0. 7:exact c1.
       all:eauto.
     * eapply pre_conv_in_ctx_conv.
       1:unfold P''. 1:eapply conv_ren; eauto.
@@ -2930,13 +2969,65 @@ Proof.
       1:eapply pre_subst_conv; eauto using validity_ty_ctx, conv_sym.
       3:unfold P''; rasimpl.
       3:eapply pre_subst_conv; eauto using subst_one, validity_ty_ctx, conv_refl, substs_one.
-      1:{ econstructor. 1:econstructor. 1:ssimpl; eauto using subst_id, validity_ty_ctx.
-          1:rasimpl; ssimpl; eauto.
-          1:ssimpl.
-      admit. }   admit. }
-    (* 4:eapply pre_subst_conv; eauto using validity_ty_ctx, conv_sym. *)
-    (* 4:eapply subst_one; eauto. *)
-    (* 4:eapply substs_one; eauto using conv_sym. *)
+      * econstructor. 1:econstructor. 1:ssimpl; eapply subst_id; eauto using validity_ty_ctx.
+        all:ssimpl; eauto.
+        eapply type_conv. 
+        - eapply meta_tm_conv. 1:eapply t5Wt. 
+          ** exact H9.
+          ** eapply pre_conv_in_ctx_ty. 1:exact H10. 2:eapply Γ_A_SA_conv; eauto. eapply  Γ_A_SA'; eauto.
+          ** eapply pre_conv_in_ctx_ty. 1:exact H11. 1:eauto using validity_ty_ctx, ctx_typing.
+             econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
+          ** eapply type_conv. 1:exact H13. eauto.
+          ** eapply pre_conv_in_ctx_ty. 1:eapply type_conv. 1:exact H12.
+             1:{ unfold P''. eapply conv_ren; eauto using validity_ty_ctx. econstructor. 
+                1:ssimpl; eauto using WellRen_weak, WellRen_S. ssimpl. eapply varty_meta. 1:econstructor. 
+                1:econstructor. rasimpl. reflexivity. }
+              2:eapply Γ_A_B_conv; eauto.
+              econstructor. 1:eauto using validity_ty_ctx, ctx_typing.
+              eapply BWt; eauto.
+              1,2:eapply pre_conv_in_ctx_ty; eauto.
+              3:econstructor; eauto using validity_ty_ctx.
+              3:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
+              1:econstructor. 1:econstructor. 4:econstructor. 4:econstructor.
+              all:eauto using conv_sym, validity_ty_ctx, ctx_conv_refl.
+              1:eapply type_ren; eauto using ctx_typing, validity_ty_ctx.
+              2:eapply conv_ren; eauto using ctx_typing, validity_ty_ctx, conv_sym.
+              all:eapply WellRen_S. 
+          ** eapply type_conv. 1:exact H14. econstructor; eauto.
+          **  rasimpl. reflexivity.
+        -  unfold B, P_, R_. rasimpl. eapply conv_sym. econstructor; eauto.
+          eapply meta_conv_conv. 1:eapply meta_lvl_conv. 1:econstructor.
+        4,5:reflexivity.
+        ** eapply subst_ty; eauto using validity_ty_ctx. econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx.
+            ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx, WellRen_S. rasimpl. reflexivity.
+        ** eapply pre_subst_conv; eauto using validity_ty_ctx, conv_refl.
+          *** econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx.
+            ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx, WellRen_S. rasimpl. reflexivity.
+          *** econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx, refl_subst.
+            ssimpl. eapply meta_conv_conv. 1:eapply conv_ren; eauto using validity_ty_ctx, WellRen_S, conv_refl. rasimpl. reflexivity.
+        ** substify. asimpl. eapply meta_tm_conv_conv. 1:renamify. 1:eapply P00_conv_P00'2; eauto using conv_sym.
+           all:substify;asimpl;reflexivity.
+      * econstructor. 1:econstructor. 1:ssimpl; eapply refl_subst, subst_id; eauto using validity_ty_ctx.
+        all:ssimpl.
+        1:eauto using conv_sym.
+        eapply conv_sym. eapply conv_conv.
+        1:{ unfold t7, t6, t5, t4, t3, t2, pwk, Pwk, Rwk, Awk, P'', B, P_, R_. eapply meta_tm_conv_conv. 1:eapply t5_conv_t5'.
+            2:exact c. 4:exact c0. 6:exact c1. 11:exact c2. 9:exact c3. 11:exact c4.  all:eauto.
+            rasimpl. reflexivity. }
+        unfold B, P_, R_. rasimpl. econstructor; eauto using conv_refl.
+        eapply meta_conv_conv. 1:eapply meta_lvl_conv. 1:econstructor.
+        4,5:reflexivity.
+        ** eapply subst_ty; eauto using validity_ty_ctx. econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx.
+            ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx, WellRen_S. rasimpl. reflexivity.
+        ** eapply pre_subst_conv; eauto using validity_ty_ctx, conv_refl.
+          *** econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx.
+            ssimpl. eapply meta_conv. 1:eapply type_ren; eauto using validity_ty_ctx, WellRen_S. rasimpl. reflexivity.
+          *** econstructor. 1:ssimpl. 1:rewrite subst_id_reduce1. 1:eauto using subst_id, validity_ty_ctx, refl_subst.
+            ssimpl. eapply meta_conv_conv. 1:eapply conv_ren; eauto using validity_ty_ctx, WellRen_S. rasimpl. reflexivity.
+        ** substify. asimpl. eapply conv_refl.  
+          eapply meta_tm_conv. 1: eapply meta_ctx.  1:eapply P00Wt2. 1:exact H8. 1:exact H2. 1:exact H3. 1:exact H5. 1:exact H4.
+          1:exact H6. 1:rasimpl; reflexivity. substify. asimpl. reflexivity. }
+           
     2:eapply pre_conv_in_ctx_ty; eauto.
     1:eapply pre_conv_in_ctx_ty; eauto.
     1,2:econstructor.
@@ -2952,7 +3043,7 @@ Proof.
       eapply pre_conv_in_ctx_ty; eauto.
       1:econstructor; eauto using validity_ty_ctx.
       econstructor; eauto using conv_sym, ctx_conv_refl ,validity_ty_ctx.
-    * eapply meta_ctx_conv. 1:eapply Γ_A_B_conv. 8:exact c. 8:exact c0. 8:exact c1.
+    * eapply meta_ctx_conv. 1:eapply Γ_A_B_conv. 3:exact c. 5:exact c0. 7:exact c1.
       all:eauto.
     * eapply pre_conv_in_ctx_conv.
       1:unfold P''. 1:eapply conv_ren; eauto.
@@ -3039,18 +3130,7 @@ Proof.
           + econstructor. all: intuition eauto.
       }
       rasimpl. reflexivity.
-  (* - intuition eauto. 1:econstructor; eauto.
-    eapply subst_ty; eauto using validity_ty_ctx.
-    2:unfold P''; rasimpl; reflexivity.
-    econstructor. 1:econstructor.
-    + ssimpl. eapply subst_id; eauto using validity_ty_ctx.
-    + ssimpl. eauto.
-    + ssimpl. unfold B. rasimpl.
-      eapply meta_tm_conv. 1:eapply meta_conv.
-      1: eapply t5Wt; eauto.
-      * unfold R', P'. ssimpl. f_equal. f_equal. substify. ssimpl. reflexivity.
-      * unfold t10, t9, t8, t7. f_equal.  *)
-Admitted.
+Qed.
 
 Theorem validity_conv_left Γ l t u A :
   Γ ⊢< l > t ≡ u : A ->
