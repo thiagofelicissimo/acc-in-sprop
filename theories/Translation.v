@@ -868,6 +868,8 @@ Proof.
         (* Need tr_var or something, but can we actually do it?
           I guess it works if we're ok with the translated term not being a
           variable.
+
+          Or we have a version that works when translation is identity?
         *)
         admit.
       }
