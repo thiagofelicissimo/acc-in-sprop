@@ -422,11 +422,62 @@ Qed.
 
 *)
 
+Definition renX m := 3 * m.
+Definition renR m := 1 + (3 * m).
+Definition renL m := 2 + (3 * m).
+
+Fixpoint pack (Γ : ctx) := 
+  match Γ with 
+  | nil => ∙
+  | cons (l, A) Γ => 
+    let A1 := renL ⋅ A in
+    let A2 := renR ⋅ A in
+    let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+    pack Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq)
+  end.
+
+
+Lemma WellRen_packL Γ :
+  pack Γ ⊢r renL : Γ.
+Proof.
+  induction Γ.
+  - econstructor.
+  - destruct a. unfold renL. econstructor.
+    * simpl. eapply WellRen_weak,WellRen_weak,WellRen_weak. fold plus.
+      eapply autosubst_simpl_WellRen. 2:eauto.
+      econstructor. unfold pointwise_relation. intros.
+      induction a; eauto.
+      unfold renL in *.  simpl in *. rewrite IHa. lia.
+    * eapply varty_meta. 1:cbn. 1:econstructor. 1:econstructor. 1:econstructor.
+      unfold renL; ssimpl. eapply ren_term_morphism. 2:reflexivity.
+      unfold pointwise_relation. intros. induction a.
+      all:unfold ">>" in *; simpl in *; lia.
+Qed.
+
+
+Lemma WellRen_packR Γ :
+  pack Γ ⊢r renR : Γ.
+Proof.
+  induction Γ.
+  - econstructor.
+  - destruct a. unfold renR. econstructor. 
+    * simpl. eapply WellRen_weak,WellRen_weak. fold plus. 
+      eapply autosubst_simpl_WellRen.
+      2:eapply WellRen_weak. 2:eapply IHΓ. unfold renR. simpl.
+      econstructor. unfold pointwise_relation. intros.
+      unfold ">>". lia. 
+    * eapply varty_meta. 1:cbn. 1:econstructor. 1:econstructor.
+      unfold renR; ssimpl. eapply ren_term_morphism. 2:reflexivity.
+      unfold pointwise_relation. intros. induction a.
+      all:unfold ">>" in *; simpl in *; lia.
+Qed.
+
+
 Lemma sim_heq i Γ u v A B :
   u ~ v →
   Γ ⊢< ty i > u : A →
   Γ ⊢< ty i > v : B →
-  ∃ e, Γ ⊢< prop > e : heq (ty i) A B u v.
+  ∃ e, pack Γ ⊢< prop > e : heq (ty i) (renL ⋅ A) (renR ⋅ B) (renL ⋅ u) (renR ⋅ v).
 Proof.
   intros hsim hu hv.
   induction hsim in Γ, A, B, hu, hv |- *.
