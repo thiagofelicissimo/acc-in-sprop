@@ -614,6 +614,10 @@ Proof.
     eapply LR_iff_rel; eauto using LR_irrel.
 Qed.
 
+
+(* Here we have a more general statement, in which we do not require R = R',
+   and which is more convenient in some cases. However, thanks to LR_sym, LR_iff_rel
+   and LR_irrel, the two are interderivable. *)
 Lemma LR_trans l A B C R R' :
     ⊩< l > A ≡ B ↓ R -> ⊩< l > B ≡ C ↓ R' -> ⊩< l > A ≡ C ↓ R.
 Proof.
