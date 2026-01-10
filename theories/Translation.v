@@ -18,6 +18,9 @@ Open Scope subst_scope.
 
 Axiom heq : level -> term -> term -> term -> term -> term.
 
+Axiom heq_ren : forall ρ l A B a e,
+  ρ ⋅ (heq l A B a e) = heq l (ρ ⋅ A) (ρ ⋅ B) (ρ ⋅ a) (ρ ⋅ e).
+
 Axiom type_heq : forall Γ n A B a b,
   Γ ⊢< Ax (ty n) > A : Sort (ty n) →
   Γ ⊢< Ax (ty n) > B : Sort (ty n) →
@@ -54,13 +57,13 @@ Axiom type_heq_sym : forall Γ n A B b a e,
   Γ ⊢< ty n > a : A ->
   Γ ⊢< ty n > b : B ->
   Γ ⊢< prop > e : heq (ty n) A B a b →
-  Γ ⊢< prop > heq_sym (ty n) A B a b e : heq (ty n) A B a b.
+  Γ ⊢< prop > heq_sym (ty n) A B a b e : heq (ty n) B A b a.
 
 Axiom conv_heq_sym : forall Γ n A B b a e A' B' b' a' e',
   Γ ⊢< ty n > a ≡ a' : A ->
   Γ ⊢< ty n > b ≡ b' : B ->
   Γ ⊢< prop > e ≡ e' : heq (ty n) A B a b →
-  Γ ⊢< prop > heq_sym (ty n) A B a b e ≡ heq_sym (ty n) A' B' a' b' e' : heq (ty n) A B a b.
+  Γ ⊢< prop > heq_sym (ty n) A B a b e ≡ heq_sym (ty n) A' B' a' b' e' : heq (ty n) B A b a.
 
 
 
@@ -271,49 +274,64 @@ where "u ⊏ v" := (decoration u v).
 Reserved Notation " t ~ t' " (at level 19).
 
 Inductive simdec : term → term → Prop :=
-| dec_sim_Pi i j A A' B B' :
+| sim_var x :
+    var x ~ var x 
+
+| sim_sort l :
+    Sort l ~ Sort l 
+
+| sim_assm c :
+    assm c ~ assm c 
+
+| sim_Pi i j A A' B B' :
     A ~ A' →
     B ~ B' →
     Pi i j A B ~ Pi i j A' B'
 
-| dec_sim_lam i j A A' B B' t t' :
+| sim_lam i j A A' B B' t t' :
     A ~ A' →
     B ~ B' →
     t ~ t' →
     lam i j A B t ~ lam i j A' B' t'
 
-| dec_sim_app i j A A' B B' t t' u u' :
+| sim_app i j A A' B B' t t' u u' :
     A ~ A' →
     B ~ B' →
     t ~ t' →
     u ~ u' →
     app i j A B t u ~ app i j A' B' t' u'
 
-| dec_sim_succ t t' :
+| sim_nat : 
+    Nat ~ Nat 
+
+| sim_zero :
+    zero ~ zero
+
+| sim_succ t t' :
     t ~ t' →
     succ t ~ succ t'
 
-| dec_sim_rec l P P' pz pz' ps ps' t t' :
+| sim_rec l P P' pz pz' ps ps' t t' :
     P ~ P' →
     pz ~ pz' →
     ps ~ ps' →
     t ~ t' →
     rec l P pz ps t ~ rec l P' pz' ps' t'
 
-| dec_sim_acc i A A' R R' a a' :
+| sim_acc i A A' R R' a a' :
     A ~ A' →
     R ~ R' →
     a ~ a' →
     acc i A R a ~ acc i A' R' a'
 
-| dec_sim_accin i A A' R R' a a' p p' :
+| sim_accin i A A' R R' a a' p p' :
     A ~ A' →
     R ~ R' →
     a ~ a' →
     p ~ p' →
     accin i A R a p ~ accin i A' R' a' p'
 
-| dec_sim_accinv i A A' R R' a a' p p' b b' r r' :
+| sim_accinv i A A' R R' a a' p p' b b' r r' :
     A ~ A' →
     R ~ R' →
     a ~ a' →
@@ -322,7 +340,7 @@ Inductive simdec : term → term → Prop :=
     r ~ r' →
     accinv i A R a p b r ~ accinv i A' R' a' p' b' r'
 
-| dec_sim_accel i l A A' R R' P P' p p' a a' q q' :
+| sim_accel i l A A' R R' P P' p p' a a' q q' :
     A ~ A' →
     R ~ R' →
     P ~ P' →
@@ -330,18 +348,18 @@ Inductive simdec : term → term → Prop :=
     q ~ q' →
     accel i l A R P p a q ~ accel i l A' R' P' p' a' q'
 
-| dec_sim_obseq i A A' a a' b b' :
+| sim_obseq i A A' a a' b b' :
     A ~ A' →
     a ~ a' →
     b ~ b' →
     obseq i A a b ~ obseq i A' a' b'
 
-| dec_sim_obsrefl i A A' a a' :
+| sim_obsrefl i A A' a a' :
     A ~ A' →
     a ~ a' →
     obsrefl i A a ~ obsrefl i A' a'
 
-| dec_sim_J i A A' a a' P P' p p' b b' e e' :
+| sim_J i A A' a a' P P' p p' b b' e e' :
     A ~ A' →
     a ~ a' →
     P ~ P' →
@@ -350,14 +368,15 @@ Inductive simdec : term → term → Prop :=
     e ~ e' →
     J i A a P p b e ~ J i A' a' P' p' b' e'
 
-| dec_sim_cast i A A' B B' e e' a a' :
+(* admissible *)
+(* | sim_cast i A A' B B' e e' a a' :
     A ~ A' →
     B ~ B' →
     e ~ e' →
     a ~ a' →
-    cast i A B e a ~ cast i A' B' e' a'
+    cast i A B e a ~ cast i A' B' e' a' *)
 
-| dec_sim_injpi1 i j A1 A1' A2 A2' B1 B1' B2 B2' e e' :
+| sim_injpi1 i j A1 A1' A2 A2' B1 B1' B2 B2' e e' :
     A1 ~ A1' →
     A2 ~ A2' →
     B1 ~ B1' →
@@ -365,7 +384,7 @@ Inductive simdec : term → term → Prop :=
     e ~ e' →
     injpi1 i j A1 A2 B1 B2 e ~ injpi1 i j A1' A2' B1' B2' e'
 
-| dec_sim_injpi2 i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2' :
+| sim_injpi2 i j A1 A1' A2 A2' B1 B1' B2 B2' e e' a2 a2' :
     A1 ~ A1' →
     A2 ~ A2' →
     B1 ~ B1' →
@@ -374,26 +393,75 @@ Inductive simdec : term → term → Prop :=
     a2 ~ a2' →
     injpi2 i j A1 A2 B1 B2 e a2 ~ injpi2 i j A1' A2' B1' B2' e' a2'
 
-| dec_sim_refl u :
-    u ~ u
+| sim_castR i A B e a b :
+    b ~ a →
+    b ~ cast i A B e a
 
-| dec_sim_trans u v w :
-    u ~ v →
-    v ~ w →
-    u ~ w
-
-| sim_cast i A B e a :
-    a ~ cast i A B e a
+| sim_castL i A B e a b :
+    a ~ b →
+    cast i A B e a ~ b
 
 where "u ~ v" := (simdec u v).
 
-Lemma dec_to_sim u v :
+Lemma sim_cast i A A' B B' e e' a a' :
+    a ~ a' →
+    cast i A B e a ~ cast i A' B' e' a'.
+Proof.
+  intros. eauto using simdec.
+Qed.
+
+Lemma sim_refl t :
+  t ~ t.
+Proof.
+  induction t. 
+  all: eauto using simdec.
+  admit.
+Admitted.
+
+
+Lemma sim_sym u v :
+  u ~ v -> v ~ u.
+Proof.
+  intros. induction H; eauto using simdec.
+Qed.
+
+Derive Signature for simdec.
+Lemma sim_trans t u v :
+  t ~ u -> u ~ v -> t ~ v.
+Proof.
+  intros. rename H0 into h. generalize v h. clear v h. induction H; intros.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto 7 using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto 7 using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto 7 using simdec.
+  - admit.
+  - admit.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - admit.
+  - admit.
+  (* - dependent induction h; eauto using simdec. *)
+  - admit.
+  - apply IHsimdec. dependent induction h; eauto using simdec.
+  - eapply IHsimdec in h. eauto using simdec.
+Admitted.
+
+
+(* Lemma dec_to_sim u v :
   u ⊏ v →
   u ~ v.
 Proof.
   induction 1.
   all: solve [ econstructor ; eauto ].
-Qed.
+Qed. *)
 
 Lemma rename_dec ρ u v :
   u ⊏ v →
@@ -480,17 +548,69 @@ Lemma sim_heq i Γ u v A B :
   ∃ e, pack Γ ⊢< prop > e : heq (ty i) (renL ⋅ A) (renR ⋅ B) (renL ⋅ u) (renR ⋅ v).
 Proof.
   intros hsim hu hv.
-  induction hsim in Γ, A, B, hu, hv |- *.
-  1-17: admit.
-  - eapply type_inv_cast in hv as hv'.
-    destruct hv' as (hA & hB & he & ha & -> & hBB).
+  induction hsim in i, Γ, A, B, hu, hv |- *.
+  all:try solve 
+   [ eapply type_inv in hu; dependent destruction hu ; dependent destruction lvl_eq ].
+  - admit.
+  - eapply type_inv in hu, hv. dependent destruction hu. dependent destruction hv.  
+    assert (⊢ pack Γ) by admit.
+    dependent destruction lvl_eq. clear lvl_eq0.
+    eapply conv_ren in conv_ty. 3:eapply WellRen_packL. all:eauto.
+    eapply conv_ren in conv_ty0. 3:eapply WellRen_packR. all:eauto.
+    simpl in *.
     eexists. eapply type_conv.
-    + eapply type_heq_cast. 3: exact he. all: eassumption.
-    + apply conv_sym. eapply conv_heq. all: try (apply conv_refl ; assumption).
-      2: assumption.
-      eapply meta_lvl_conv.
-      { eapply unique_type. all: eassumption. }
-      reflexivity.
+    2:eapply conv_heq.
+    1:eapply type_heq_refl.
+    all:simpl.
+    5,6:eapply conv_refl; econstructor; eauto.
+    1,2:eapply meta_lvl. 1:eapply meta_conv.
+    1,4:eauto using typing.
+    1-3:reflexivity.
+    all:eauto using conv_sym.
+  - eapply type_inv in hu, hv. dependent destruction hu. dependent destruction hv.
+    
+    edestruct IHhsim1. 1,2:unfold Ax in *; eauto.
+    edestruct IHhsim2. 1,2:unfold Ax in *; eauto.
+    all:admit.
+    
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - eapply type_inv in hv as hv'; dependent destruction hv'. subst.
+    destruct (IHhsim _ _ _ _ hu a_Wt).
+    eexists. 
+    eapply type_heq_trans.
+    4:eapply H.
+    all: try solve [ eapply type_ren; 
+      eauto using WellRen_packL, WellRen_packR, validity_ty_ctx ].
+    eapply type_ren.
+    3:eapply WellRen_packR.
+    2:eauto using validity_ty_ctx.
+    1:eapply type_conv. 2:eapply conv_heq.
+    6:rewrite heq_ren; reflexivity.
+    1:eapply type_heq_cast. 3:exact e_Wt.
+    all:eauto using conv_sym, conv_refl, conversion.
+  - eapply type_inv in hu as hu'; dependent destruction hu'. subst.
+    destruct (IHhsim _ _ _ _ a_Wt hv).
+    eexists. 
+    eapply type_heq_trans.
+    5:eapply H.
+    all: try solve [ eapply type_ren; 
+      eauto using WellRen_packL, WellRen_packR, validity_ty_ctx ].
+    eapply type_ren.
+    3:eapply WellRen_packL.
+    2:eauto using validity_ty_ctx.
+    1:eapply type_conv. 2:eapply conv_heq.
+    6:rewrite heq_ren; reflexivity.
+    1:eapply type_heq_sym, type_heq_cast.
+    5:eapply e_Wt.
+    all:eauto using conv_sym, conv_refl, typing.
 Admitted.
 
 (* Potential translations *)
