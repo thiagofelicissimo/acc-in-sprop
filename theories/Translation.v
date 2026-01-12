@@ -250,6 +250,7 @@ Inductive decoration : term → term → Prop :=
     A ⊏ A' →
     R ⊏ R' →
     P ⊏ P' →
+    p ⊏ p' →
     a ⊏ a' →
     q ⊏ q' →
     accel i l A R P p a q ⊏ accel i l A' R' P' p' a' q'
@@ -450,14 +451,46 @@ Proof.
   intros. eauto using simdec.
 Qed.
 
+(* excludes acc_el_comp *)
+Inductive dterm : term -> Prop :=
+| dvar x : dterm (var x)
+| dsort l : dterm (Sort l)
+| dassm c : dterm (assm c)
+| dpi i j A B : dterm A -> dterm B -> dterm (Pi i j A B)
+| dlam i j A B t : dterm A -> dterm B -> dterm t -> dterm (lam i j A B t)
+| dapp i j A B t u : dterm A -> dterm B -> dterm t -> dterm u -> dterm (app i j A B t u)
+| dnat : dterm Nat 
+| dzero : dterm zero 
+| dsucc t : dterm t -> dterm (succ t)
+| drec l P p0 pS n : dterm P -> dterm p0 -> dterm pS -> dterm n -> dterm (rec l P p0 pS n)
+| deq l A a b : dterm A -> dterm a -> dterm b -> dterm (obseq l A a b)
+| drefl l A a : dterm A -> dterm a -> dterm (obsrefl l A a)
+| dcast l A B e a : dterm A -> dterm B -> dterm e -> dterm a -> dterm (cast l A B e a)
+| dJ l A a P p b e : dterm A -> dterm a -> dterm P -> dterm p -> dterm b -> dterm e -> dterm (J l A a P p b e)
+| dinjpi1 i j A1 A2 B1 B2 e : dterm A1 -> dterm A2 -> dterm B1 -> dterm B2 -> dterm e -> dterm (injpi1 i j A1 A2 B1 B2 e)
+| dinjpi2 i j A1 A2 B1 B2 e a : dterm A1 -> dterm A2 -> dterm B1 -> dterm B2 -> dterm e -> dterm a -> dterm (injpi2 i j A1 A2 B1 B2 e a)
+| dacc l A R a : dterm A -> dterm R -> dterm a -> dterm (acc l A R a)
+| daccin i A R a p : dterm A -> dterm R -> dterm a -> dterm p -> dterm (accin i A R a p)
+| daccinv i A R a p b r : dterm A -> dterm R -> dterm a -> dterm p -> dterm r -> dterm b -> dterm (accinv i A R a p r b)
+| daccel i l A R P p a q : dterm A -> dterm R -> dterm P -> dterm p -> dterm a -> dterm p -> dterm q -> dterm (accel i l A R P p a q).
+
+
+Lemma well_typed_implies_dterm Γ l t A : 
+  Typing.typing Γ l t A -> dterm t.
+Proof.
+  intros. induction H; eauto using dterm.
+Qed.
+
+
+(* does not hold for all t, because we do not have constructors in sim for acc_el_comp *)
 Lemma sim_refl t :
+  dterm t ->
   t ~ t.
 Proof.
-  induction t. 
+  intros.
+  induction H. 
   all: eauto using simdec.
-  admit.
-Admitted.
-
+Qed.
 
 Lemma sim_sym u v :
   u ~ v -> v ~ u.
@@ -470,38 +503,76 @@ Lemma sim_trans t u v :
   t ~ u -> u ~ v -> t ~ v.
 Proof.
   intros. rename H0 into h. generalize v h. clear v h. induction H; intros.
+  (* in some cases, dependent induction loops/takes a lot of time, so we do it by hand *)
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
+  - assert (exists w, w = app i j A' B' t' u' /\ w ~ v) as (w & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - dependent induction h; eauto using simdec.
+  - assert (exists w, w = rec l P' pz' ps' t' /\ w ~ v) as (w & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
   - dependent induction h; eauto 7 using simdec.
+  - assert (exists w, w = accin i A' R' a' p' /\ w ~ v) as (w & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
+  - assert (exists t, t = accinv i A' R' a' p' b' r' /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
+  - assert (exists t, t = accel i l A' R' P' p' a' q' /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
-  - dependent induction h; eauto using simdec.
-  - dependent induction h; eauto 7 using simdec.
-  - dependent induction h; eauto using simdec.
-  - dependent induction h; eauto 7 using simdec.
-  - admit.
-  - admit.
-  - dependent induction h; eauto using simdec.
-  - dependent induction h; eauto using simdec.
-  - admit.
-  - admit.
-  (* - dependent induction h; eauto using simdec. *)
-  - admit.
+  - assert (exists t, t = J i A' a' P' p' b' e'  /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
+  - assert (exists t, t = injpi1 i j A1' A2' B1' B2' e' /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
+  - assert (exists t, t = injpi2 i j A1' A2' B1' B2' e' a2' /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
   - apply IHsimdec. dependent induction h; eauto using simdec.
   - eapply IHsimdec in h. eauto using simdec.
-Admitted.
+Qed.
 
+Lemma decoration_is_dterm t u : 
+  dterm u ->
+  t ⊏ u -> 
+  dterm t.
+Proof.
+  intros. generalize H. clear H.  
+  dependent induction H0; intros X; dependent destruction X; eauto 10 using dterm.
+Qed.
 
-(* Lemma dec_to_sim u v :
+Lemma dec_to_sim u v :
+  dterm u -> dterm v ->
   u ⊏ v →
   u ~ v.
 Proof.
-  induction 1.
-  all: solve [ econstructor ; eauto ].
-Qed. *)
+  intros. rename H into du. rename H0 into dv. dependent induction H1. 
+  1-15:dependent destruction du; dependent destruction dv.
+  all: try solve [ econstructor ; eauto ].
+  1:eauto using sim_cast.
+  1:eauto using sim_refl.
+  1:eauto 9 using decoration_is_dterm, sim_trans.
+  dependent destruction dv. eauto using simdec, sim_trans, sim_sym, sim_refl.
+Qed.
 
 Lemma rename_dec ρ u v :
   u ⊏ v →
