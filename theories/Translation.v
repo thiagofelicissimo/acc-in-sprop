@@ -99,6 +99,13 @@ Axiom type_heq_app : forall Γ i j A1 A2 B1 B2 f1 f2 a1 a2 p q,
     : heq j (B1 <[a1..]) (B2 <[a2..]) (app i j A1 B1 f1 a1) (app i j A2 B2 f2 a2).
 
 
+Axiom heq_succ : term -> term -> term -> term.
+
+Axiom type_heq_succ : forall Γ t u e,
+  Γ ⊢< ty 0 > t : Nat ->
+  Γ ⊢< ty 0 > u : Nat ->
+  Γ ⊢< prop > e: heq (ty 0) Nat Nat t u ->
+  Γ ⊢< prop > heq_succ t u e : heq (ty 0) Nat Nat (succ t) (succ u).
     
 Axiom heq_sym : level -> term -> term -> term -> term -> term -> term.
 
@@ -130,6 +137,14 @@ Axiom type_heq_cast : forall Γ l A B e a,
   Γ ⊢< prop > e : obseq (Ax l) (Sort l) A B →
   Γ ⊢< l > a : A →
   Γ ⊢< prop > heq_cast l A B e a : heq l A B a (cast l A B e a).
+
+
+(* Axiom type_heq_rec : 
+  let Aeq := heq (ty 0) Nat Nat (var 1) (var 0) in
+  Γ ,, (ty 0, Nat) ,, (ty 0, Nat) ,, (prop, Aeq) ⊢< prop > e1 : heq (Ax l) (Sort l) (Sort l) ((S >> S) ⋅ P1) ((fun x => match x with | O => 1 | n => n + 2 end) ⋅ P2) ->
+  Γ ⊢< prop > e2 : heq l (P1 <[ zero ..]) (P2 <[ zero..]) pzero1 pzero2 ->
+  Γ ,, (ty 0, Nat) ,, (ty 0, Nat) ,, (prop, Aeq) ,, ()
+   *)
 
 (* 
 
@@ -759,9 +774,35 @@ Proof.
     1,3:eapply meta_lvl. 1,3:econstructor; eapply type_ren; eauto using WellRen_renL, ctx_typing, type_ren.
     1:eapply WellRen_up. all:eauto using WellRen_renL, WellRen_renR, ctx_typing, type_ren.
     2,3:rasimpl;reflexivity. eapply WellRen_up. all:eauto using WellRen_renR.
-  - admit.
-  - admit.
-  - admit.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2. 
+    dependent destruction lvl_eq. clear lvl_eq0.
+    eapply conv_ren in conv_ty, conv_ty0; eauto using WellRen_renL, WellRen_renR.
+    eexists.
+    eapply type_conv. 1:eapply type_heq_refl.
+    3:eapply conv_heq.
+    3,4 :eauto using conv_sym.
+    3,4:eauto using conv_refl, typing.
+    all:eapply meta_lvl;rasimpl;eauto using typing.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2. 
+    dependent destruction lvl_eq. clear lvl_eq0.
+    eapply conv_ren in conv_ty, conv_ty0; eauto using WellRen_renL, WellRen_renR.
+    eexists.
+    eapply type_conv. 1:eapply type_heq_refl.
+    3:eapply conv_heq.
+    3,4 :eauto using conv_sym.
+    3,4:eauto using conv_refl, typing.
+    all:eapply meta_lvl;rasimpl;eauto using typing.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2. 
+    dependent destruction lvl_eq. clear lvl_eq0.
+
+    edestruct IHhsim; eauto. rasimpl in H0.
+    eapply conv_ren in conv_ty, conv_ty0; eauto using WellRen_renL, WellRen_renR.
+    rasimpl in conv_ty. rasimpl in conv_ty0.
+    eexists. eapply type_conv.
+    1:eapply type_heq_succ. 3:eapply H0. 1,2:eauto using type_ren, WellRen_renL, WellRen_renR.
+    eapply conv_heq; eauto using conv_sym.
+    all:eapply conv_refl, type_ren; eauto using WellRen_renL, WellRen_renR, typing.
+
   - admit.
   - admit.
   - admit.
