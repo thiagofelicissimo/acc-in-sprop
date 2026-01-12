@@ -21,6 +21,9 @@ Axiom heq : level -> term -> term -> term -> term -> term.
 Axiom heq_ren : forall ρ l A B a e,
   ρ ⋅ (heq l A B a e) = heq l (ρ ⋅ A) (ρ ⋅ B) (ρ ⋅ a) (ρ ⋅ e).
 
+Axiom heq_subst : forall σ l A B a e,
+  (heq l A B a e)<[σ] = heq l (A<[σ]) (B<[σ]) (a<[σ]) (e<[σ]).
+
 Axiom type_heq : forall Γ l A B a b,
   Γ ⊢< Ax l > A : Sort l →
   Γ ⊢< Ax l > B : Sort l →
@@ -37,6 +40,9 @@ Axiom conv_heq : forall Γ l A B a b A' B' a' b',
 
 
 Axiom heq_refl : level -> term -> term -> term.
+
+Axiom ren_heq_refl : forall ρ l A a, ρ ⋅ (heq_refl l A a) = heq_refl l (ρ ⋅ A) (ρ ⋅ a).
+(* Axiom subst_heq_refl : forall σ l A a, (heq_refl l A a) <[ σ ] = heq_refl l (A<[σ]) (a<[σ]). *)
 
 Axiom type_heq_refl : forall Γ l A a,
   Γ ⊢< Ax l > A : Sort l →
@@ -80,18 +86,20 @@ Axiom type_heq_trans : forall Γ l A B C c b a e1 e2,
   Γ ⊢< prop > heq_trans l A B C a b c e1 e2 : heq l A C a c.
 
 
+Axiom heq_cast : forall (i : level) (A B e a : term), term.
+
+Axiom type_heq_cast : forall Γ l A B e a,
+  Γ ⊢< Ax l > A : Sort l →
+  Γ ⊢< Ax l > B : Sort l →
+  Γ ⊢< prop > e : obseq (Ax l) (Sort l) A B →
+  Γ ⊢< l > a : A →
+  Γ ⊢< prop > heq_cast l A B e a : heq l A B a (cast l A B e a).
+
 (* 
 
 
 
-Axiom heq_cast : forall (i : level) (A B e a : term), term.
 
-Axiom type_heq_cast : forall Γ i A B e a,
-  Γ ⊢< Ax (ty i) > A : Sort (ty i) →
-  Γ ⊢< Ax (ty i) > B : Sort (ty i) →
-  Γ ⊢< prop > e : obseq (Ax (ty i)) (Sort (ty i)) A B →
-  Γ ⊢< ty i > a : A →
-  Γ ⊢< prop > heq_cast (ty i) A B e a : heq (ty i) A B a (cast (ty i) A B e a).
 
 Axiom conv_heq_cast : forall Γ i A A' B B' e e' a a',
   Γ ⊢< Ax (ty i) > A ≡ A' : Sort (ty i) →
@@ -552,6 +560,7 @@ Proof.
     rasimpl. reflexivity.
 Qed.
 
+
 Lemma sim_var_heq l x A1 A2 Γ1 Γ2 :
   ⊢ Γ1 -> ⊢ Γ2 ->
   ctx_compat Γ1 Γ2 ->
@@ -656,36 +665,271 @@ Proof.
   - admit.
   - admit.
   - admit.
-  (* - eapply type_inv in h2 as h2'; dependent destruction h2'. subst.
+  - eapply type_inv in h2 as h2'; dependent destruction h2'. subst.
     edestruct (IHhsim _ _ _ _ _ hctx h1 a_Wt).
     eexists. 
     eapply type_heq_trans.
     4:eapply H0.
     all: try solve [ eapply type_ren; 
-      eauto using WellRen_packL, WellRen_packR, validity_ty_ctx ].
+      eauto using WellRen_renL, WellRen_renR, validity_ty_ctx ].
     eapply type_ren.
-    3:eapply WellRen_packR.
+    3:eapply WellRen_renR.
     2:eauto using validity_ty_ctx.
     1:eapply type_conv. 2:eapply conv_heq.
-    6:rewrite heq_ren; reflexivity.
+    7:rewrite heq_ren; reflexivity.
     1:eapply type_heq_cast. 3:exact e_Wt.
     all:eauto using conv_sym, conv_refl, conversion.
-  - eapply type_inv in hu as hu'; dependent destruction hu'. subst.
-    destruct (IHhsim _ _ _ _ a_Wt hv).
+  - eapply type_inv in h1 as h1'; dependent destruction h1'. subst.
+    destruct (IHhsim _ _ _ _ _ hctx a_Wt h2).
     eexists. 
     eapply type_heq_trans.
-    5:eapply H.
+    5:eapply H0.
     all: try solve [ eapply type_ren; 
-      eauto using WellRen_packL, WellRen_packR, validity_ty_ctx ].
+      eauto using WellRen_renL, WellRen_renR, validity_ty_ctx ].
     eapply type_ren.
-    3:eapply WellRen_packL.
+    3:eapply WellRen_renL.
     2:eauto using validity_ty_ctx.
     1:eapply type_conv. 2:eapply conv_heq.
-    6:rewrite heq_ren; reflexivity.
+    7:rewrite heq_ren; reflexivity.
     1:eapply type_heq_sym, type_heq_cast.
     5:eapply e_Wt.
-    all:eauto using conv_sym, conv_refl, typing. *)
+    all:eauto using conv_sym, conv_refl, typing.
 Admitted.
+
+
+
+Fixpoint get_entry n Γ :=
+  match Γ, n with 
+  | nil, _ => (prop, Nat) (* junk *)
+  | cons (l, A) Γ, 0 => (l, S ⋅ A)
+  | cons _ Γ, S n => 
+    let (l, A) := get_entry n Γ in
+      (l, S ⋅ A)
+    end.
+  
+Definition get_tail Γ : ctx :=
+  match Γ with  
+  | cons _ Γ => Γ
+  | nil => nil (* junk *)
+  end.
+
+(* Fixpoint pack_refl Γ n :=
+  let X := get_entry (n / 3) Γ in
+  (heq_refl (fst X) (snd X) (var 0)) .: (var n) .: (var n) .: (pack_refl (get_tail Γ) (n + 1)). *)
+
+Definition pack_refl Γ n :=
+  let X := get_entry (n / 3) Γ in
+  match n mod 3 with 
+  | 0 => heq_refl (fst X) (snd X) (var (n / 3))
+  | _ => var (n / 3)
+  end.
+
+Lemma mod_aux0 x : (0 + 3 * x) mod 3 = 0.
+Proof.
+  rewrite Nat.add_mod by lia. 
+  replace (3 * x) with (x * 3) by lia.
+  rewrite Nat.mod_mul.
+  2:eauto.
+  simpl. eauto.
+Qed.
+
+Lemma mod_aux1 x : (1 + 3 * x) mod 3 = 1.
+Proof.
+  rewrite Nat.add_mod by lia. 
+  replace (3 * x) with (x * 3) by lia.
+  rewrite Nat.mod_mul.
+  2:eauto.
+  simpl. eauto.
+Qed.
+
+
+Lemma mod_aux2 x : (2 + 3 * x) mod 3 = 2.
+Proof.
+  rewrite Nat.add_mod by lia. 
+  replace (3 * x) with (x * 3) by lia.
+  rewrite Nat.mod_mul.
+  2:eauto.
+  simpl. eauto.
+Qed.
+
+Lemma comp_refl_renL' Γ x :
+  (pack_refl Γ (renL x)) = var x.
+Proof.
+  unfold pack_refl, renL. rewrite mod_aux2. 
+  replace (2 + 3 * x) with (x * 3 + 2) by lia.
+  rewrite Nat.div_add_l by lia.  simpl. replace (x + 0) with x by lia. reflexivity.
+Qed.
+
+Lemma comp_refl_renL Γ :
+  pointwise_relation _ eq (renL >> pack_refl Γ) var.
+Proof.
+  unfold pointwise_relation. intros. eapply comp_refl_renL'.
+Qed.
+
+
+Lemma comp_refl_renR' Γ x :
+  (pack_refl Γ (renR x)) = var x.
+Proof.
+  unfold pack_refl, renR. rewrite mod_aux1. 
+  replace (1 + 3 * x) with (x * 3 + 1) by lia.
+  rewrite Nat.div_add_l by lia.  simpl. replace (x + 0) with x by lia. reflexivity.
+Qed.
+
+Lemma comp_refl_renR Γ :
+  pointwise_relation _ eq (renR >> pack_refl Γ) var.
+Proof.
+  unfold pointwise_relation. intros. eapply comp_refl_renR'.
+Qed.
+
+Lemma aux_match_nat {A B} (f : A -> B) (n : nat) p0 ps :
+  f (match n with 
+  | 0 => p0 
+  | S n => ps n end)
+  = match n with 
+  | 0 => f p0 
+  | S n => f (ps n) end.
+Proof.
+  destruct n; reflexivity.
+Qed.
+
+Lemma aux_match_nat2 {A} (n : nat) (p0 p0':A) ps ps' :
+  p0 = p0' -> 
+  (forall x, ps x = ps' x) ->
+  match n with 
+  | 0 => p0 
+  | S n => ps n end
+  = match n with 
+  | 0 => p0' 
+  | S n => ps' n end.
+Proof.
+  intros. destruct n; eauto.
+Qed.
+
+Lemma fun_snd {A B C} (f:B -> C) (t : A * B): 
+  f (snd t) = snd (let (a, b) := t in (a, f b)).
+Proof.
+  destruct t. reflexivity.
+Qed.
+Lemma fun_fst {A B C} (f:B -> C) (t : A * B): 
+  fst t = fst (let (a, b) := t in (a, f b)).
+Proof.
+  destruct t. reflexivity.
+Qed.
+Lemma snd_get_entry n Γ l A :
+  snd (get_entry (S n) (Γ ,, (l, A))) = S ⋅ (snd (get_entry n Γ)).
+Proof.
+  simpl. symmetry. eapply fun_snd.
+Qed.
+
+Lemma fst_get_entry n Γ l A :
+  fst (get_entry (S n) (Γ ,, (l, A))) = fst (get_entry n Γ).
+Proof.
+  simpl. symmetry. eapply fun_fst.
+Qed.
+
+Lemma commute_renL_S A (ρ : nat -> A) : 
+  pointwise_relation _ eq (↑ >> (renL >> ρ)) (renL >> (↑ >> (↑ >> (↑ >> ρ)))).
+Proof.
+  unfold pointwise_relation. intros.
+  unfold ">>", "↑", renL. f_equal. lia.
+Qed.
+
+Lemma commute_renR_S A (ρ : nat -> A) : 
+  pointwise_relation _ eq (↑ >> (renR >> ρ)) (renR >> (↑ >> (↑ >> (↑ >> ρ)))).
+Proof.
+  unfold pointwise_relation. intros.
+  unfold ">>", "↑", renR. f_equal. lia.
+Qed.
+
+Lemma pack_refl_Wt Γ : 
+  ⊢ Γ -> Γ ⊢s pack_refl Γ : pack Γ Γ.
+Proof.
+  intros. induction H.
+  1:econstructor.
+  simpl. econstructor. 1:econstructor. 1:econstructor.
+  - rewrite autosubst_simpl_WellSubst.
+    1:eapply WellSubst_weak. 1:eapply IHctx_typing.
+    1:assumption.
+    econstructor. unfold pointwise_relation. intros.
+    unfold ">>".
+    unfold pack_refl.
+    replace (↑ (↑ (↑ a)) mod 3) with (a mod 3).
+    2:{ unfold "↑".
+        replace (S (S (S a))) with (3 + a) by lia.
+        rewrite Nat.add_mod. 2:lia. 
+        change (3 mod 3) with (1 * 3 mod 3).
+        rewrite Nat.mod_mul. 2:lia.
+        symmetry.
+        rewrite Nat.mod_small.
+        1:lia.
+        change (0 + a mod 3) with (a mod 3).
+        eapply Nat.mod_upper_bound. lia. }
+    rewrite (aux_match_nat (fun x => S ⋅ x)).
+    eapply aux_match_nat2.
+    * rewrite ren_heq_refl. f_equal.
+      3:{ unfold "↑". 
+          change (S ⋅ (var (a / 3))) with (var (1 + a / 3)).
+          replace (S (S (S a)) / 3) with (1 + a /3). 1:reflexivity.
+          change (S (S (S a))) with (1 * 3 + a).
+          rewrite Nat.div_add_l. 2:lia.
+          reflexivity. }
+      ** replace (↑ (↑ (↑ a)) / 3) with (S (a / 3)).
+         2:unfold "↑". 2:replace (S (S (S a))) with (1*3 + a) by lia.
+         2:rewrite Nat.div_add_l. 2-3:lia.
+         rewrite fst_get_entry. reflexivity.
+      ** replace (↑ (↑ (↑ a)) / 3) with (S (a / 3)).
+         2:unfold "↑". 2:replace (S (S (S a))) with (1*3 + a) by lia.
+         2:rewrite Nat.div_add_l. 2-3:lia.
+         rewrite snd_get_entry. reflexivity.
+    * intros. unfold "↑". change (S ⋅ (var (a /3))) with (var (1 + a /3)).
+      replace (S (S (S a)) / 3) with (1 + a / 3). 1:reflexivity.
+      replace (S (S (S a))) with (1 * 3 + a) by lia.
+      rewrite Nat.div_add_l. 1:reflexivity. lia.
+  - ssimpl. setoid_rewrite <- commute_renL_S.
+    setoid_rewrite comp_refl_renL.
+    change (pack_refl (Γ,, (l, A)) (↑ (↑ 0))) with (var 0).
+    econstructor. 1:eauto using ctx_typing.
+    1:eapply varty_meta. 1:econstructor. rasimpl. reflexivity.
+  - ssimpl. setoid_rewrite <- commute_renR_S.
+    setoid_rewrite comp_refl_renR.
+    change (pack_refl (Γ,, (l, A)) (↑ (↑ 0))) with (var 0).
+    econstructor. 1:eauto using ctx_typing.
+    1:eapply varty_meta. 1:econstructor. rasimpl. reflexivity.
+  - rewrite  heq_subst. rasimpl.  setoid_rewrite <- commute_renR_S.  setoid_rewrite <- commute_renL_S.
+    setoid_rewrite comp_refl_renL. setoid_rewrite comp_refl_renR.
+    unfold ">>". unfold pack_refl. simpl. renamify.
+    eapply type_heq_refl.
+    1:eapply type_ren; eauto using ctx_typing, WellRen_S.
+    econstructor; eauto using ctx_typing.
+    econstructor.
+Qed.
+
+
+
+Lemma compat_refl Γ : ctx_compat Γ Γ.
+Proof.
+  induction Γ.
+  1:econstructor.
+  destruct a. econstructor; eauto.
+Qed.
+
+Corollary sim_heq_same_ctx i Γ t1 t2 A1 A2 :
+  t1 ~ t2 →
+  Γ ⊢< ty i > t1 : A1 →
+  Γ ⊢< ty i > t2 : A2 →
+  ∃ e, Γ ⊢< prop > e : heq (ty i) A1 A2 t1 t2.
+Proof.
+  intros. edestruct sim_heq; eauto using compat_refl.
+  eapply subst_ty in H2. 3:eapply pack_refl_Wt.
+  2-4:eauto using validity_ty_ctx.
+  rewrite heq_subst in H2. rasimpl in H2.
+  setoid_rewrite comp_refl_renL in H2.
+  setoid_rewrite comp_refl_renR in H2.
+  rasimpl in H2.
+  eauto.
+Qed.
+
+
 
 (* Potential translations *)
 
