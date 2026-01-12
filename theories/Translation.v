@@ -21,69 +21,66 @@ Axiom heq : level -> term -> term -> term -> term -> term.
 Axiom heq_ren : forall ρ l A B a e,
   ρ ⋅ (heq l A B a e) = heq l (ρ ⋅ A) (ρ ⋅ B) (ρ ⋅ a) (ρ ⋅ e).
 
-Axiom type_heq : forall Γ n A B a b,
-  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
-  Γ ⊢< Ax (ty n) > B : Sort (ty n) →
-  Γ ⊢< ty n > a : A →
-  Γ ⊢< ty n > b : B →
-  Γ ⊢< ty 0 > heq (ty n) A B a b : Sort prop.
+Axiom type_heq : forall Γ l A B a b,
+  Γ ⊢< Ax l > A : Sort l →
+  Γ ⊢< Ax l > B : Sort l →
+  Γ ⊢< l > a : A →
+  Γ ⊢< l > b : B →
+  Γ ⊢< ty 0 > heq l A B a b : Sort prop.
 
-Axiom conv_heq : forall Γ n A B a b A' B' a' b',
-  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
-  Γ ⊢< Ax (ty n) > B ≡ B' : Sort (ty n) →
-  Γ ⊢< ty n > a ≡ a' : A →
-  Γ ⊢< ty n > b ≡ b' : B →
-  Γ ⊢< ty 0 > heq (ty n) A B a b ≡ heq (ty n) A' B' a' b' : Sort prop.
-
+Axiom conv_heq : forall Γ l A B a b A' B' a' b',
+  Γ ⊢< Ax l > A ≡ A' : Sort l →
+  Γ ⊢< Ax l > B ≡ B' : Sort l →
+  Γ ⊢< l > a ≡ a' : A →
+  Γ ⊢< l > b ≡ b' : B →
+  Γ ⊢< ty 0 > heq l A B a b ≡ heq l A' B' a' b' : Sort prop.
 
 
 Axiom heq_refl : level -> term -> term -> term.
 
-Axiom type_heq_refl : forall Γ n A a,
-  Γ ⊢< Ax (ty n) > A : Sort (ty n) →
-  Γ ⊢< ty n > a : A →
-  Γ ⊢< prop > heq_refl (ty n) A a : heq (ty n) A A a a.
+Axiom type_heq_refl : forall Γ l A a,
+  Γ ⊢< Ax l > A : Sort l →
+  Γ ⊢< l > a : A →
+  Γ ⊢< prop > heq_refl l A a : heq l A A a a.
 
-Axiom conv_heq_refl : forall Γ n A A' a a',
-  Γ ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) →
-  Γ ⊢< ty n > a ≡ a' : A →
-  Γ ⊢< prop > heq_refl (ty n) A a ≡ heq_refl (ty n) A' a' : heq (ty n) A A a a.  
+Axiom heq_pi : level -> level -> term -> term -> term -> term -> term -> term -> term.
 
+Axiom type_heq_pi : forall Γ i j A1 A2 B1 B2 p q,
+  Γ ⊢< Ax i > A1 : Sort i ->
+  Γ ⊢< Ax i > A2 : Sort i ->
+  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+  Γ ⊢< prop > p : heq (Ax i) (Sort i) (Sort i) A1 A2 ->
+  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq)
+    ⊢< prop > q : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1) ((fun x => match x with | O => 1 | n => n + 2 end) ⋅ B2) -> 
+  Γ ⊢< prop > heq_pi i j A1 A2 B1 B2 p q 
+    : heq (Ax (Ru i j)) (Sort (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2).
 
 
 Axiom heq_sym : level -> term -> term -> term -> term -> term -> term.
 
-Axiom type_heq_sym : forall Γ n A B b a e,
-  Γ ⊢< ty n > a : A ->
-  Γ ⊢< ty n > b : B ->
-  Γ ⊢< prop > e : heq (ty n) A B a b →
-  Γ ⊢< prop > heq_sym (ty n) A B a b e : heq (ty n) B A b a.
+Axiom type_heq_sym : forall Γ l A B b a e,
+  Γ ⊢< l > a : A ->
+  Γ ⊢< l > b : B ->
+  Γ ⊢< prop > e : heq l A B a b →
+  Γ ⊢< prop > heq_sym l A B a b e : heq l B A b a.
 
-Axiom conv_heq_sym : forall Γ n A B b a e A' B' b' a' e',
-  Γ ⊢< ty n > a ≡ a' : A ->
-  Γ ⊢< ty n > b ≡ b' : B ->
-  Γ ⊢< prop > e ≡ e' : heq (ty n) A B a b →
-  Γ ⊢< prop > heq_sym (ty n) A B a b e ≡ heq_sym (ty n) A' B' a' b' e' : heq (ty n) B A b a.
 
 
 
 Axiom heq_trans : level -> term -> term -> term -> term -> term -> term -> term -> term -> term.
 
-Axiom type_heq_trans : forall Γ n A B C c b a e1 e2,
-  Γ ⊢< ty n > a : A ->
-  Γ ⊢< ty n > b : B ->
-  Γ ⊢< ty n > c : C ->
-  Γ ⊢< prop > e1 : heq (ty n) A B a b →
-  Γ ⊢< prop > e2 : heq (ty n) B C b c → 
-  Γ ⊢< prop > heq_trans (ty n) A B C a b c e1 e2 : heq (ty n) A C a c.
+Axiom type_heq_trans : forall Γ l A B C c b a e1 e2,
+  Γ ⊢< l > a : A ->
+  Γ ⊢< l > b : B ->
+  Γ ⊢< l > c : C ->
+  Γ ⊢< prop > e1 : heq l A B a b →
+  Γ ⊢< prop > e2 : heq l B C b c → 
+  Γ ⊢< prop > heq_trans l A B C a b c e1 e2 : heq l A C a c.
 
-Axiom conv_heq_trans : forall Γ n A B C c b a e1 e2 A' B' C' c' b' a' e1' e2',
-  Γ ⊢< ty n > a ≡ a' : A ->
-  Γ ⊢< ty n > b ≡ b' : B ->
-  Γ ⊢< ty n > c ≡ c' : C ->
-  Γ ⊢< prop > e1 ≡ e1' : heq (ty n) A B a b →
-  Γ ⊢< prop > e2 ≡ e2' : heq (ty n) B C b c → 
-  Γ ⊢< prop > heq_trans (ty n) A B C a b c e1 e2 ≡ heq_trans (ty n) A' B' C' a' b' c' e1' e2' : heq (ty n) A C a c.
+
+(* 
 
 
 
@@ -134,23 +131,7 @@ Axiom type_heq_pi : forall Γ n m A1 A2 B1 B2 p q,
     ⊢< prop > q : heq (Ax (ty m)) (Sort (ty m)) (Sort (ty m)) (((S >> S >> S) ⋅ B1) <[(var 2)..]) (((S >> S >> S) ⋅ B2) <[(var 1)..]) -> 
   Γ ⊢< prop > heq_pi (ty n) (ty m) A1 A2 B1 B2 p q 
     : heq (Ax (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Pi (ty n) (ty m) A1 B1) (Pi (ty n) (ty m) A2 B2).
-
-
-(* Uniqueness of type *)
-
-(* The following can now be found in UnicityP.v *)
-(* Lemma unique_type Γ i u A B :
-  Γ ⊢< i > u : A →
-  Γ ⊢< i > u : B →
-  Γ ⊢< Ax i > A ≡ B : Sort i.
-Proof.
-Admitted. *)
-
-(* Potential translations
-
-  u ⊏ v means that v is u decorated with casts.
-
-*)
+ *)
 
 Reserved Notation " t ⊏ t' " (at level 21).
 
@@ -494,23 +475,29 @@ Definition renX m := 3 * m.
 Definition renR m := 1 + (3 * m).
 Definition renL m := 2 + (3 * m).
 
-Fixpoint pack (Γ : ctx) := 
-  match Γ with 
-  | nil => ∙
-  | cons (l, A) Γ => 
-    let A1 := renL ⋅ A in
-    let A2 := renR ⋅ A in
-    let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-    pack Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq)
+Fixpoint pack (Γ1 Γ2 : ctx) := 
+  match Γ1, Γ2 with 
+  | cons (l, A1) Γ1, cons (l', A2) Γ2 => (* invariant: l = l' *)
+    let A1' := renL ⋅ A1 in
+    let A2' := renR ⋅ A2 in
+    let Aeq := heq l ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
+    pack Γ1 Γ2 ,, (l, A1') ,, (l, S ⋅ A2') ,, (prop, Aeq)
+  | _,_ =>  ∙
   end.
 
+Inductive ctx_compat : ctx -> ctx -> Prop := 
+| compat_nil : ctx_compat ∙ ∙
+| compat_cons Γ1 l1 A1 Γ2 l2 A2 : 
+  l1 = l2 ->
+  ctx_compat Γ1 Γ2 ->
+  ctx_compat (Γ1 ,, (l1, A1)) (Γ2 ,, (l2, A2)).
 
-Lemma WellRen_packL Γ :
-  pack Γ ⊢r renL : Γ.
+Lemma WellRen_renL Γ1 Γ2 (h : ctx_compat Γ1 Γ2):
+  pack Γ1 Γ2 ⊢r renL : Γ1.
 Proof.
-  induction Γ.
+  induction h.
   - econstructor.
-  - destruct a. unfold renL. econstructor.
+  - subst. unfold renL. econstructor.
     * simpl. eapply WellRen_weak,WellRen_weak,WellRen_weak. fold plus.
       eapply autosubst_simpl_WellRen. 2:eauto.
       econstructor. unfold pointwise_relation. intros.
@@ -523,15 +510,15 @@ Proof.
 Qed.
 
 
-Lemma WellRen_packR Γ :
-  pack Γ ⊢r renR : Γ.
+Lemma WellRen_renR Γ1 Γ2 (h : ctx_compat Γ1 Γ2):
+  pack Γ1 Γ2 ⊢r renR : Γ2.
 Proof.
-  induction Γ.
+  induction h.
   - econstructor.
-  - destruct a. unfold renR. econstructor. 
+  - subst. unfold renR. econstructor. 
     * simpl. eapply WellRen_weak,WellRen_weak. fold plus. 
       eapply autosubst_simpl_WellRen.
-      2:eapply WellRen_weak. 2:eapply IHΓ. unfold renR. simpl.
+      2:eapply WellRen_weak. 2:eapply IHh. unfold renR. simpl.
       econstructor. unfold pointwise_relation. intros.
       unfold ">>". lia. 
     * eapply varty_meta. 1:cbn. 1:econstructor. 1:econstructor.
@@ -541,22 +528,87 @@ Proof.
 Qed.
 
 
-Lemma sim_heq i Γ u v A B :
-  u ~ v →
-  Γ ⊢< ty i > u : A →
-  Γ ⊢< ty i > v : B →
-  ∃ e, pack Γ ⊢< prop > e : heq (ty i) (renL ⋅ A) (renR ⋅ B) (renL ⋅ u) (renR ⋅ v).
+Lemma pack_Wt Γ1 Γ2 :
+  ctx_compat Γ1 Γ2 ->
+  ⊢ Γ1 -> 
+  ⊢ Γ2 -> 
+  ⊢ pack Γ1 Γ2.
 Proof.
-  intros hsim hu hv.
-  induction hsim in i, Γ, A, B, hu, hv |- *.
+  intro h. induction h.
+  1:econstructor. subst.
+  intros. dependent destruction H. dependent destruction H0.
+  assert (pack Γ1 Γ2 ⊢< Ax l2 > renL ⋅ A1 : Sort l2) by eauto using type_ren, WellRen_renL.
+  assert (pack Γ1 Γ2,, (l2, renL ⋅ A1) ⊢< Ax l2 > S ⋅ renR ⋅ A2 : Sort l2) 
+    by (rasimpl; eapply type_ren; eauto using ctx_typing, WellRen_weak, WellRen_renR). 
+  simpl. econstructor. 1:econstructor. 1:econstructor.
+  1:eauto.
+  3:unfold Ax;simpl;eapply type_heq.
+  1,2:assumption.
+  * eapply type_ren; eauto using ctx_typing, WellRen_weak, WellRen_S.
+  * rasimpl. rasimpl in H4. eapply type_ren; eauto using ctx_typing, WellRen_weak, WellRen_renR.
+  * econstructor; eauto using ctx_typing. eapply varty_meta. 1:econstructor. 1:econstructor.
+    rasimpl. reflexivity.
+  * econstructor; eauto using ctx_typing. eapply varty_meta. 1:econstructor.
+    rasimpl. reflexivity.
+Qed.
+
+Lemma sim_var_heq l x A1 A2 Γ1 Γ2 :
+  ⊢ Γ1 -> ⊢ Γ2 ->
+  ctx_compat Γ1 Γ2 ->
+  Γ1 ∋< l > x : A1 ->
+  Γ2 ∋< l > x : A2 ->
+  ∃ e, pack Γ1 Γ2 ⊢< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ (var x)) (renR ⋅ (var x)).
+Proof.
+  intros. generalize l x A1 A2 H H0 H2 H3. clear l x A1 A2 H H0 H2 H3. induction H1; intros.
+  1:dependent destruction H2.
+  subst.
+  destruct x.
+  - dependent destruction H3. dependent destruction H4.
+    simpl. exists (var 0). econstructor.
+    1:unshelve eapply (pack_Wt _ _ _ H0 H2); eauto using ctx_compat. 
+    eapply varty_meta. 1:econstructor. ssimpl. rewrite heq_ren. unfold renL, renR. ssimpl. f_equal.
+    all:eapply ren_term_morphism; eauto.
+    all:unfold pointwise_relation; intros; unfold ">>"; lia.
+  - dependent destruction H3. dependent destruction H4.
+    dependent destruction H0. dependent destruction H2.  
+    edestruct (IHctx_compat); eauto.
+    eexists. eapply type_ren; eauto.
+    1:eapply pack_Wt; eauto using ctx_typing, ctx_compat.
+    1:simpl; eauto using WellRen_weak, WellRen_S.
+    rewrite heq_ren. unfold renR, renL. rasimpl. unfold ">>". f_equal.
+    3,4:eapply f_equal; lia.
+    1,2:eapply ren_term_morphism; eauto.
+    all:unfold pointwise_relation; intros; unfold ">>"; lia.
+Qed.
+
+Lemma sim_heq i Γ1 Γ2 t1 t2 A1 A2 :
+  ctx_compat Γ1 Γ2 ->
+  t1 ~ t2 →
+  Γ1 ⊢< ty i > t1 : A1 →
+  Γ2 ⊢< ty i > t2 : A2 →
+  ∃ e, pack Γ1 Γ2 ⊢< prop > e : heq (ty i) (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ t1) (renR ⋅ t2).
+Proof.
+  intros hctx hsim h1 h2.
+  induction hsim in i, Γ1, Γ2, hctx, A1, A2, h1, h2 |- *.
   all:try solve 
-   [ eapply type_inv in hu; dependent destruction hu ; dependent destruction lvl_eq ].
-  - admit.
-  - eapply type_inv in hu, hv. dependent destruction hu. dependent destruction hv.  
-    assert (⊢ pack Γ) by admit.
+   [ eapply type_inv in h1; dependent destruction h1 ; dependent destruction lvl_eq ].
+  all : assert (⊢ pack Γ1 Γ2) by eauto using pack_Wt, validity_ty_ctx.
+  - pose proof h1 as h1'. pose proof h2 as h2'.
+    eapply type_inv in h1. dependent destruction h1.
+    eapply type_inv in h2. dependent destruction h2.
+    eapply sim_var_heq in hctx as temp. 2-5:eauto using validity_ty_ctx, validity_conv_left.
+    destruct temp.
+    eexists. eapply type_conv. 1:eauto.
+    eapply conv_heq.
+    1,2:eapply conv_ren; eauto using conv_sym, WellRen_renL, WellRen_renR.
+    all:eapply conv_refl, type_conv.
+    1,3:eapply type_ren. 3:eapply WellRen_renL. 7:eapply WellRen_renR. 
+    all: eauto.
+    all:eapply conv_ren; eauto using WellRen_renL, WellRen_renR.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2.  
     dependent destruction lvl_eq. clear lvl_eq0.
-    eapply conv_ren in conv_ty. 3:eapply WellRen_packL. all:eauto.
-    eapply conv_ren in conv_ty0. 3:eapply WellRen_packR. all:eauto.
+    eapply conv_ren in conv_ty. 3:eapply WellRen_renL. all:eauto.
+    eapply conv_ren in conv_ty0. 3:eapply WellRen_renR. all:eauto.
     simpl in *.
     eexists. eapply type_conv.
     2:eapply conv_heq.
@@ -567,11 +619,33 @@ Proof.
     1,4:eauto using typing.
     1-3:reflexivity.
     all:eauto using conv_sym.
-  - eapply type_inv in hu, hv. dependent destruction hu. dependent destruction hv.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2. 
+    dependent destruction lvl_eq. clear lvl_eq0.
     
-    edestruct IHhsim1. 1,2:unfold Ax in *; eauto.
-    edestruct IHhsim2. 1,2:unfold Ax in *; eauto.
-    all:admit.
+    edestruct IHhsim1. 2:eapply A_Wt. 2:eapply A_Wt0. 1:eauto.
+    edestruct IHhsim2. 2:eapply B_Wt. 2:eapply B_Wt0. 1:eauto using ctx_compat.
+    eexists. eapply type_conv.
+    1:eapply type_heq_pi. 
+    1,2:eapply type_ren. 1:eapply A_Wt. 4:eapply A_Wt0.
+    1-6:eauto using WellRen_renL, WellRen_renR.
+    1,2:eapply type_ren.
+    1:eapply B_Wt. 4:eapply B_Wt0.
+    1,4:eauto using ctx_typing, type_ren, WellRen_renL, WellRen_renR.
+    1,3:eapply WellRen_up. 1,3:eauto using WellRen_renL,WellRen_renR.
+    1-4:rasimpl;reflexivity.
+    2:{ simpl in H1. unfold renR, renL in *. eapply meta_conv. 1:eapply H1. f_equal.
+        all:ssimpl; substify; eapply subst_term_morphism; eauto.
+        all:unfold pointwise_relation; intros; unfold ">>"; simpl.
+        * destruct a; eauto. simpl. assert (forall x y, x = y -> var x = var y) by eauto. eapply H2. lia.
+        * destruct a; eauto. 1:simpl. assert (forall x y, x = y -> var x = var y) by eauto. eapply H2. lia. }
+    1:eauto.   
+    eapply conv_heq.
+    3,4:simpl; eapply conv_refl; eauto.
+    3,4:eapply type_pi. 3-6:eapply type_ren; eauto using ctx_typing, WellRen_renL, WellRen_renR, type_ren.
+    3,4:eapply WellRen_up; eauto using WellRen_renL, WellRen_renR.
+    1:change (Sort (Ru i0 j)) with (renL ⋅ (Sort (Ru i0 j))).
+    2:change (Sort (Ru i0 j)) with (renR ⋅ (Sort (Ru i0 j))).
+    1,2:eapply conv_ren; eauto using conv_sym, WellRen_renL, WellRen_renR.
     
   - admit.
   - admit.
@@ -582,11 +656,11 @@ Proof.
   - admit.
   - admit.
   - admit.
-  - eapply type_inv in hv as hv'; dependent destruction hv'. subst.
-    destruct (IHhsim _ _ _ _ hu a_Wt).
+  (* - eapply type_inv in h2 as h2'; dependent destruction h2'. subst.
+    edestruct (IHhsim _ _ _ _ _ hctx h1 a_Wt).
     eexists. 
     eapply type_heq_trans.
-    4:eapply H.
+    4:eapply H0.
     all: try solve [ eapply type_ren; 
       eauto using WellRen_packL, WellRen_packR, validity_ty_ctx ].
     eapply type_ren.
@@ -610,7 +684,7 @@ Proof.
     6:rewrite heq_ren; reflexivity.
     1:eapply type_heq_sym, type_heq_cast.
     5:eapply e_Wt.
-    all:eauto using conv_sym, conv_refl, typing.
+    all:eauto using conv_sym, conv_refl, typing. *)
 Admitted.
 
 (* Potential translations *)
