@@ -54,6 +54,10 @@ Axiom type_heq_refl : forall Γ l A a,
 (* because heq at l = prop is True, we also have the following *)
 Axiom true : term.
 Axiom type_true_heq : forall Γ A B a b,
+  Γ ⊢< Ax prop > A : Sort prop →
+  Γ ⊢< Ax prop > B : Sort prop →
+  Γ ⊢< prop > a : A →
+  Γ ⊢< prop > b : B →
   Γ ⊢< prop > true : heq prop A B a b.
 
 
@@ -724,7 +728,11 @@ Lemma sim_heq_ih_aux {u u'}:
     Γ2 ⊢< l > u' : A2 → 
     ∃ e : term, pack Γ1 Γ2 ⊢< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ u) (renR ⋅ u')).
 Proof.
-  intros. destruct l; eauto. eexists. eapply type_true_heq.
+  intros. destruct l; eauto. eexists. eapply type_ren in H1, H2.
+  3,6:eauto using WellRen_renL, WellRen_renR.
+  3,5:reflexivity.
+  2,3:eauto using validity_ty_ctx, pack_Wt. 
+  eapply type_true_heq; eauto using validity_ty_ty.
 Qed.
     
 
