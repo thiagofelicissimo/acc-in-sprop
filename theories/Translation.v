@@ -485,12 +485,26 @@ Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 19).
 Definition tr_ctx Γ Δ :=
   ⊢ Δ ∧ Γ ⊂ Δ.
 
-Definition tr_ty l t A Γ' t' A' :=
+Definition tr_ty_data l t A Γ' t' A' :=
   Γ' ⊢< l > t' : A' ∧ t ⊏ t' ∧ A ⊏ A'.
 
-Notation "D ⊨⟨ l ⟩ t : A ∈ ⟦ u : B ⟧" :=
-  (tr_ty l u B D t A)
-  (at level 8, t, A, u, B at next level).
+Notation "D ⊨⟨ l ⟩ t : A ↦ u : B" :=
+  (tr_ty_data l t A D u B)
+  (at level 50, t, A, u, B at next level).
+
+Definition tr_ty_abs l t A Γ' A' :=
+  ∃ t', tr_ty_data l t A Γ' t' A'.
+
+Notation "D ⊨⟨ l ⟩ t : A ⇒ B" :=
+  (tr_ty_abs l t A D B)
+  (at level 50, t, A, B at next level).
+
+Definition tr_ty l t A Γ' :=
+  ∃ A', Γ' ⊨⟨ l ⟩ t : A ⇒ A'.
+
+Notation "D ⊨⟨ l ⟩ t : A" :=
+  (tr_ty l t A D)
+  (at level 50, t, A at next level).
 
 Definition eqtrans l A u v Γ' A' A'' u' v' e :=
   match l with
@@ -503,6 +517,13 @@ Definition eqtrans l A u v Γ' A' A'' u' v' e :=
     Γ' ⊢< prop > e : heq i A' A'' u' v'
   end.
 
+Definition tr_eq Γ' l A u v :=
+  ∃ A' A'' u' v' e, eqtrans l A u v Γ' A' A'' u' v' e.
+
+Notation "D ⊨⟨ l ⟩ u ≡ v : A" :=
+  (tr_eq D l A u v)
+  (at level 50, u, v, A at next level).
+
 (* Type heads *)
 
 Inductive type_head := hSort (l : level) | hPi | hNat | hacc | hobseq.
@@ -514,31 +535,31 @@ Inductive has_type_head : term → type_head → Prop :=
 | isacc i A R x : has_type_head (acc i A R x) hacc
 | isobseq i A u v : has_type_head (obseq i A u v) hobseq.
 
-Lemma keep_head Γ' l t t' A A' h :
-  Γ' ⊨⟨ l ⟩ t' : A' ∈ ⟦ t : A ⟧ →
+Lemma keep_head Γ' l t A h :
+  Γ' ⊨⟨ l ⟩ t : A →
   has_type_head A h →
-  ∃ A'' t'',
-    has_type_head A'' h ∧
-    Γ' ⊨⟨ l ⟩ t'' : A'' ∈ ⟦ t : A ⟧.
+  ∃ A',
+    has_type_head A' h ∧
+    Γ' ⊨⟨ l ⟩ t : A ⇒ A'.
 Proof.
   intros ht hh.
 Admitted.
 
-Corollary keep_sort Γ' i j A A' s :
-  Γ' ⊨⟨ i ⟩ A' : s ∈ ⟦ A : Sort j ⟧ →
-  ∃ A'', Γ' ⊨⟨ i ⟩ A'' : Sort j ∈ ⟦ A : Sort j ⟧.
+Corollary keep_sort Γ' i j A :
+  Γ' ⊨⟨ i ⟩ A : Sort j →
+  Γ' ⊨⟨ i ⟩ A : Sort j ⇒ Sort j.
 Proof.
   intros h.
   eapply keep_head in h. 2: econstructor.
-  destruct h as (A'' & s' & h & hA).
+  destruct h as (A' & h & hA).
   inversion h. subst.
-  firstorder.
+  assumption.
 Qed.
 
-Lemma change_type Γ' i t t' A A1 A2 :
-  Γ' ⊨⟨ i ⟩ t' : A1 ∈ ⟦ t : A ⟧ →
-  Γ' ⊨⟨ Ax i ⟩ A2 : Sort i ∈ ⟦ A : Sort i ⟧ →
-  ∃ t'', Γ' ⊨⟨ i ⟩ t'' : A2 ∈ ⟦ t : A ⟧.
+Lemma change_type Γ' i t A A' :
+  Γ' ⊨⟨ i ⟩ t : A →
+  Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
+  Γ' ⊨⟨ i ⟩ t : A ⇒ A'.
 Proof.
 Admitted.
 
@@ -587,17 +608,18 @@ Proof.
     + apply rename_dec. assumption.
 Qed.
 
-(* Not sure there is something meaningful here *)
-(* Lemma tr_var_change Γ Γ' x l A A' :
+Lemma tr_var Γ Γ' x A l :
   Γ ∋< l >× x : A →
   tr_ctx Γ Γ' →
-  Γ' ⊨⟨ Ax l ⟩ A' : (Sort l) ∈ ⟦ A : (Sort l) ⟧ →
-  Γ' ⊨⟨ l ⟩ (var x) : A' ∈ ⟦ (var x) : A ⟧.
+  Γ' ⊨⟨ l ⟩ var x : A.
 Proof.
-  intros hx hc hA.
+  intros hx hc.
   eapply varty_trans in hx as hx'. 2: eassumption.
-  destruct hx' as (A'' & h1 & h2).
-  eapply change_type. 2: eassumption. *)
+  destruct hx' as (A' & hx' & hA).
+  eexists _,_. split.
+  { econstructor. 2: eauto. apply hc. }
+  intuition constructor.
+Qed.
 
 (* Not ideal, but given circumstances there is not much else we can do. *)
 
@@ -609,7 +631,7 @@ Axiom tr_assm_sig :
 
 Lemma tr_ctx_cons Γ Γ' A A' i :
   tr_ctx Γ Γ' →
-  Γ' ⊨⟨ Ax i ⟩ A' : Sort i ∈ ⟦ A : Sort i ⟧ →
+  Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
   tr_ctx (Γ ,, (i, A)) (Γ' ,, (i, A')).
 Proof.
   intros [hc1 hc2] (? & ? & hs).
@@ -619,20 +641,30 @@ Proof.
     cbn. intuition auto.
 Qed.
 
-Lemma tr_Pi i j Γ' A A' B B' :
-  Γ' ⊨⟨ Ax i ⟩ A' : Sort i ∈ ⟦ A : Sort i ⟧ →
-  (Γ',, (i, A')) ⊨⟨ Ax j ⟩ B' : Sort j ∈ ⟦ B : Sort j ⟧ →
-  Γ' ⊨⟨ Ax (Ru i j) ⟩ (Pi i j A' B') : (Sort (Ru i j)) ∈ ⟦ (Pi i j A B) : (Sort (Ru i j)) ⟧.
+Lemma tr_Sort Γ Γ' l :
+  tr_ctx Γ Γ' →
+  Γ' ⊨⟨ Ax (Ax l) ⟩ Sort l : Sort (Ax l).
+Proof.
+  intros hc.
+  eexists _,_. split. 2: intuition constructor.
+  econstructor. apply hc.
+Qed.
+
+Lemma tr_Pi i j Γ' A A' B :
+  Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
+  Γ',, (i, A') ⊨⟨ Ax j ⟩ B : Sort j →
+  Γ' ⊨⟨ Ax (Ru i j) ⟩ Pi i j A B : Sort (Ru i j).
 Proof.
   intros ihA ihB.
-  destruct ihA as (? & ? & _), ihB as (? & ? & _).
-  split. 2: intuition (constructor ; eauto).
+  eapply keep_sort in ihB.
+  destruct ihA as (? & ? & ?), ihB as (?& ? & ?).
+  eexists _,_. split. 2: intuition (constructor ; eauto).
   econstructor. all: eauto.
 Qed.
 
 Lemma tr_Nat Γ Γ' :
   tr_ctx Γ Γ' →
-  Γ' ⊨⟨ ty 1 ⟩ Nat : (Sort (ty 0)) ∈ ⟦ Nat : (Sort (ty 0)) ⟧.
+  Γ' ⊨⟨ ty 1 ⟩ Nat : Sort (ty 0) ↦ Nat : Sort (ty 0).
 Proof.
   intro hc.
   split. 2: intuition constructor.
@@ -642,25 +674,38 @@ Qed.
 
 Lemma tr_zero Γ Γ' :
   tr_ctx Γ Γ' →
-  Γ' ⊨⟨ ty 0 ⟩ zero : Nat ∈ ⟦ zero : Nat ⟧.
+  Γ' ⊨⟨ ty 0 ⟩ zero : Nat.
 Proof.
   intros hc.
-  split. 2: intuition constructor.
+  eexists _,_. split. 2: intuition constructor.
   constructor. apply hc.
 Qed.
 
-Lemma tr_succ Γ' t t' :
-  Γ' ⊨⟨ ty 0 ⟩ t' : Nat ∈ ⟦ t : Nat ⟧ →
-  Γ' ⊨⟨ ty 0 ⟩ (succ t') : Nat ∈ ⟦ (succ t) : Nat ⟧.
+Lemma tr_succ Γ' t :
+  Γ' ⊨⟨ ty 0 ⟩ t : Nat →
+  Γ' ⊨⟨ ty 0 ⟩ succ t : Nat.
 Proof.
   intros iht.
-  destruct iht as (? & ? & _).
-  split. 2: intuition (constructor ; eauto).
+  eapply keep_head in iht. 2: econstructor.
+  destruct iht as (? & hh & iht). inversion hh. subst.
+  destruct iht as (? & ? & ?).
+  eexists _,_. split. 2: intuition (constructor ; eauto).
   constructor. assumption.
 Qed.
 
-Definition tr_subst Γ' σ σ' Δ' :=
+Definition tr_subst_data Γ' σ σ' Δ' :=
   Γ' ⊢s σ' : Δ' ∧ dec_subst σ σ'.
+
+Notation "Γ ⊨s σ : Δ ⇒ σ'" :=
+  (tr_subst_data Γ σ σ' Δ)
+  (at level 50, σ, Δ at next level).
+
+Definition tr_subst Γ' σ Δ' :=
+  ∃ σ', tr_subst_data Γ' σ σ' Δ'.
+
+Notation "Γ ⊨s σ : Δ" :=
+  (tr_subst Γ σ Δ)
+  (at level 50, σ, Δ at next level).
 
 #[export] Instance dec_subst_morphism :
   Proper ((`=1`) ==> (`=1`) ==> iff) dec_subst.
@@ -670,8 +715,8 @@ Proof.
   intros x. rewrite <- e, <- e'. apply h.
 Qed.
 
-#[export] Instance tr_subst_morphism :
-  Proper (eq ==> (`=1`) ==> (`=1`) ==> eq ==> iff) tr_subst.
+#[export] Instance tr_subst_data_morphism :
+  Proper (eq ==> (`=1`) ==> (`=1`) ==> eq ==> iff) tr_subst_data.
 Proof.
   intros Γ ? <- σ σ' e θ θ' e' Δ ? <-.
   revert σ σ' e θ θ' e'. wlog_iff. intros σ σ' e θ θ' e' h.
@@ -680,27 +725,48 @@ Proof.
   - rewrite <- e, <- e'. assumption.
 Qed.
 
-Lemma autosubst_simpl_tr_subst :
+#[export] Instance tr_subst_morphism :
+  Proper (eq ==> (`=1`) ==> eq ==> iff) tr_subst.
+Proof.
+  intros Γ ? <- σ σ' e Δ ? <-.
+  revert σ σ' e. wlog_iff. intros σ σ' e h.
+  destruct h as [s h]. exists s.
+  rewrite <- e. assumption.
+Qed.
+
+Lemma autosubst_simpl_tr_subst_data :
   ∀ Γ Δ s1 s2 s3 s4,
     SubstSimplification s1 s2 →
     SubstSimplification s3 s4 →
-    tr_subst Γ s1 s3 Δ ↔ tr_subst Γ s2 s4 Δ.
+    tr_subst_data Γ s1 s3 Δ ↔ tr_subst_data Γ s2 s4 Δ.
 Proof.
   intros * h1 h2.
-  apply tr_subst_morphism. 1,4: eauto.
+  apply tr_subst_data_morphism. 1,4: eauto.
   - apply h1.
   - apply h2.
 Qed.
 
+#[export] Hint Rewrite -> autosubst_simpl_tr_subst_data : rasimpl_outermost.
+
+Lemma autosubst_simpl_tr_subst :
+  ∀ Γ Δ s1 s2,
+    SubstSimplification s1 s2 →
+    tr_subst Γ s1 Δ ↔ tr_subst Γ s2 Δ.
+Proof.
+  intros * h.
+  apply tr_subst_morphism. 1,3: eauto.
+  apply h.
+Qed.
+
 #[export] Hint Rewrite -> autosubst_simpl_tr_subst : rasimpl_outermost.
 
-Lemma tr_subst_scons l Γ' Δ' σ σ' A A' u u' :
-  tr_subst Γ' σ σ' Δ' →
-  Γ' ⊨⟨ l ⟩ u' : (A' <[ σ' ]) ∈ ⟦ u : (A <[ σ ]) ⟧ →
-  tr_subst Γ' (u .: σ) (u' .: σ') (Δ' ,, (l, A')).
+Lemma tr_subst_scons l Γ' Δ' σ σ' A A' u :
+  Γ' ⊨s σ : Δ' ⇒ σ' →
+  Γ' ⊨⟨ l ⟩ u : A <[ σ ] ⇒ A' <[ σ' ] →
+  Γ' ⊨s (u .: σ) : Δ' ,, (l, A').
 Proof.
-  intros [hs1 hs2] [hu1 hu2].
-  split.
+  intros [hs1 hs2] [? [hu1 hu2]].
+  eexists. split.
   - apply well_scons_alt. all: eauto.
   - apply dec_subst_scons. all: intuition eauto.
 Qed.
@@ -708,7 +774,7 @@ Qed.
 Lemma tr_subst_ren Γ Γ' Δ' ρ :
   tr_ctx Γ Γ' →
   Γ' ⊢r ρ : Δ' →
-  tr_subst Γ' (ρ >> var) (ρ >> var) Δ'.
+  Γ' ⊨s (ρ >> var) : Δ' ⇒ (ρ >> var).
 Proof.
   intros hc hr.
   split. 2: apply dec_subst_refl.
@@ -717,50 +783,51 @@ Proof.
   - apply hc.
 Qed.
 
-Lemma tr_substitution i Γ Γ' t t' A A' Δ' σ σ' :
+Lemma tr_substitution i Γ Γ' t A Δ' σ :
   tr_ctx Γ Γ' →
-  Δ' ⊨⟨ i ⟩ t' : A' ∈ ⟦ t : A ⟧ →
-  tr_subst Γ' σ σ' Δ' →
-  Γ' ⊨⟨ i ⟩ (t' <[ σ' ]) : (A' <[ σ' ]) ∈ ⟦ (t <[ σ ]) : (A <[ σ ]) ⟧.
+  Δ' ⊨⟨ i ⟩ t : A →
+  Γ' ⊨s σ : Δ' →
+  Γ' ⊨⟨ i ⟩ t <[ σ ] : A <[ σ ].
 Proof.
   intros hc ht hs.
-  destruct ht as (? & ? & ?), hs as (? & ?).
-  split. 2: intuition eauto using substs_decs.
+  destruct ht as (? & ? & ? & ?), hs as (? & ? & ?).
+  eexists _,_. split. 2: intuition eauto using substs_decs.
   eapply typing_conversion_subst.
   - eassumption.
   - apply hc.
   - assumption.
 Qed.
 
-Corollary tr_substitution_sort i Γ Γ' A A' l Δ' σ σ' :
+Corollary tr_substitution_sort i Γ Γ' A l Δ' σ :
   tr_ctx Γ Γ' →
-  Δ' ⊨⟨ i ⟩ A' : (Sort l) ∈ ⟦ A : (Sort l) ⟧ →
-  tr_subst Γ' σ σ' Δ' →
-  Γ' ⊨⟨ i ⟩ (A' <[ σ' ]) : (Sort l) ∈ ⟦ (A <[ σ ]) : (Sort l) ⟧.
+  Δ' ⊨⟨ i ⟩ A : Sort l →
+  Γ' ⊨s σ : Δ' →
+  Γ' ⊨⟨ i ⟩ A <[ σ ] : Sort l.
 Proof.
   intros hc ht hs.
   eapply tr_substitution in hs. 2,3: eassumption.
   assumption.
 Qed.
 
-Corollary tr_substitution_one i j Γ Γ' t t' u u' A A' B B' :
+Corollary tr_substitution_one i j Γ Γ' t u A B B' :
   tr_ctx Γ Γ' →
-  (Γ',, (j,B')) ⊨⟨ i ⟩ t' : A' ∈ ⟦ t : A ⟧ →
-  Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
-  Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (A' <[ u' .. ]) ∈ ⟦ (t <[ u .. ]) : (A <[ u .. ]) ⟧.
+  Γ',, (j,B') ⊨⟨ i ⟩ t : A →
+  Γ' ⊨⟨ j ⟩ u : B ⇒ B' →
+  Γ' ⊨⟨ i ⟩ t <[ u .. ] : A <[ u .. ].
 Proof.
   intros hc ht hu.
   eapply tr_substitution. 1,2: eassumption.
-  split.
+  destruct hu as (? & hu).
+  eexists. split.
   - apply subst_one. apply hu.
   - apply dec_subst_one. apply hu.
 Qed.
 
-Corollary tr_substitution_one_sort i j Γ Γ' t t' u u' l B B' :
+Corollary tr_substitution_one_sort i j Γ Γ' t u l B B' :
   tr_ctx Γ Γ' →
-  (Γ',, (j,B')) ⊨⟨ i ⟩ t' : (Sort l) ∈ ⟦ t : (Sort l) ⟧ →
-  Γ' ⊨⟨ j ⟩ u' : B' ∈ ⟦ u : B ⟧ →
-  Γ' ⊨⟨ i ⟩ (t' <[ u' .. ]) : (Sort l) ∈ ⟦ (t <[ u .. ]) : (Sort l) ⟧.
+  Γ',, (j,B') ⊨⟨ i ⟩ t : Sort l →
+  Γ' ⊨⟨ j ⟩ u : B ⇒ B' →
+  Γ' ⊨⟨ i ⟩ t <[ u .. ] : Sort l.
 Proof.
   intros hc ht hu.
   eapply tr_substitution_one in hu. 2,3: eassumption.
@@ -772,13 +839,13 @@ Lemma typing_conversion_trans :
     Γ ⊢< l >× t : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
-      ∃ t' A', Γ' ⊨⟨ l ⟩ t' : A' ∈ ⟦ t : A ⟧
+      Γ' ⊨⟨ l ⟩ t : A
   ) ∧
   (∀ Γ l u v A,
     Γ ⊢< l >× u ≡ v : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
-      ∃ A' A'' u' v' e, eqtrans l A u v Γ' A' A'' u' v' e
+      Γ ⊨⟨ l ⟩ u ≡ v : A
   ).
 Proof.
   apply Typing.typing_mutind.
@@ -786,46 +853,43 @@ Proof.
   (* Typing rules *)
 
   - intros * ? hx ? hc.
-    eapply varty_trans in hx as hx'. 2: eassumption.
-    destruct hx' as (A' & hx' & hA).
-    eexists _,_. split.
-    { econstructor. 2: eauto. apply hc. }
-    intuition constructor.
+    eapply tr_var. all: eassumption.
   - intros * ?? hc.
-    eexists _,_. split. 2: intuition constructor.
-    econstructor. apply hc.
+    eapply tr_Sort. eassumption.
   - intros * ? e ? ih ? hc.
     eapply tr_assm_sig in e as e'. destruct e' as (A' & e' & ? & ?).
-    eexists (assm _), _. split.
+    eexists _, (assm _). split.
     { econstructor. 2,3: eassumption. apply hc. }
     intuition constructor.
   - intros * ? ihA ? ihB ? hc.
-    specialize ihA with (1 := hc). destruct ihA as (A' & s & ihA).
-    eapply keep_sort in ihA. destruct ihA as (A'' & ihA).
-    eapply tr_ctx_cons in hc as hca. 2: eassumption.
-    specialize ihB with (1 := hca). destruct ihB as (B' & s' & ihB).
-    eapply keep_sort in ihB. destruct ihB as (B'' & ihB).
-    eexists _,_. eapply tr_Pi. all: eassumption.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as (A' & ihA).
+    eapply tr_Pi. 1: eassumption.
+    eapply ihB.
+    eapply tr_ctx_cons. all: eassumption.
   - intros * ? ihA ? ihB ? iht ? hc.
-    specialize ihA with (1 := hc). destruct ihA as (A' & s & ihA).
-    eapply keep_sort in ihA. destruct ihA as (A'' & ihA).
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as (A' & ihA).
     eapply tr_ctx_cons in hc as hca. 2: eassumption.
-    specialize ihB with (1 := hca). destruct ihB as (B' & s' & ihB).
-    eapply keep_sort in ihB. destruct ihB as (B'' & ihB).
-    specialize iht with (1 := hca). destruct iht as (t' & B2 & iht).
+    specialize ihB with (1 := hca). eapply keep_sort in ihB.
+    destruct ihB as (B' & ihB).
+    specialize iht with (1 := hca).
     eapply change_type in iht. 2: eassumption.
-    destruct iht as (t'' & iht).
+    destruct iht as (t' & iht).
     destruct ihA as (? & ? & _), ihB as (? & ? & _), iht as (? & ? & _).
     eexists _,_. split. 2: intuition (constructor ; eauto).
     econstructor. all: eauto.
   - intros * ? ihA ? ihB ? iht ? ihu ? hc.
-    specialize ihA with (1 := hc). destruct ihA as (A' & s & ihA).
-    eapply keep_sort in ihA. destruct ihA as (A'' & ihA).
+    specialize ihA with (1 := hc).
+    eapply keep_sort in ihA. destruct ihA as (A' & ihA).
     eapply tr_ctx_cons in hc as hca. 2: eassumption.
-    specialize ihB with (1 := hca). destruct ihB as (B' & s' & ihB).
-    eapply keep_sort in ihB. destruct ihB as (B'' & ihB).
-    specialize iht with (1 := hc). destruct iht as (t' & PAB & iht).
-    eapply change_type in iht. 2:{ eapply tr_Pi. all: eassumption. }
+    specialize ihB with (1 := hca).
+    eapply keep_sort in ihB. destruct ihB as (B' & ihB).
+    specialize iht with (1 := hc).
+    eapply change_type in iht. 2:{ fail. (* We need the explicit version! *)
+
+
+    eapply tr_Pi. all: eassumption. }
     destruct iht as (t'' & iht).
     specialize ihu with (1 := hc). destruct ihu as (u' & Au & ihu).
     eapply change_type in ihu. 2: eassumption.
@@ -870,6 +934,13 @@ Proof.
           variable.
 
           Or we have a version that works when translation is identity?
+
+          Perhaps I should try to have a judgment Γ' ⊨⟨ l ⟩ t : A
+          defined as ∃ t', A', …
+          so that they compose better.
+          Need to think how change_type and so on become with it.
+          Maybe a judgment that also specifies the type like
+          Γ' ⊨⟨ l ⟩ t : A ⇒ A'
         *)
         admit.
       }
