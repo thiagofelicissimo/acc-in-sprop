@@ -681,10 +681,10 @@ Qed.
 
 Lemma tr_Sort Γ Γ' l :
   tr_ctx Γ Γ' →
-  Γ' ⊨⟨ Ax (Ax l) ⟩ Sort l : Sort (Ax l).
+  Γ' ⊨⟨ Ax (Ax l) ⟩ Sort l : Sort (Ax l) ↦ Sort l : Sort (Ax l).
 Proof.
   intros hc.
-  eexists _,_. split. 2: intuition constructor.
+  split. 2: intuition constructor.
   econstructor. apply hc.
 Qed.
 
@@ -978,7 +978,7 @@ Proof.
   - intros * ? hx ? hc.
     eapply tr_var. all: eassumption.
   - intros * ?? hc.
-    eapply tr_Sort. eassumption.
+    eexists _,_. eapply tr_Sort. eassumption.
   - intros * ? e ? ih ? hc.
     eapply tr_assm_sig in e as e'. destruct e' as (A' & e' & ? & ?).
     eexists _, (assm _). split.
@@ -1275,8 +1275,44 @@ Proof.
     specialize iha with (1 := hc). eapply change_type in iha. 2: eassumption.
     destruct iha as [a' iha].
     eexists _,_. eapply tr_obsrefl. all: eassumption.
-  - admit.
-  - admit.
+  - intros * ? ihA ? iha ? ihP ? ihp ? ihb ? ihe ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    specialize iha with (1 := hc). eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    specialize ihb with (1 := hc). eapply change_type in ihb. 2: eassumption.
+    destruct ihb as [b' ihb].
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    specialize ihP with (1 := hca). eapply keep_sort in ihP.
+    destruct ihP as [P' ihP].
+    specialize ihp with (1 := hc).
+    eapply change_type in ihp.
+    2:{ eapply tr_substitution_one_sort. all: eassumption. }
+    destruct ihp as [p' ihp].
+    specialize ihe with (1 := hc). eapply change_type in ihe.
+    2:{ eapply tr_obseq. all: eassumption. }
+    destruct ihe as [e' ihe].
+    destruct ihA, iha, ihP, ihp, ihb, ihe.
+    eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
+    + econstructor. all: eauto.
+    + eapply substs_decs_one. all: intuition assumption.
+  - intros * ? ihA ? ihB ? ihe ? iha ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    specialize ihB with (1 := hc). eapply keep_sort in ihB.
+    destruct ihB as [B' ihB].
+    specialize ihe with (1 := hc). eapply change_type in ihe.
+    2:{
+      eapply tr_obseq. 2,3: eassumption.
+      eapply tr_Sort. eassumption.
+    }
+    destruct ihe as [e' ihe].
+    specialize iha with (1 := hc). eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    destruct ihA, ihB, ihe, iha.
+    eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
+    + econstructor. all: eauto.
+    + intuition eauto.
   - admit.
   - admit.
   - intros * ? iht ? ihAB ? hc.
