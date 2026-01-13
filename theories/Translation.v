@@ -220,9 +220,7 @@ Axiom type_heq_accel : forall Γ l n A1 A2 R1 R2 P1 P2 p1 p2 q1 q2 a1 a2 e1 e2 e
 
   Γ ⊢< prop > heq_accel (ty n) l A1 A2 R1 R2 P1 P2 p1 p2 a1 a2 q1 q2 e1 e2 e3 e4
     : heq l (P1 <[ a1..]) (P2 <[ a2..]) (accel (ty n) l A1 R1 P1 p1 a1 q1) (accel (ty n) l A2 R2 P2 p2 a2 q2).
-
-
-    
+  
 
 Axiom heq_obseq : forall (l : level) (A1 A2 a1 a2 b1 b2 e1 e2 : term), term.
 
@@ -235,52 +233,6 @@ Axiom type_heq_obseq : forall Γ n A1 a1 b1 A2 a2 b2 e1 e2,
   Γ ⊢< prop > e2 : heq (ty n) A1 A2 b1 b2 ->
   Γ ⊢< prop > heq_obseq (ty n) A1 A2 a1 a2 b1 b2 e1 e2 : heq (Ax prop) (Sort prop) (Sort prop) (obseq (ty n) A1 a1 b1) (obseq (ty n) A2 a2 b2).
 
-
-(* 
-
-
-
-
-
-Axiom conv_heq_cast : forall Γ i A A' B B' e e' a a',
-  Γ ⊢< Ax (ty i) > A ≡ A' : Sort (ty i) →
-  Γ ⊢< Ax (ty i) > B ≡ B' : Sort (ty i) →
-  Γ ⊢< prop > e ≡ e' : obseq (Ax (ty i)) (Sort (ty i)) A B →
-  Γ ⊢< ty i > a ≡ a' : A →
-  Γ ⊢< prop > heq_cast (ty i) A B e a : heq (ty i) A B a (cast (ty i) A B e a).
-
-
-
-Axiom heq_app : level -> level -> term -> term -> term -> term -> term -> term -> term -> term -> term -> term -> term.
-
-Axiom type_heq_app : forall Γ n m A1 A2 B1 B2 f1 f2 a1 a2 p q,
-  Γ ,, (ty n, A1) ⊢< ty m > f1 : B1 ->
-  Γ ,, (ty n, A2) ⊢< ty m > f2 : B2 ->
-  Γ ⊢< ty n > a1 : A1 ->
-  Γ ⊢< ty n > a2 : A2 ->
-  Γ ⊢< prop > p : heq (Ru (ty n) (ty m)) (Pi (ty n) (ty m) A1 B1) (Pi (ty n) (ty m) A2 B2) f1 f2 -> 
-  Γ ⊢< prop > q : heq (ty n) A1 A2 a1 a2 ->
-  Γ ⊢< prop > heq_app (ty n) (ty m) A1 A2 B1 B2 f1 f2 a1 a2 p q 
-    : heq (ty m) (B1 <[a1..]) (B2 <[a2..]) (app (ty n) (ty m) A1 B1 f1 a1) (app (ty n) (ty m) A2 B2 f2 a2).
-
-
-
-
-Axiom heq_pi : level -> level -> term -> term -> term -> term -> term -> term -> term.
-
-(* I think we will need another heq_pi which replaces (ty n) by prop, but this cannot be the same symbol *)
-Axiom type_heq_pi : forall Γ n m A1 A2 B1 B2 p q,
-  Γ ⊢< Ax (ty n) > A1 : Sort (ty n) ->
-  Γ ⊢< Ax (ty n) > A2 : Sort (ty n) ->
-  Γ ,, (ty n, A1) ⊢< Ax (ty m) > B1 : Sort (ty m) ->
-  Γ ,, (ty n, A2) ⊢< Ax (ty m) > B2 : Sort (ty m) ->
-  Γ ⊢< prop > p : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A1 A2 ->
-  let Aeq := heq (ty n) ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  Γ ,, (ty n, A1) ,, (ty n, S ⋅ A2) ,, (prop, Aeq)
-    ⊢< prop > q : heq (Ax (ty m)) (Sort (ty m)) (Sort (ty m)) (((S >> S >> S) ⋅ B1) <[(var 2)..]) (((S >> S >> S) ⋅ B2) <[(var 1)..]) -> 
-  Γ ⊢< prop > heq_pi (ty n) (ty m) A1 A2 B1 B2 p q 
-    : heq (Ax (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Sort (Ru (ty n) (ty m))) (Pi (ty n) (ty m) A1 B1) (Pi (ty n) (ty m) A2 B2).
- *)
 
 Reserved Notation " t ⊏ t' " (at level 21).
 
