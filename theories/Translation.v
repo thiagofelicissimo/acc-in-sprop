@@ -171,6 +171,19 @@ Axiom type_heq_rec : forall l Γ P1 P2 pzero1 pzero2 psucc1 psucc2 t1 t2 e1 e2 e
   Γ ⊢< prop > heq_rec l P1 P2 pzero1 pzero2 psucc1 psucc2 t1 t2 e1 e2 e3 e4 : 
     heq l (P1<[t1..]) (P2<[t2..]) (rec l P1 pzero1 psucc1 t1) (rec l P2 pzero2 psucc2 t2).
 
+
+Axiom heq_obseq : forall (l : level) (A1 A2 a1 a2 b1 b2 e1 e2 : term), term.
+
+Axiom type_heq_obseq : forall Γ n A1 a1 b1 A2 a2 b2 e1 e2, 
+  Γ ⊢< ty n > a1 : A1 ->
+  Γ ⊢< ty n > b1 : A1 ->
+  Γ ⊢< ty n > a2 : A2 ->
+  Γ ⊢< ty n > b2 : A2 ->
+  Γ ⊢< prop > e1 : heq (ty n) A1 A2 a1 a2 ->
+  Γ ⊢< prop > e2 : heq (ty n) A1 A2 b1 b2 ->
+  Γ ⊢< prop > heq_obseq (ty n) A1 A2 a1 a2 b1 b2 e1 e2 : heq (Ax prop) (Sort prop) (Sort prop) (obseq (ty n) A1 a1 b1) (obseq (ty n) A2 a2 b2).
+
+
 (* 
 
 
@@ -964,7 +977,21 @@ Proof.
       all:eauto using conv_refl, conv_sym, type_ren, conv_ren, WellRen_renL, WellRen_renR, typing.
   - admit.
   - admit.
-  - admit.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2.
+    dependent destruction lvl_eq. clear lvl_eq0.
+
+    edestruct IHhsim1; eauto.
+    edestruct IHhsim2; eauto.
+    edestruct IHhsim3; eauto.
+
+    eexists. eapply type_conv.
+    1:eapply type_heq_obseq.
+    7:eapply conv_heq. 9,10:rasimpl; eapply conv_refl.
+    1-6:eauto using type_ren, WellRen_renL, WellRen_renR.
+    1:replace (Sort prop) with (renL ⋅ (Sort prop)) by reflexivity.
+    2:replace (Sort prop) with (renR ⋅ (Sort prop)) by reflexivity.
+    1-4:eauto 8 using conv_sym, conv_ren, type_ren, typing, WellRen_renL, WellRen_renR.
+
   - eapply type_inv in h2 as h2'; dependent destruction h2'. subst.
     edestruct (IHhsim _ _ _ _ _ hctx h1 a_Wt).
     eexists. 
