@@ -499,14 +499,16 @@ Qed.
 
 (* -- heq_acc_el -- *)
 
-Lemma heq_ty_acc_el {A1 A2 R1 R2 a1 a2 P1 P2 p1 p2}
+Lemma heq_ty_acc_el {A1 A2 R1 R2 a1 a2 P1 P2 p1 p2 q1 q2}
     (e0 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> R1 x1 y1 == R2 x2 y2) 
     (e1 : forall x1 x2, x1 == x2 -> P1 x1 == P2 x2)
     (e2 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> p1 x1 y1 == p2 x2 y2)
     (e3 : a1 == a2)
-    : (acc_el A1 R1 P1 p1 a1) == (acc_el A2 R2 P2 p2 a2).
+    : (acc_el A1 R1 P1 p1 a1 q1) == (acc_el A2 R2 P2 p2 a2 q2).
 Proof.
     pose proof (e31 := fst e3). destruct e31.
+    eapply (@heq_prop_ty_app _ _ _ _ (acc_el A1 R1 P1 p1 a1) (acc_el A1 R2 P2 p2 a2)). 
+    2:econstructor.
     eapply (@heq_ty_ty_app _ _ _ _ (acc_el A1 R1 P1 p1) (acc_el A1 R2 P2 p2)).
     2:assumption.
     eapply (@heq_ty_ty_app _ _ _ _ (acc_el A1 R1 P1) (acc_el A1 R2 P2)).
@@ -533,12 +535,11 @@ Proof.
     eapply heq_ty_refl.
 Qed.
 
-Lemma heq_prop_acc_el {A1 A2 R1 R2 a1 a2} {P1 : A1 -> SProp} {P2 : A2 -> SProp} {p1 p2}
+Lemma heq_prop_acc_el {A1 A2 R1 R2 a1 a2} {P1 : A1 -> SProp} {P2 : A2 -> SProp} {p1 p2 q1 q2}
     (e0 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 == y2 -> R1 x1 y1 == R2 x2 y2) 
     (e1 : forall x1 x2, x1 == x2 -> P1 x1 == P2 x2)
     (e2 : forall x1 x2, x1 == x2 -> forall y1 y2, y1 ~~ y2 -> p1 x1 y1 ~~ p2 x2 y2)
-    (e3 : a1 == a2)
-    : (acc_el_prop A1 R1 P1 p1 a1) ~~ (acc_el_prop A2 R2 P2 p2 a2).
+    : (acc_el_prop A1 R1 P1 p1 a1 q1) ~~ (acc_el_prop A2 R2 P2 p2 a2 q2).
 Proof.
     econstructor.
 Qed.
