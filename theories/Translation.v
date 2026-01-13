@@ -1313,8 +1313,57 @@ Proof.
     eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
     + econstructor. all: eauto.
     + intuition eauto.
-  - admit.
-  - admit.
+  - intros * ? ihA1 ? ihB1 ? ihA2 ? ihB2 ? ihe ? hc.
+    specialize ihA1 with (1 := hc). eapply keep_sort in ihA1.
+    destruct ihA1 as [A1' ihA1].
+    eapply tr_ctx_cons in hc as hca1. 2: eassumption.
+    specialize ihB1 with (1 := hca1). eapply keep_sort in ihB1.
+    destruct ihB1 as [B1' ihB1].
+    specialize ihA2 with (1 := hc). eapply keep_sort in ihA2.
+    destruct ihA2 as [A2' ihA2].
+    eapply tr_ctx_cons in hc as hca2. 2: eassumption.
+    specialize ihB2 with (1 := hca2). eapply keep_sort in ihB2.
+    destruct ihB2 as [B2' ihB2].
+    specialize ihe with (1 := hc). eapply change_type in ihe.
+    2:{
+      eapply tr_obseq.
+      - eapply tr_Sort. eassumption.
+      - eapply tr_Pi. all: eassumption.
+      - eapply tr_Pi. all: eassumption.
+    }
+    destruct ihe as [e' ihe].
+    destruct ihA1, ihB1, ihA2, ihB2, ihe.
+    eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
+    + econstructor. all: eauto.
+    + intuition (constructor ; eauto).
+  - intros * ? ihA1 ? ihB1 ? ihA2 ? ihB2 ? ihe ? iha2. cbn zeta. intros ? hc.
+    specialize ihA1 with (1 := hc). eapply keep_sort in ihA1.
+    destruct ihA1 as [A1' ihA1].
+    eapply tr_ctx_cons in hc as hca1. 2: eassumption.
+    specialize ihB1 with (1 := hca1). eapply keep_sort in ihB1.
+    destruct ihB1 as [B1' ihB1].
+    specialize ihA2 with (1 := hc). eapply keep_sort in ihA2.
+    destruct ihA2 as [A2' ihA2].
+    eapply tr_ctx_cons in hc as hca2. 2: eassumption.
+    specialize ihB2 with (1 := hca2). eapply keep_sort in ihB2.
+    destruct ihB2 as [B2' ihB2].
+    specialize ihe with (1 := hc). eapply change_type in ihe.
+    2:{
+      eapply tr_obseq.
+      - eapply tr_Sort. eassumption.
+      - eapply tr_Pi. all: eassumption.
+      - eapply tr_Pi. all: eassumption.
+    }
+    destruct ihe as [e' ihe].
+    specialize iha2 with (1 := hc). eapply change_type in iha2. 2: eassumption.
+    destruct iha2 as [a2' iha2].
+    destruct ihA1, ihB1, ihA2, ihB2, ihe, iha2.
+    eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
+    + econstructor. all: eauto.
+    + constructor.
+      * constructor.
+      * eapply substs_decs_one. all: intuition (repeat constructor ; eauto).
+      * eapply substs_decs_one. all: intuition eauto.
   - intros * ? iht ? ihAB ? hc.
     admit.
 
