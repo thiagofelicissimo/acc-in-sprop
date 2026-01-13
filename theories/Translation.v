@@ -579,6 +579,16 @@ Notation "⊢× Γ" :=
 
 (* Translation of derivations *)
 
+Lemma tr_meta Γ' i j t t' A A' B B' :
+  Γ' ⊨⟨ i ⟩ t : A ↦ t' : A' →
+  i = j →
+  A = B →
+  A' = B' →
+  Γ' ⊨⟨ j ⟩ t : B ↦ t' : B'.
+Proof.
+  intros h -> -> ->. assumption.
+Qed.
+
 Lemma tr_ctx_inv Γ l A Δ :
   tr_ctx (Γ ,, (l, A)) Δ →
   ∃ Γ' A', tr_ctx Γ Γ' ∧ A ⊏ A' ∧ Δ = Γ',, (l, A').
@@ -827,6 +837,30 @@ Proof.
   - apply hc.
 Qed.
 
+Lemma tr_rename l Γ Γ' Δ' t t' A A' ρ :
+  Δ' ⊨⟨ l ⟩ t : A ↦ t' : A' →
+  tr_ctx Γ Γ' →
+  Γ' ⊢r ρ : Δ' →
+  Γ' ⊨⟨ l ⟩ ρ ⋅ t : ρ ⋅ A ↦ ρ ⋅ t' : ρ ⋅ A'.
+Proof.
+  intros ht hc hr.
+  destruct ht.
+  split.
+  - eapply typing_conversion_ren. all: eauto. apply hc.
+  - intuition eauto using rename_dec.
+Qed.
+
+Lemma tr_rename_sort l Γ Γ' Δ' i A A' ρ :
+  Δ' ⊨⟨ l ⟩ A : Sort i ↦ A' : Sort i →
+  tr_ctx Γ Γ' →
+  Γ' ⊢r ρ : Δ' →
+  Γ' ⊨⟨ l ⟩ ρ ⋅ A : Sort i ↦ ρ ⋅ A' : Sort i.
+Proof.
+  intros ht hc hr.
+  eapply tr_rename in ht. 2,3: eauto.
+  assumption.
+Qed.
+
 Lemma tr_substitution i Γ Γ' t t' A A' Δ' σ σ' :
   tr_ctx Γ Γ' →
   Δ' ⊨⟨ i ⟩ t : A ↦ t' : A' →
@@ -990,8 +1024,64 @@ Proof.
     eexists _,_. split. 2: split. 2: constructor ; eauto.
     + econstructor. all: eauto.
     + eapply substs_decs_one. all: assumption.
-  - admit.
-  - admit.
+  - intros * ? ihA ? ihR ? iha ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as (A' & ihA).
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    eapply tr_ctx_cons in hca as hcaa.
+    2:{ eapply tr_rename_sort. 1,2: eauto. eapply WellRen_S. }
+    specialize ihR with (1 := hcaa). eapply keep_sort in ihR.
+    specialize iha with (1 := hc).
+    eapply change_type in iha. 2: eassumption.
+    destruct ihR as [R' ihR], iha as [a' iha].
+    destruct
+      ihA as (? & ? & _),
+      ihR as (? & ? & _),
+      iha as (? & ? & _).
+    eexists _,_. split. 2: intuition (constructor ; eauto).
+    econstructor. all: eauto.
+  - intros * ? ihA ? ihR ? iha. cbn zeta. intros ? ihp ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    eapply tr_ctx_cons in hca as hcaa.
+    2:{ eapply tr_rename_sort. 1,2: eauto. eapply WellRen_S. }
+    specialize ihR with (1 := hcaa). eapply keep_sort in ihR.
+    destruct ihR as [R' ihR].
+    specialize iha with (1 := hc).
+    eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    specialize ihp with (1 := hc).
+    eapply change_type in ihp.
+    2:{
+      eapply tr_meta.
+      { eapply tr_Pi. 1: eassumption.
+        eapply tr_meta.
+        { eapply tr_Pi.
+          - eapply tr_substitution_sort. 1,2: eauto.
+            eapply tr_subst_scons with (A := S ⋅ A).
+            + eapply tr_subst_scons with (A := A).
+              * eapply tr_subst_ren. 1: eassumption.
+                apply WellRen_S.
+              * {
+                eapply tr_var_kown. 3: eassumption.
+                - eapply BasicMetaTheory.varty_meta.
+                  { repeat econstructor. }
+                  rasimpl. reflexivity.
+                - eapply varty_meta.
+                  { repeat econstructor. }
+                  rasimpl. reflexivity.
+              }
+            + rasimpl. eapply tr_rename. 1,2: eauto.
+              apply WellRen_S.
+          - (* TODO Make previous goal intro tr_acc (full version) *)
+            admit.
+        }
+        all: reflexivity.
+      }
+      all: reflexivity.
+    }
+    admit.
   - admit.
   - admit.
   - admit.
