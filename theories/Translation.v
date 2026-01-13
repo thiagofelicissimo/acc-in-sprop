@@ -911,6 +911,21 @@ Proof.
   assumption.
 Qed.
 
+Lemma tr_acc Γ' n A A' R R' a a' :
+  Γ' ⊨⟨ Ax (ty n) ⟩ A : Sort (ty n) ↦ A' : Sort (ty n) →
+  Γ' ,, (ty n, A'),, (ty n, S ⋅ A') ⊨⟨ Ax prop ⟩ R : Sort prop ↦ R' : Sort prop →
+  Γ' ⊨⟨ ty n ⟩ a : A ↦ a' : A' →
+  Γ' ⊨⟨ Ax prop ⟩ acc (ty n) A R a : Sort prop ↦ acc (ty n) A' R' a' : Sort prop.
+Proof.
+  intros ihA ihR iha.
+  destruct
+    ihA as (? & ? & _),
+    ihR as (? & ? & _),
+    iha as (? & ? & _).
+  split. 2: intuition (constructor ; eauto).
+  econstructor. all: eauto.
+Qed.
+
 Lemma typing_conversion_trans :
   (∀ Γ l t A,
     Γ ⊢< l >× t : A →
@@ -1034,12 +1049,8 @@ Proof.
     specialize iha with (1 := hc).
     eapply change_type in iha. 2: eassumption.
     destruct ihR as [R' ihR], iha as [a' iha].
-    destruct
-      ihA as (? & ? & _),
-      ihR as (? & ? & _),
-      iha as (? & ? & _).
-    eexists _,_. split. 2: intuition (constructor ; eauto).
-    econstructor. all: eauto.
+    eexists _,_.
+    eapply tr_acc. all: eassumption.
   - intros * ? ihA ? ihR ? iha. cbn zeta. intros ? ihp ? hc.
     specialize ihA with (1 := hc). eapply keep_sort in ihA.
     destruct ihA as [A' ihA].
@@ -1074,8 +1085,14 @@ Proof.
               }
             + rasimpl. eapply tr_rename. 1,2: eauto.
               apply WellRen_S.
-          - (* TODO Make previous goal intro tr_acc (full version) *)
-            admit.
+          - eapply tr_acc.
+            + eapply tr_rename_sort. 1: eassumption.
+              * eapply tr_ctx_cons. 1: eassumption.
+                eapply tr_substitution_sort. 1,2: eauto.
+                admit.
+              * admit.
+            + admit.
+            + admit.
         }
         all: reflexivity.
       }
