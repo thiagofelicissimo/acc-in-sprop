@@ -75,6 +75,23 @@ Axiom type_heq_pi : forall Γ i j A1 A2 B1 B2 p q,
   Γ ⊢< prop > heq_pi i j A1 A2 B1 B2 p q 
     : heq (Ax (Ru i j)) (Sort (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2).
 
+Axiom heq_acc : forall (l : level) (A1 A2 R1 R2 a1 a2 e1 e2 : term), term.
+
+Axiom type_heq_acc : forall Γ n A1 A2 R1 R2 a1 a2 e1 e2,
+  Γ ,, (ty n, A1) ,, (ty n, S ⋅ A1) ⊢< Ax prop > R1 : Sort prop ->
+  Γ ⊢< ty n > a1 : A1 ->
+  Γ ,, (ty n, A2) ,, (ty n, S ⋅ A2) ⊢< Ax prop > R2 : Sort prop ->
+  Γ ⊢< ty n > a2 : A2 ->
+  let Aeq := heq (ty n) ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  let Aeq' := heq (ty n) ((S >> S >> S >> S >> S) ⋅ A1) ((S >> S >> S >> S >> S) ⋅ A2) (var 1) (var 0) in
+  Γ ,, (ty n, A1) ,, (ty n, S ⋅ A2) ,, (prop, Aeq) 
+    ,, (ty n, (S >> S >> S) ⋅ A1) ,, (ty n, (S >> S >> S >> S) ⋅ A2) ,, (prop, Aeq')
+      ⊢< prop > e1 : heq (Ax prop) (Sort prop) (Sort prop) 
+        ((up_ren (S >> S) >> S >> S) ⋅ R1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ R2) ->
+  Γ ⊢< prop > e2 : heq (ty n) A1 A2 a1 a2 ->
+  Γ ⊢< prop > heq_acc (ty n) A1 A2 R1 R2 a1 a2 e1 e2 
+    : heq (Ax prop) (Sort prop) (Sort prop) (acc (ty n) A1 R1 a1) (acc (ty n) A2 R2 a2).
+
 (* 
 Lemma test x : match x with | O => 1 | n => n + 2 end = ((up_ren S) >> S) x.
 Proof.
@@ -975,7 +992,42 @@ Proof.
       4:replace (rec (ty i) (up_ren renR ⋅ P') (renR ⋅ pz') (up_ren (up_ren renR) ⋅ ps') (renR ⋅ t'))
         with (renR ⋅ rec (ty i) P' pz' ps' t') by (rasimpl;reflexivity).
       all:eauto using conv_refl, conv_sym, type_ren, conv_ren, WellRen_renL, WellRen_renR, typing.
-  - admit.
+  - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2. 
+    dependent destruction lvl_eq. clear lvl_eq0.
+
+    edestruct IHhsim2. 2:exact B_Wt. 2:exact B_Wt0. 1:eauto using ctx_compat.
+    edestruct IHhsim3; eauto.
+    eexists. eapply type_conv.
+    1:eapply type_heq_acc.
+    1,3:eapply type_ren. 1:eapply B_Wt. 4:eapply B_Wt0.
+    2,5:eapply WellRen_up. 2,4:eapply WellRen_up.
+    1-10:eauto using WellRen_renL, WellRen_renR.
+    2,3:rasimpl; reflexivity.
+    1,2:econstructor; eauto using ctx_typing, type_ren, WellRen_renL, WellRen_renR.
+    1,2:eapply type_ren. 1,5:eapply type_ren. 1,5:eauto. 8,11:eauto using WellRen_S.
+    1-10:eauto using WellRen_renL, WellRen_renR, ctx_typing, type_ren.
+    1,2:eapply type_ren. 1:eapply a_Wt. 4:eapply a_Wt0.
+    1-6:eauto using WellRen_renL, WellRen_renR.
+    * eapply meta_conv. 1:eapply meta_ctx. 1:eapply H0.
+      ** simpl. unfold renL, renR. rasimpl.
+        f_equal. 1:f_equal. 1:f_equal.
+        1,2:eapply ren_term_morphism; eauto.
+        1,2:unfold pointwise_relation; intros; unfold ">>"; destruct a; simpl; lia.
+        f_equal. 1:f_equal.
+        1:eapply ren_term_morphism; eauto.
+        1:unfold pointwise_relation; intros; unfold ">>"; destruct a; simpl; lia.
+        f_equal. f_equal.
+        eapply ren_term_morphism; eauto.
+        unfold pointwise_relation; intros; unfold ">>"; destruct a; simpl; lia.
+      ** simpl. unfold renL, renR. rasimpl. f_equal.
+        1,2:eapply ren_term_morphism; eauto.
+        1,2:unfold pointwise_relation; intros; unfold ">>"; destruct a0; simpl; try destruct a0; simpl; lia.
+    * eapply H1.
+    * eapply conv_heq.
+      1,3:change (Sort prop) with (renL ⋅ (Sort prop)).
+      3,4:change (Sort prop) with (renR ⋅ (Sort prop)).
+      2,4:eapply conv_refl.
+      all:eauto using type_ren, conv_ren, conv_sym, WellRen_renL, WellRen_renR, typing.
   - admit.
   - eapply type_inv in h1, h2. dependent destruction h1. dependent destruction h2.
     dependent destruction lvl_eq. clear lvl_eq0.
