@@ -234,9 +234,27 @@ Axiom type_heq_obseq : forall Γ n A1 a1 b1 A2 a2 b2 e1 e2,
   Γ ⊢< prop > heq_obseq (ty n) A1 A2 a1 a2 b1 b2 e1 e2 : heq (Ax prop) (Sort prop) (Sort prop) (obseq (ty n) A1 a1 b1) (obseq (ty n) A2 a2 b2).
 
 
+Axiom hetero_to_homo : forall (l : level) (A t u e : term), term.
+
+Axiom type_hetero_to_homo : forall n Γ t u A e,
+  Γ ⊢< ty n > t : A ->
+  Γ ⊢< ty n > u : A ->
+  Γ ⊢< prop > e : heq (ty n) A A t u ->
+  Γ ⊢< prop > hetero_to_homo (ty n) A t u e : obseq (ty n) A t u.
+
+
 Reserved Notation " t ⊏ t' " (at level 21).
 
 Inductive decoration : term → term → Prop :=
+| dec_var x :
+    var x ⊏ var x 
+
+| dec_sort l :
+    Sort l ⊏ Sort l 
+
+| dec_assm c :
+    assm c ⊏ assm c 
+
 | dec_Pi i j A A' B B' :
     A ⊏ A' →
     B ⊏ B' →
@@ -254,6 +272,12 @@ Inductive decoration : term → term → Prop :=
     t ⊏ t' →
     u ⊏ u' →
     app i j A B t u ⊏ app i j A' B' t' u'
+
+| dec_nat : 
+    Nat ⊏ Nat 
+
+| dec_zero :
+    zero ⊏ zero
 
 | dec_succ t t' :
     t ⊏ t' →
@@ -341,18 +365,21 @@ Inductive decoration : term → term → Prop :=
     a2 ⊏ a2' →
     injpi2 i j A1 A2 B1 B2 e a2 ⊏ injpi2 i j A1' A2' B1' B2' e' a2'
 
-| dec_refl u :
+(* | dec_refl u :
     u ⊏ u
 
 | dec_trans u v w :
     u ⊏ v →
     v ⊏ w →
-    u ⊏ w
+    u ⊏ w *)
 
-| add_cast i A B e a :
-    a ⊏ cast i A B e a
+| add_cast i A B e a b :
+    a ⊏ b →
+    a ⊏ cast i A B e b
 
 where "u ⊏ v" := (decoration u v).
+
+
 
 Reserved Notation " t ~ t' " (at level 19).
 
@@ -594,6 +621,43 @@ Proof.
   - eapply IHsimdec in h. eauto using simdec.
 Qed.
 
+Lemma dec_refl u : 
+  dterm u ->
+  u ⊏ u.
+Proof.
+  intros.
+  induction H. 
+  all: eauto using decoration.
+Qed.
+
+Lemma dec_trans u v w :
+  u ⊏ v →
+  v ⊏ w →
+  u ⊏ w.
+Proof.
+  intros. generalize w H0. clear w H0. induction H; intros w hw.
+  1,2,3,4,5,7,8,9,11,15,16:dependent induction hw; eauto using decoration.
+  - assert (exists s, s = app i j A' B' t' u' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto.
+  - assert (exists s, s = rec l P' pz' ps' t' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto.
+  - assert (exists s, s = accin i A' R' a' p' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto.
+  - assert (exists s, s = accinv i A' R' a' p' b' r' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = accel i l A' R' P' p' a' q' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = J i A' a' P' p' b' e' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = cast i A' B' e' a' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = injpi1 i j A1' A2' B1' B2' e' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = injpi2 i j A1' A2' B1' B2' e' a2' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - dependent induction hw; econstructor; eauto.
+Qed.
+
 Lemma decoration_is_dterm t u : 
   dterm u ->
   t ⊏ u -> 
@@ -604,17 +668,10 @@ Proof.
 Qed.
 
 Lemma dec_to_sim u v :
-  dterm u -> dterm v ->
   u ⊏ v →
   u ~ v.
 Proof.
-  intros. rename H into du. rename H0 into dv. dependent induction H1. 
-  1-15:dependent destruction du; dependent destruction dv.
-  all: try solve [ econstructor ; eauto ].
-  1:eauto using sim_cast.
-  1:eauto using sim_refl.
-  1:eauto 9 using decoration_is_dterm, sim_trans.
-  dependent destruction dv. eauto using simdec, sim_trans, sim_sym, sim_refl.
+  intros. induction H; eauto using simdec.
 Qed.
 
 Lemma rename_dec ρ u v :
@@ -625,12 +682,32 @@ Proof.
   all: solve [ cbn ; econstructor ; eauto ].
 Qed.
 
+Lemma dterm_ren ρ t :
+  dterm t ->
+  dterm (ρ ⋅ t).
+Proof.
+  intros. generalize ρ. clear ρ. induction H; intros; simpl; eauto using dterm.
+Qed.
+
+Lemma dterm_subst_upterm σ :
+  (forall x, dterm (σ x)) ->
+  forall x, dterm ((up_term_term σ) x).
+Proof.
+  intros. destruct x.
+  1:eauto using dterm.
+  simpl. unfold ">>". eapply dterm_ren. eauto.
+Qed.
+
+
 Lemma subst_dec σ u v :
+  (forall x, dterm (σ x)) ->
   u ⊏ v →
   u <[ σ ] ⊏ v <[ σ ].
 Proof.
-  induction 1 in σ |- *.
-  all: solve [ cbn ; econstructor ; eauto ].
+  intros. generalize σ H. clear σ H.
+  induction H0.
+  all: try solve [ cbn ; econstructor ; eauto using dterm_subst_upterm ].
+  intros. eapply dec_refl. eauto.
 Qed.
 
 Definition dec_subst (σ θ : nat → term) :=
@@ -665,31 +742,31 @@ Proof.
 Qed.
 
 Lemma dec_subst_refl σ :
+  (forall x, dterm (σ x)) ->
   dec_subst σ σ.
 Proof.
-  intro. apply dec_refl.
+  intros. intro. apply dec_refl. eauto.
 Qed.
 
 Lemma substs_dec σ θ u :
+  dterm u ->
   dec_subst σ θ →
   u <[ σ ] ⊏ u <[ θ ].
 Proof.
-  intros h.
-  induction u in σ, θ, h |- *.
+  intros. generalize σ θ H0. clear σ θ H0. induction H.
   all: try solve [ cbn ; econstructor ; eauto using dec_subst_up ].
-  - cbn. eauto.
-  - cbn.
-Admitted.
+  intros. eapply H0.
+Qed.
 
 Lemma substs_decs σ θ u v :
   dec_subst σ θ →
   u ⊏ v →
   u <[ σ ] ⊏ v <[ θ ].
 Proof.
-  intros hs hd.
-  eapply dec_trans.
-  - eapply subst_dec. eassumption.
-  - apply substs_dec. assumption.
+  intros. generalize σ θ H. clear σ θ H.
+  induction H0.
+  all: try solve [ cbn ; econstructor ; eauto using decoration, dec_subst_up ].
+  intros. eapply H.
 Qed.
 
 Lemma substs_decs_one u v a b :
@@ -1499,6 +1576,165 @@ Inductive has_type_head : term → type_head → Prop :=
 | isacc i A R x : has_type_head (acc i A R x) hacc
 | isobseq i A u v : has_type_head (obseq i A u v) hobseq.
 
+
+(* Lemma well_typed_dec Γ l t A u : 
+  t ⊏ u ->
+  Γ ⊢< l > u : A ->
+  exists B, Γ ⊢< l > t : B.
+Proof.
+  intros. generalize Γ l A H0. clear Γ l A H0.
+  induction H; intros.
+  all:try solve [eexists; eauto ]. *)
+
+Lemma keep_head_ty_aux Γ l A t h u :
+  t ⊏ u ->
+  Γ ⊢< l > u : A -> 
+  has_type_head t h ->
+  exists B e v, 
+    
+    has_type_head v h /\
+    Γ ⊢< l > v : B /\
+    Γ ⊢< prop > e : heq l A B u v.
+Proof.
+  intros. induction H1.
+  - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
+    + eapply type_inv in H0. dependent destruction H0. subst.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eapply type_conv. 2:eapply conv_heq.
+      1:eapply type_heq_refl. 1:eauto using validity_conv_left.
+      1:eapply type_conv. 2:eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+      all:eapply conv_conv; eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+    + eapply type_inv in H0. dependent destruction H0.
+      eapply IHdecoration in a_Wt as temp.
+      destruct temp as (B' & e' & v & has_head & v_Wt & e'_Wt). subst.
+      eexists. eexists. eexists. intuition eauto.
+      eapply type_heq_trans. 5:eauto.
+      4:eapply type_conv.
+      4:eapply type_heq_sym, type_heq_cast.
+      10:eapply conv_heq. 12:eapply conv_refl.
+      all:eauto using conv_refl, conv_sym, typing.
+  - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
+    + eapply type_inv in H1. dependent destruction H1. subst.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eapply type_conv. 2:eapply conv_heq.
+      1:eapply type_heq_refl. 1:eauto using validity_conv_left.
+      1:eapply type_conv. 2:eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+      all:eapply conv_conv; eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+    +  eapply type_inv in H0. dependent destruction H0.
+      eapply IHdecoration in a_Wt as temp.
+      destruct temp as (B' & e' & v & has_head & v_Wt & e'_Wt). subst.
+      eexists. eexists. eexists. intuition eauto.
+      eapply type_heq_trans. 5:eauto.
+      4:eapply type_conv.
+      4:eapply type_heq_sym, type_heq_cast.
+      10:eapply conv_heq. 12:eapply conv_refl.
+      all:eauto using conv_refl, conv_sym, typing.
+  - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
+    + eapply type_inv in H0. dependent destruction H0. subst.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eapply type_conv. 2:eapply conv_heq.
+      1:eapply type_heq_refl. 1:eauto using validity_conv_left.
+      1:eapply type_conv. 2:eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+      all:eapply conv_conv; eauto using conv_sym.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+    + eapply type_inv in H0. dependent destruction H0.
+      eapply IHdecoration in a_Wt as temp.
+      destruct temp as (B' & e' & v & has_head & v_Wt & e'_Wt). subst.
+      eexists. eexists. eexists. intuition eauto.
+      eapply type_heq_trans. 5:eauto.
+      4:eapply type_conv.
+      4:eapply type_heq_sym, type_heq_cast.
+      10:eapply conv_heq. 12:eapply conv_refl.
+      all:eauto using conv_refl, conv_sym, typing.
+  - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
+    + eapply type_inv in H2. dependent destruction H2. subst.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eapply type_conv. 2:eapply conv_heq.
+      1:eapply type_heq_refl. 1:eauto using validity_conv_left.
+      1:eapply type_conv. 2:eauto using conv_sym. 4,5:eapply conv_refl.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+      all:eauto using typing, conv_sym.
+    +  eapply type_inv in H0. dependent destruction H0.
+      eapply IHdecoration in a_Wt as temp.
+      destruct temp as (B' & e' & v & has_head & v_Wt & e'_Wt). subst.
+      eexists. eexists. eexists. intuition eauto.
+      eapply type_heq_trans. 5:eauto.
+      4:eapply type_conv.
+      4:eapply type_heq_sym, type_heq_cast.
+      10:eapply conv_heq. 12:eapply conv_refl.
+      all:eauto using conv_refl, conv_sym, typing.
+  - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
+    + eapply type_inv in H2. dependent destruction H2. subst.
+      eexists. eexists. eexists. 
+      Unshelve. 4:exact (obseq (ty n) A' a' b'). 2,3:shelve.  
+      intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eapply type_conv. 2:eapply conv_heq.
+      1:eapply type_heq_refl. 1:eauto using validity_conv_left.
+      1:eapply type_conv. 2:eauto using conv_sym. 4,5:eapply conv_refl.
+      all :eauto using conv_refl, validity_conv_left, validity_ty_ctx, typing.
+      all:eauto using typing, conv_sym.
+    +  eapply type_inv in H0. dependent destruction H0.
+      eapply IHdecoration in a_Wt as temp.
+      destruct temp as (B' & e' & v' & has_head & v_Wt & e'_Wt). subst.
+      eexists. eexists. eexists. intuition eauto.
+      eapply type_heq_trans. 5:eauto.
+      4:eapply type_conv.
+      4:eapply type_heq_sym, type_heq_cast.
+      10:eapply conv_heq. 12:eapply conv_refl.
+      all:eauto using conv_refl, conv_sym, typing.
+Qed.
+
+Lemma keep_head_ty Γ l A A0 h :
+  A0 ⊏ A ->
+  Γ ⊢< Ax l > A : Sort l -> 
+  has_type_head A0 h ->
+  exists B e, 
+    has_type_head B h /\
+    Γ ⊢< prop > e : obseq (Ax l) (Sort l) A B.
+Proof.
+  intros. eapply keep_head_ty_aux in H1; eauto.
+  destruct H1 as (B & e & v & has_head & v_Wt & e_Wt).
+  dependent destruction has_head;
+  eapply type_inv in v_Wt; dependent destruction v_Wt.
+  - eapply Ax_inj in lvl_eq. subst.
+    eexists. eexists. intuition eauto using has_type_head.
+    eapply type_conv in e_Wt. 
+    2:eapply conv_heq.  2:eapply conv_refl. 3:eauto using conv_sym.
+    2-4:eauto 8 using typing, conv_refl, validity_ty_ctx, conv_sym.
+    eapply type_hetero_to_homo; eauto using typing, validity_ty_ctx.
+  - eapply Ax_inj in lvl_eq. subst.
+    eexists. eexists. intuition eauto using has_type_head.
+    eapply type_conv in e_Wt. 
+    2:eapply conv_heq.  2:eapply conv_refl. 3:eauto using conv_sym.
+    2-4:eauto 8 using typing, conv_refl, validity_ty_ctx, conv_sym.
+    eapply type_hetero_to_homo; eauto using typing, validity_ty_ctx.
+  - dependent destruction lvl_eq. destruct l; dependent destruction H1.
+    eexists. eexists. intuition eauto using has_type_head.
+    eapply type_conv in e_Wt. 
+    2:eapply conv_heq.  2:eapply conv_refl. 3:eauto using conv_sym.
+    2-4:eauto 8 using typing, conv_refl, validity_ty_ctx, conv_sym.
+    eapply type_hetero_to_homo; eauto using typing, validity_ty_ctx.
+  - eapply Ax_inj in lvl_eq. subst.
+    eexists. eexists. intuition eauto using has_type_head.
+    eapply type_conv in e_Wt. 
+    2:eapply conv_heq.  2:eapply conv_refl. 3:eauto using conv_sym.
+    2-4:eauto 8 using typing, conv_refl, validity_ty_ctx, conv_sym.
+    eapply type_hetero_to_homo; eauto using typing, validity_ty_ctx.
+  - eapply Ax_inj in lvl_eq. subst.
+    eexists. eexists. intuition eauto using has_type_head.
+    eapply type_conv in e_Wt. 
+    2:eapply conv_heq.  2:eapply conv_refl. 3:eauto using conv_sym.
+    4:eapply conv_refl.
+    2-4:eauto 8 using typing, conv_refl, validity_ty_ctx, conv_sym.
+    eapply type_hetero_to_homo. 3:eapply e_Wt. all:eauto using typing, validity_ty_ctx.
+Qed.
+
+
 Lemma keep_head Γ' l t A h :
   Γ' ⊨⟨ l ⟩ t : A →
   has_type_head A h →
@@ -1507,6 +1743,16 @@ Lemma keep_head Γ' l t A h :
     Γ' ⊨⟨ l ⟩ t : A ⇒ A'.
 Proof.
   intros ht hh.
+  destruct ht. destruct H. destruct H. destruct H0.
+  eapply validity_ty_ty in H as H'.
+  eapply keep_head_ty in hh; eauto.
+  destruct hh as (B & e & has_head & e_Wt).
+  eexists. split; eauto.
+  econstructor. econstructor. 
+  1:eapply type_cast.
+  3:eapply e_Wt.
+  3:eauto.
+
 Admitted.
 
 Corollary keep_sort Γ' i j A :
@@ -1796,6 +2042,7 @@ Lemma tr_subst_ren Γ Γ' Δ' ρ :
 Proof.
   intros hc hr.
   split. 2: apply dec_subst_refl.
+  2:{intros. unfold ">>". econstructor. }
   apply WellSubst_ren.
   - assumption.
   - apply hc.
