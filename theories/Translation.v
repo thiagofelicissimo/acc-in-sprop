@@ -1576,16 +1576,6 @@ Inductive has_type_head : term → type_head → Prop :=
 | isacc i A R x : has_type_head (acc i A R x) hacc
 | isobseq i A u v : has_type_head (obseq i A u v) hobseq.
 
-
-(* Lemma well_typed_dec Γ l t A u : 
-  t ⊏ u ->
-  Γ ⊢< l > u : A ->
-  exists B, Γ ⊢< l > t : B.
-Proof.
-  intros. generalize Γ l A H0. clear Γ l A H0.
-  induction H; intros.
-  all:try solve [eexists; eauto ]. *)
-
 Lemma keep_head_ty_aux Γ l A t h u :
   t ⊏ u ->
   Γ ⊢< l > u : A -> 
@@ -1778,7 +1768,19 @@ Lemma change_type Γ' i t A A' :
   Γ' ⊨⟨ i ⟩ t : A ⇒ A'.
 Proof.
   intros.
-Admitted.
+  destruct H. destruct H. destruct H. destruct H1.
+  destruct H0. destruct H3.
+  assert (x ~ A') by eauto using dec_to_sim, sim_trans, sim_sym.
+  eapply validity_ty_ty in H as x_Wt.
+  eapply sim_heq_same_ctx in H5; eauto.
+  destruct H5.
+  eapply type_hetero_to_homo in H5; eauto.
+  eapply type_cast in H. 4:eapply H5.
+  2,3:eauto.
+  econstructor. econstructor.
+  1:eauto.
+  split; eauto using decoration.
+Qed.
 
 (* New notations for source derivations *)
 
