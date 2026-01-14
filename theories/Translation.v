@@ -1555,6 +1555,8 @@ Definition eqtrans l A u v Γ' A' A'' u' v' e :=
     A ⊏ A'' ∧
     u ⊏ u' ∧
     v ⊏ v' ∧
+    Γ' ⊢< ty i > u' : A' /\
+    Γ' ⊢< ty i > v' : A'' /\
     Γ' ⊢< prop > e : heq (ty i) A' A'' u' v'
   end.
 
@@ -2177,6 +2179,30 @@ Proof.
   econstructor. all: eassumption.
 Qed.
 
+Lemma tr_conv Γ' l t A B : 
+  Γ' ⊨⟨ l ⟩ t : A ->
+  Γ' ⊨⟨ Ax l ⟩ A ≡ B : Sort l ->
+  Γ' ⊨⟨ l ⟩ t : B.
+Proof.
+  intros.
+  destruct H. destruct H. destruct H. destruct H1. rename x0 into t'. rename x into A'.
+  destruct H0 as (sort & sort' & A'' & B' & e & h).
+  destruct h. destruct H3. destruct H4. destruct H5. destruct H6. destruct H7.
+  assert (A' ~ A'') by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H9; eauto using validity_ty_ty.
+  destruct H9.
+  eapply type_heq_trans in H8. 5:eauto. all:eauto using validity_ty_ty.
+  assert (sort' ~ Sort l) by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H10; eauto using validity_ty_ty.
+  destruct H10. eapply type_hetero_to_homo in H10; eauto using validity_ty_ty.
+  eapply type_heq_cast in H7 as H7'. 4:eauto. all:eauto using validity_ty_ty.
+  eapply type_heq_trans in H7'. 5:eauto.  all:eauto using validity_ty_ty, type_cast.
+  eapply type_hetero_to_homo in H7'; eauto using validity_ty_ty, type_cast.
+  eapply type_cast in H. 4:eauto. all:eauto using validity_ty_ty, type_cast.
+  econstructor. econstructor. econstructor. 1: eapply H.
+  all: intuition eauto using decoration.
+Qed.
+
 Lemma typing_conversion_trans :
   (∀ Γ l t A,
     Γ ⊢< l >× t : A →
@@ -2188,7 +2214,7 @@ Lemma typing_conversion_trans :
     Γ ⊢< l >× u ≡ v : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
-      Γ ⊨⟨ l ⟩ u ≡ v : A
+      Γ' ⊨⟨ l ⟩ u ≡ v : A
   ).
 Proof.
   apply Typing.typing_mutind.
@@ -2585,11 +2611,14 @@ Proof.
       * eapply substs_decs_one. all: intuition (repeat constructor ; eauto).
       * eapply substs_decs_one. all: intuition eauto.
   - intros * ? iht ? ihAB ? hc.
-    admit.
+    eapply iht in hc as tWt.
+    eapply ihAB in hc as AconvB.
+    eapply tr_conv; eauto.
 
   (* Conversion rules *)
 
   - intros * ??? hc. admit.
+
   - admit.
   - admit.
   - admit.
