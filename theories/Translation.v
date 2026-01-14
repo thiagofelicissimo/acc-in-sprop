@@ -1591,7 +1591,7 @@ Lemma keep_head_ty_aux Γ l A t h u :
   Γ ⊢< l > u : A -> 
   has_type_head t h ->
   exists B e v, 
-    
+    t ⊏ v /\
     has_type_head v h /\
     Γ ⊢< l > v : B /\
     Γ ⊢< prop > e : heq l A B u v.
@@ -1599,7 +1599,7 @@ Proof.
   intros. induction H1.
   - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
     + eapply type_inv in H0. dependent destruction H0. subst.
-      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx, decoration.
       eapply type_conv. 2:eapply conv_heq.
       1:eapply type_heq_refl. 1:eauto using validity_conv_left.
       1:eapply type_conv. 2:eauto using conv_sym.
@@ -1617,7 +1617,8 @@ Proof.
       all:eauto using conv_refl, conv_sym, typing.
   - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
     + eapply type_inv in H1. dependent destruction H1. subst.
-      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx. 
+      1:econstructor; eauto.
       eapply type_conv. 2:eapply conv_heq.
       1:eapply type_heq_refl. 1:eauto using validity_conv_left.
       1:eapply type_conv. 2:eauto using conv_sym.
@@ -1636,6 +1637,7 @@ Proof.
   - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
     + eapply type_inv in H0. dependent destruction H0. subst.
       eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      1:econstructor; eauto.
       eapply type_conv. 2:eapply conv_heq.
       1:eapply type_heq_refl. 1:eauto using validity_conv_left.
       1:eapply type_conv. 2:eauto using conv_sym.
@@ -1654,6 +1656,7 @@ Proof.
   - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
     + eapply type_inv in H2. dependent destruction H2. subst.
       eexists. eexists. eexists. intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      1:econstructor; eauto.
       eapply type_conv. 2:eapply conv_heq.
       1:eapply type_heq_refl. 1:eauto using validity_conv_left.
       1:eapply type_conv. 2:eauto using conv_sym. 4,5:eapply conv_refl.
@@ -1673,6 +1676,7 @@ Proof.
       eexists. eexists. eexists. 
       Unshelve. 4:exact (obseq (ty n) A' a' b'). 2,3:shelve.  
       intuition eauto using has_type_head, typing, validity_conv_left, validity_ty_ctx.
+      1:econstructor; eauto.
       eapply type_conv. 2:eapply conv_heq.
       1:eapply type_heq_refl. 1:eauto using validity_conv_left.
       1:eapply type_conv. 2:eauto using conv_sym. 4,5:eapply conv_refl.
@@ -1694,11 +1698,12 @@ Lemma keep_head_ty Γ l A A0 h :
   Γ ⊢< Ax l > A : Sort l -> 
   has_type_head A0 h ->
   exists B e, 
+    A0 ⊏ B /\
     has_type_head B h /\
     Γ ⊢< prop > e : obseq (Ax l) (Sort l) A B.
 Proof.
   intros. eapply keep_head_ty_aux in H1; eauto.
-  destruct H1 as (B & e & v & has_head & v_Wt & e_Wt).
+  destruct H1 as (B & e & v & refines & has_head & v_Wt & e_Wt).
   dependent destruction has_head;
   eapply type_inv in v_Wt; dependent destruction v_Wt.
   - eapply Ax_inj in lvl_eq. subst.
@@ -1746,14 +1751,15 @@ Proof.
   destruct ht. destruct H. destruct H. destruct H0.
   eapply validity_ty_ty in H as H'.
   eapply keep_head_ty in hh; eauto.
-  destruct hh as (B & e & has_head & e_Wt).
+  destruct hh as (B & e & refines & has_head & e_Wt).
   eexists. split; eauto.
   econstructor. econstructor. 
   1:eapply type_cast.
   3:eapply e_Wt.
   3:eauto.
-
-Admitted.
+  3:intuition eauto using decoration.
+  all:eapply validity_ty_ty, type_inv in e_Wt; dependent destruction e_Wt; eauto.
+Qed.
 
 Corollary keep_sort Γ' i j A :
   Γ' ⊨⟨ i ⟩ A : Sort j →
@@ -1771,6 +1777,7 @@ Lemma change_type Γ' i t A A' :
   Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
   Γ' ⊨⟨ i ⟩ t : A ⇒ A'.
 Proof.
+  intros.
 Admitted.
 
 (* New notations for source derivations *)
