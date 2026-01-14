@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP.
+Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP Fundamental.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -2219,6 +2219,9 @@ Lemma typing_conversion_trans :
 Proof.
   apply Typing.typing_mutind.
 
+  (* solves SProp equality cases *)
+  all : try solve [ intros; exists Nat; exists Nat; exists Nat; exists Nat; exists Nat; econstructor ].
+
   (* Typing rules *)
 
   - intros * ? hx ? hc.
@@ -2621,6 +2624,7 @@ Proof.
 
   - admit.
   - admit.
+  - intros. admit.
   - admit.
   - admit.
   - admit.
@@ -2640,13 +2644,77 @@ Proof.
   - admit.
   - admit.
   - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
+Admitted.
+
+Scheme typing_mut' := Induction for typing Sort Prop
+with conversion_mut' := Induction for conversion Sort Prop
+with ctx_typing_mut' := Induction for ctx_typing Sort Prop.
+Combined Scheme typing_mutind' from typing_mut', conversion_mut', ctx_typing_mut'.
+
+Fixpoint incl t :=
+    match t with
+    | var i => var i
+    | assm c => assm c
+    | lam i j A B t => lam i j (incl A) (incl B) (incl t)
+    | app i j A B t u => app i j (incl A) (incl B) (incl t) (incl u)
+    | Pi i j A B => Pi i j (incl A) (incl B)
+    | zero => zero
+    | succ t => succ (incl t)
+    | rec l P pzero psucc t =>
+        rec l (incl P) (incl pzero) (incl psucc) (incl t)
+    | Nat => Nat
+    | accel i l A R P p a r => accel i l (incl A) (incl R) (incl P) (incl p) (incl a) (incl r)
+    | Sort i => Sort i
+    | acc l A R a => acc l (incl A) (incl R) (incl a)
+    | accin l A R a p => accin l (incl A) (incl R) (incl a) (incl p)
+    | accinv l A R a p b r => accinv l (incl A) (incl R) (incl a) (incl p) (incl b) (incl r)
+    | obseq l A a b => obseq l (incl A) (incl a) (incl b)
+    | obsrefl l A a => obsrefl l (incl A) (incl a)
+    | J l A a P p b e => J l (incl A) (incl a) (incl P) (incl p) (incl b) (incl e)
+    | injpi1 i j A1 A2 B1 B2 e => injpi1 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e)
+    | injpi2 i j A1 A2 B1 B2 e a => injpi2 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e) (incl a)
+    | cast i A B e t => cast i (incl A) (incl B) (incl e) (incl t)
+    | accelcomp l l' A R P p a q => obsrefl l' ((incl P) <[(incl a) ..]) (accel l l' (incl A) (incl R) (incl P) (incl p) (incl a) (incl q)) 
+    end.
+    
+    
+Fixpoint incl_ctx Γ : ctx :=
+  match Γ with
+  | nil => nil
+  | cons (l , A) Γ => cons (l, incl A) (incl_ctx Γ)
+  end.
+
+Lemma incl_typing :  
+  (∀ Γ l t A,
+    Γ ⊢< l > t : A → incl_ctx Γ ⊢< l >× incl t : incl A)
+  /\
+  (∀ Γ l u v A,
+    Γ ⊢< l > u ≡ v : A → incl_ctx Γ ⊢< l >× incl u ≡ incl v : incl A)
+  /\
+  (∀ Γ,
+    ⊢ Γ -> Typing.ctx_typing (incl_ctx Γ)).
+Proof.
+  apply typing_mutind'; eauto using Typing.typing, Typing.conversion, Typing.ctx_typing.
+Admitted.
+
+Lemma prop_canonicity n : 
+  ∙ ⊢< ty 0 > n : Nat ->
+  exists e k, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
+Proof.
+  intros.
+  eapply incl_typing in H as temp.
+  simpl in temp. eapply canonicity_conv in temp.
+  destruct temp. eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat (incl n) (mk_Nat x)).
+  1:eapply Typing.type_conv.
+  1:eapply Typing.type_obsrefl.
+  3:econstructor.
+  5:eauto.
+  all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
+  eapply typing_conversion_trans in H1. 
+  2:econstructor. 2:eapply ctx_nil. 2:econstructor.
+  eapply keep_head in H1. 2:econstructor.
+  destruct H1. destruct H1. destruct x0; inversion H1. subst.
+  destruct H2. destruct H2. destruct H3.
+  dependent destruction H4.
+  (* we have a problem *)
 Admitted.
