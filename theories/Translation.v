@@ -13,7 +13,6 @@ Import CombineNotations.
 
 Open Scope subst_scope.
 
-
 (* the following axioms are justified in the file HEq.v *)
 
 Axiom heq : level -> term -> term -> term -> term -> term.
@@ -697,7 +696,6 @@ Proof.
   1:eauto using dterm.
   simpl. unfold ">>". eapply dterm_ren. eauto.
 Qed.
-
 
 Lemma subst_dec σ u v :
   (forall x, dterm (σ x)) ->
@@ -3095,12 +3093,53 @@ Proof.
   (* apply typing_mutind'; eauto using Typing.typing, Typing.conversion, Typing.ctx_typing. *)
 Admitted.
 
+Lemma obseq_sym Γ e l A a b: 
+  Γ ⊢< prop > e : obseq l A a b ->
+  exists e', Γ ⊢< prop > e' : obseq l A b a.
+Admitted. 
+
+Lemma dterm_incl A : dterm A -> incl A = A.
+  induction 1; cbn; try reflexivity; f_equal; eauto.
+Qed.
+
+Lemma subst_closed  σ l t A : ∙ ⊢< l > t : A -> σ ⋅ t = t.
+Admitted. 
+
+Lemma conservativity_ty A A0 :
+  dterm A -> 
+  incl A ⊏ A0 ->
+  ∙ ⊢< Ax prop > A : Sort prop -> 
+  ∙ ⊢< Ax prop > A0 : Sort prop -> 
+  exists e, ∙ ⊢< prop > e : obseq (Ax prop) (Sort prop) A0 A.
+Proof.
+  intros Hdterm Hinc Hty Hty0.
+  eapply dterm_incl in Hdterm. rewrite Hdterm in Hinc. 
+  unshelve epose proof (H := sim_heq 0 ∙ ∙ A A0 (Sort prop) (Sort prop) _ _ Hty Hty0).
+  1: econstructor.
+  1: now eapply dec_to_sim. 
+  assert (renL ⋅ A = A) by (eapply subst_closed; eauto).
+  assert (renR ⋅ A0 = A0) by (eapply subst_closed; eauto).
+  destruct H as [e H].
+  rewrite H0, H1 in H. cbn in H.
+  eapply type_hetero_to_homo in H; eauto.
+  eapply obseq_sym in H. destruct H; eexists; eauto.
+Qed.
+
 Lemma conservativity e P :
+  dterm P -> 
   ∙ ⊢< ty 0 > P : Sort prop  ->
   ∙ ⊢< prop >× e : incl P ->
   exists e', ∙ ⊢< prop > e' : P.
 Proof.
-Admitted.  
+  intros HdP Hty HP.
+  eapply typing_conversion_trans in HP.
+  2: repeat econstructor.
+  destruct HP as [P' [e' [HP [Hincl Hincl']]]].
+  assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
+  destruct (conservativity_ty _ _ HdP Hincl' Hty HP') as [eqp Heq].
+  eexists (cast _ P' P eqp e').
+  eapply type_cast; eauto. 
+Qed.  
 
 Lemma incl_nat k : incl (mk_Nat k) = mk_Nat k.
 Proof.
@@ -3115,11 +3154,17 @@ Proof.
   - eapply type_succ; eauto. 
 Qed. 
 
+Lemma dterm_mk_Nat k : dterm (mk_Nat k).
+Proof.
+  induction k; econstructor; eauto. 
+Qed.
+
 Lemma prop_canonicity n : 
+  dterm n -> 
   ∙ ⊢< ty 0 > n : Nat ->
   exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
 Proof.
-  intros.
+  intros Hdterm H.
   eapply incl_typing in H as temp.
   simpl in temp. eapply canonicity_conv in temp.
   destruct temp as [k temp]. exists k.  
@@ -3134,6 +3179,7 @@ Proof.
   { cbn. now rewrite incl_nat. } 
   rewrite <- incl_eq in Hcan.
   eapply conservativity in Hcan; eauto.
+  1: repeat econstructor; eauto; eapply dterm_mk_Nat.
   eapply type_obseq; eauto.
   1: eapply type_nat; econstructor.
   eapply type_mk_Nat.
