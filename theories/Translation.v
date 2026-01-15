@@ -3106,14 +3106,12 @@ Lemma subst_closed  σ l t A : ∙ ⊢< l > t : A -> σ ⋅ t = t.
 Admitted. 
 
 Lemma conservativity_ty A A0 :
-  dterm A -> 
-  incl A ⊏ A0 ->
+  A ⊏ A0 ->
   ∙ ⊢< Ax prop > A : Sort prop -> 
   ∙ ⊢< Ax prop > A0 : Sort prop -> 
   exists e, ∙ ⊢< prop > e : obseq (Ax prop) (Sort prop) A0 A.
 Proof.
-  intros Hdterm Hinc Hty Hty0.
-  eapply dterm_incl in Hdterm. rewrite Hdterm in Hinc. 
+  intros Hinc Hty Hty0.
   unshelve epose proof (H := sim_heq 0 ∙ ∙ A A0 (Sort prop) (Sort prop) _ _ Hty Hty0).
   1: econstructor.
   1: now eapply dec_to_sim. 
@@ -3125,18 +3123,24 @@ Proof.
   eapply obseq_sym in H. destruct H; eexists; eauto.
 Qed.
 
+Lemma dterm_typing Γ l t A :  Γ ⊢< l >× t : A  -> dterm t.
+Proof. 
+  induction 1; try econstructor; eauto.
+Qed. 
+
 Lemma conservativity e P :
-  dterm P -> 
   ∙ ⊢< ty 0 > P : Sort prop  ->
-  ∙ ⊢< prop >× e : incl P ->
+  ∙ ⊢< prop >× e : P ->
   exists e', ∙ ⊢< prop > e' : P.
 Proof.
-  intros HdP Hty HP.
+  intros Hty HP.
+  assert (HdP : dterm P).
+  { eapply BasicMetaTheory.validity_ty_ty in HP. eapply dterm_typing; eauto. }
   eapply typing_conversion_trans in HP.
   2: repeat econstructor.
   destruct HP as [P' [e' [HP [Hincl Hincl']]]].
   assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
-  destruct (conservativity_ty _ _ HdP Hincl' Hty HP') as [eqp Heq].
+  destruct (conservativity_ty _ _ Hincl' Hty HP') as [eqp Heq].
   eexists (cast _ P' P eqp e').
   eapply type_cast; eauto. 
 Qed.  
@@ -3160,11 +3164,11 @@ Proof.
 Qed.
 
 Lemma prop_canonicity n : 
-  dterm n -> 
   ∙ ⊢< ty 0 > n : Nat ->
+  ∙ ⊢< ty 0 >× n : Nat ->
   exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
 Proof.
-  intros Hdterm H.
+  intros H H'.
   eapply incl_typing in H as temp.
   simpl in temp. eapply canonicity_conv in temp.
   destruct temp as [k temp]. exists k.  
@@ -3175,11 +3179,10 @@ Proof.
   5:eauto.
   all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
   clear temp.
-  assert (incl (obseq (ty 0) Nat n (mk_Nat k)) = obseq (ty 0) Nat (incl n) (mk_Nat k)) as incl_eq.
-  { cbn. now rewrite incl_nat. } 
-  rewrite <- incl_eq in Hcan.
+  assert (incl n = n) as incl_eq.
+  { eapply dterm_typing in H'. now eapply dterm_incl. }
+  rewrite incl_eq in Hcan.  
   eapply conservativity in Hcan; eauto.
-  1: repeat econstructor; eauto; eapply dterm_mk_Nat.
   eapply type_obseq; eauto.
   1: eapply type_nat; econstructor.
   eapply type_mk_Nat.
