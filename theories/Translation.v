@@ -2782,7 +2782,8 @@ Fixpoint incl t :=
     | injpi1 i j A1 A2 B1 B2 e => injpi1 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e)
     | injpi2 i j A1 A2 B1 B2 e a => injpi2 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e) (incl a)
     | cast i A B e t => cast i (incl A) (incl B) (incl e) (incl t)
-    | accelcomp l l' A R P p a q => obsrefl l' ((incl P) <[(incl a) ..]) (accel l l' (incl A) (incl R) (incl P) (incl p) (incl a) (incl q)) 
+    | accelcomp l l' A R P p a q => 
+      obsrefl l' ((incl P) <[(incl a) ..]) (accel l l' (incl A) (incl R) (incl P) (incl p) (incl a) (incl q)) 
     end.
     
     
@@ -2805,24 +2806,46 @@ Proof.
   apply typing_mutind'; eauto using Typing.typing, Typing.conversion, Typing.ctx_typing.
 Admitted.
 
+Lemma conservativity e P :
+  ∙ ⊢< ty 0 > P : Sort prop  ->
+  ∙ ⊢< prop >× e : incl P ->
+  exists e', ∙ ⊢< prop > e' : P.
+Proof.
+Admitted.  
+
+Lemma incl_nat k : incl (mk_Nat k) = mk_Nat k.
+Proof.
+  induction k; simpl; [reflexivity|].
+  now rewrite IHk.
+Qed. 
+
+Lemma type_mk_Nat k : ∙ ⊢< ty 0 > mk_Nat k : Nat.
+Proof.
+  induction k; simpl.
+  - eapply type_zero; econstructor.
+  - eapply type_succ; eauto. 
+Qed. 
+
 Lemma prop_canonicity n : 
   ∙ ⊢< ty 0 > n : Nat ->
-  exists e k, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
+  exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
 Proof.
   intros.
   eapply incl_typing in H as temp.
   simpl in temp. eapply canonicity_conv in temp.
-  destruct temp. eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat (incl n) (mk_Nat x)).
+  destruct temp as [k temp]. exists k.  
+  eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat (incl n) (mk_Nat k)) as Hcan.
   1:eapply Typing.type_conv.
   1:eapply Typing.type_obsrefl.
   3:econstructor.
   5:eauto.
   all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
-  eapply typing_conversion_trans in H1. 
-  2:econstructor. 2:eapply ctx_nil. 2:econstructor.
-  eapply keep_head in H1. 2:econstructor.
-  destruct H1. destruct H1. destruct x0; inversion H1. subst.
-  destruct H2. destruct H2. destruct H3.
-  dependent destruction H4.
-  (* we have a problem *)
-Admitted.
+  clear temp.
+  assert (incl (obseq (ty 0) Nat n (mk_Nat k)) = obseq (ty 0) Nat (incl n) (mk_Nat k)) as incl_eq.
+  { cbn. now rewrite incl_nat. } 
+  rewrite <- incl_eq in Hcan.
+  eapply conservativity in Hcan; eauto.
+  eapply type_obseq; eauto.
+  1: eapply type_nat; econstructor.
+  eapply type_mk_Nat.
+Qed.
