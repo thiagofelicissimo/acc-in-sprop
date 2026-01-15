@@ -1587,7 +1587,7 @@ Notation "D ⊨⟨ l ⟩ t : A" :=
 
 Definition eqtrans Γ' l u v A u' A' v' A'' e :=
   match l with
-  | prop => True
+  | prop => A ⊏ A' 
   | ty i =>
     A ⊏ A' ∧
     (* A ⊏ A'' ∧ *)
@@ -1610,8 +1610,6 @@ Notation "D ⊨⟨ l ⟩ t = u : A" := (* homogeneous A *)
   (exists t' u' A' e, eqtrans D l t u A t' A' u' A' e)
   (at level 50, t, u, A at next level).
 
-
-
 Notation "D ⊨⟨ l ⟩ t ≃ u : A ↦ A' = A''" :=
   (exists t' u' e, eqtrans D l t u A t' A' u' A'' e)
   (at level 50, t, u, A, A', A'' at next level).  
@@ -1627,7 +1625,8 @@ Lemma eqtrans_hetero_to_homo Γ' l t u A :
   Γ' ⊨⟨ l ⟩ t = u : A.
 Proof.
   intros. destruct H as (t' & u' & A' & A'' & e & h).
-  destruct l. 2:exists Nat, Nat, Nat, Nat; econstructor.
+  destruct l. 
+  2:{ exists A'', Nat, A'', Nat. cbn. destruct h; eauto. }
   destruct h as (h1 & h2 & h3 & h4 & h5 & h6 & h7).
   assert (A' ~ A'') by eauto using dec_to_sim, sim_sym, sim_trans.
   eapply sim_heq_same_ctx in H; eauto using validity_ty_ty.
@@ -1649,11 +1648,12 @@ Lemma eqtrans_homo_to_hetero Γ' l t u A :
 Proof.
   intros.
   destruct H as (t' & u' & A' & e & h).
-  destruct l. 2:admit.
-  eexists _, _, _, _, _.
-  intuition eauto.
-  destruct h. eauto.
-Admitted. 
+  destruct l.
+  - eexists _, _, _, _, _.
+    split; [|eassumption]. now destruct h.
+  - eexists _, _, _, _, _.
+    split; eauto.
+Qed.
 
 Corollary eqtrans_homo_hetero  Γ' l t u A :
   Γ' ⊨⟨ l ⟩ t = u : A <-> Γ' ⊨⟨ l ⟩ t ≃ u : A.
@@ -3041,62 +3041,6 @@ Proof.
   - admit.
 Admitted.
 
-Scheme typing_mut' := Induction for typing Sort Prop
-with conversion_mut' := Induction for conversion Sort Prop
-with ctx_typing_mut' := Induction for ctx_typing Sort Prop.
-Combined Scheme typing_mutind' from typing_mut', conversion_mut', ctx_typing_mut'.
-
-Fixpoint incl t :=
-    match t with
-    | var i => var i
-    | assm c => assm c
-    | lam i j A B t => lam i j (incl A) (incl B) (incl t)
-    | app i j A B t u => app i j (incl A) (incl B) (incl t) (incl u)
-    | Pi i j A B => Pi i j (incl A) (incl B)
-    | zero => zero
-    | succ t => succ (incl t)
-    | rec l P pzero psucc t =>
-        rec l (incl P) (incl pzero) (incl psucc) (incl t)
-    | Nat => Nat
-    | accel i l A R P p a r => accel i l (incl A) (incl R) (incl P) (incl p) (incl a) (incl r)
-    | Sort i => Sort i
-    | acc l A R a => acc l (incl A) (incl R) (incl a)
-    | accin l A R a p => accin l (incl A) (incl R) (incl a) (incl p)
-    | accinv l A R a p b r => accinv l (incl A) (incl R) (incl a) (incl p) (incl b) (incl r)
-    | obseq l A a b => obseq l (incl A) (incl a) (incl b)
-    | obsrefl l A a => obsrefl l (incl A) (incl a)
-    | J l A a P p b e => J l (incl A) (incl a) (incl P) (incl p) (incl b) (incl e)
-    | injpi1 i j A1 A2 B1 B2 e => injpi1 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e)
-    | injpi2 i j A1 A2 B1 B2 e a => injpi2 i j (incl A1) (incl A2) (incl B1) (incl B2) (incl e) (incl a)
-    | cast i A B e t => cast i (incl A) (incl B) (incl e) (incl t)
-    | accelcomp l l' A R P p a q => 
-      obsrefl l' ((incl P) <[(incl a) ..]) (accel l l' (incl A) (incl R) (incl P) (incl p) (incl a) (incl q)) 
-    end.
-    
-    
-Fixpoint incl_ctx Γ : ctx :=
-  match Γ with
-  | nil => nil
-  | cons (l , A) Γ => cons (l, incl A) (incl_ctx Γ)
-  end.
-
-Lemma incl_typing :  
-  (∀ Γ l t A,
-    Γ ⊢< l > t : A → incl_ctx Γ ⊢< l >× incl t : incl A)
-  /\
-  (∀ Γ l u v A,
-    Γ ⊢< l > u ≡ v : A → incl_ctx Γ ⊢< l >× incl u ≡ incl v : incl A)
-  /\
-  (∀ Γ,
-    ⊢ Γ -> Typing.ctx_typing (incl_ctx Γ)).
-Proof.
-  (* apply typing_mutind'; eauto using Typing.typing, Typing.conversion, Typing.ctx_typing. *)
-Admitted.
-
-Lemma dterm_incl A : dterm A -> incl A = A.
-  induction 1; cbn; try reflexivity; f_equal; eauto.
-Qed.
-
 Lemma conservativity_ty A A0 :
   A ⊏ A0 ->
   ∙ ⊢< Ax prop > A : Sort prop -> 
@@ -3118,33 +3062,20 @@ Proof.
   eexists; eauto.
 Qed.
 
-Lemma dterm_typing Γ l t A :  Γ ⊢< l >× t : A  -> dterm t.
-Proof. 
-  induction 1; try econstructor; eauto.
-Qed. 
-
 Lemma conservativity e P :
   ∙ ⊢< ty 0 > P : Sort prop  ->
   ∙ ⊢< prop >× e : P ->
   exists e', ∙ ⊢< prop > e' : P.
 Proof.
   intros Hty HP.
-  assert (HdP : dterm P).
-  { eapply BasicMetaTheory.validity_ty_ty in HP. eapply dterm_typing; eauto. }
   eapply typing_conversion_trans in HP.
   2: repeat econstructor.
   destruct HP as [P' [e' [HP [Hincl Hincl']]]].
   assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
   destruct (conservativity_ty _ _ Hincl' Hty HP') as [eqp Heq].
   eexists (cast _ P' P eqp e').
-  eapply type_cast; eauto. 
+  eapply type_cast; eauto.
 Qed.  
-
-Lemma incl_nat k : incl (mk_Nat k) = mk_Nat k.
-Proof.
-  induction k; simpl; [reflexivity|].
-  now rewrite IHk.
-Qed. 
 
 Lemma type_mk_Nat k : ∙ ⊢< ty 0 > mk_Nat k : Nat.
 Proof.
@@ -3153,30 +3084,20 @@ Proof.
   - eapply type_succ; eauto. 
 Qed. 
 
-Lemma dterm_mk_Nat k : dterm (mk_Nat k).
-Proof.
-  induction k; econstructor; eauto. 
-Qed.
-
 Lemma prop_canonicity n : 
   ∙ ⊢< ty 0 > n : Nat ->
   ∙ ⊢< ty 0 >× n : Nat ->
   exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
 Proof.
   intros H H'.
-  eapply incl_typing in H as temp.
-  simpl in temp. eapply canonicity_conv in temp.
-  destruct temp as [k temp]. exists k.  
-  eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat (incl n) (mk_Nat k)) as Hcan.
+  eapply canonicity_conv in H'.
+  destruct H' as [k H']. exists k.  
+  eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat n (mk_Nat k)) as Hcan.
   1:eapply Typing.type_conv.
   1:eapply Typing.type_obsrefl.
   3:econstructor.
   5:eauto.
   all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
-  clear temp.
-  assert (incl n = n) as incl_eq.
-  { eapply dterm_typing in H'. now eapply dterm_incl. }
-  rewrite incl_eq in Hcan.  
   eapply conservativity in Hcan; eauto.
   eapply type_obseq; eauto.
   1: eapply type_nat; econstructor.
