@@ -3093,17 +3093,9 @@ Proof.
   (* apply typing_mutind'; eauto using Typing.typing, Typing.conversion, Typing.ctx_typing. *)
 Admitted.
 
-Lemma obseq_sym Γ e l A a b: 
-  Γ ⊢< prop > e : obseq l A a b ->
-  exists e', Γ ⊢< prop > e' : obseq l A b a.
-Admitted. 
-
 Lemma dterm_incl A : dterm A -> incl A = A.
   induction 1; cbn; try reflexivity; f_equal; eauto.
 Qed.
-
-Lemma subst_closed  σ l t A : ∙ ⊢< l > t : A -> σ ⋅ t = t.
-Admitted. 
 
 Lemma conservativity_ty A A0 :
   A ⊏ A0 ->
@@ -3115,12 +3107,15 @@ Proof.
   unshelve epose proof (H := sim_heq 0 ∙ ∙ A A0 (Sort prop) (Sort prop) _ _ Hty Hty0).
   1: econstructor.
   1: now eapply dec_to_sim. 
-  assert (renL ⋅ A = A) by (eapply subst_closed; eauto).
-  assert (renR ⋅ A0 = A0) by (eapply subst_closed; eauto).
+  assert (renL ⋅ A = A). 
+  { apply closed_ren. eapply typing_closed; eauto. }
+  assert (renR ⋅ A0 = A0).
+  { apply closed_ren. eapply typing_closed; eauto. }
   destruct H as [e H].
   rewrite H0, H1 in H. cbn in H.
   eapply type_hetero_to_homo in H; eauto.
-  eapply obseq_sym in H. destruct H; eexists; eauto.
+  eapply type_obseq_sym in H.
+  eexists; eauto.
 Qed.
 
 Lemma dterm_typing Γ l t A :  Γ ⊢< l >× t : A  -> dterm t.
