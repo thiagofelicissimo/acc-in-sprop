@@ -779,6 +779,16 @@ Proof.
   apply dec_subst_one. assumption.
 Qed.
 
+Lemma substs_decs_two u v a b c d :
+  u ⊏ v →
+  a ⊏ b →
+  c ⊏ d →
+  u <[ a .: c .. ] ⊏ v <[ b .: d .. ].
+Proof.
+  intros.
+  apply substs_decs. 2: auto.
+  eauto using dec_subst_scons, dec_subst_one.
+Qed.
 (* Fundamental lemma
 
   We're going to prove a more general statement with cast substitutions, but
@@ -1764,6 +1774,7 @@ Proof.
   assumption.
 Qed.
 
+
 Lemma change_type Γ' i t A A' :
   Γ' ⊨⟨ i ⟩ t : A →
   Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
@@ -2623,7 +2634,7 @@ Proof.
   - intros * ??? hc. admit.
 
   - admit.
-  - admit.
+  - intros. admit.
   - intros. admit.
   - admit.
   - admit.
@@ -2639,9 +2650,106 @@ Proof.
   - admit.
   - admit.
   - admit.
-  - admit.
-  - admit.
-  - admit.
+  - intros * ? ihP ? ihz ? ihs ?  hc.
+    eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
+    2:{ eapply tr_Nat. eassumption. }
+    specialize ihP with (1 := hcn).
+    eapply keep_sort in ihP. destruct ihP as (P' & ihP).
+    specialize ihz with (1 := hc).
+    eapply change_type in ihz.
+    2:{ eapply tr_substitution_one_sort. all: eauto using tr_zero_full. }
+    destruct ihz as (?z' & ihz).
+    eapply tr_ctx_cons in hcn as hcns. 2: eassumption.
+    specialize ihs with (1 := hcns).
+    eapply change_type in ihs.
+    2:{
+      eapply tr_substitution_sort. 1,2: eassumption.
+      eapply autosubst_simpl_tr_subst_data. 1: exact _. 1: repeat constructor.
+      eapply tr_subst_scons with (A := Nat).
+      2:{
+        cbn. eapply tr_succ_full.
+        eapply tr_var_known. 3: eassumption.
+        - eapply BasicMetaTheory.varty_meta.
+          { repeat econstructor. }
+          reflexivity.
+        - eapply varty_meta.
+          { repeat econstructor. }
+          reflexivity.
+      }
+      eapply tr_subst_ren. 1: eassumption.
+      eapply WellRen_comp. all: eapply WellRen_S.
+    }
+    destruct ihs as (?s' & ihs).
+    destruct
+      ihP as (? & ? & _),
+      ihz as (? & ? & _),
+      ihs as (? & ? & _).
+    destruct l; eexists _,_,_,_,_. 
+    + econstructor. 2:econstructor. 3:econstructor. 4:econstructor. 5:econstructor. 6:econstructor.
+      3:econstructor. all:eauto. 3:econstructor.
+      3:econstructor; eauto using typing, validity_ty_ctx.
+      1,2:eapply substs_decs_one; eauto using decoration.
+      eapply type_conv.
+      1:eapply type_heq_refl.
+      3:eapply conv_heq.
+      3,4,6:eapply conv_refl.
+      6:eapply conv_sym, conv_rec_zero; eauto.
+      all:eauto.
+      all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
+    + econstructor. Unshelve. all:exact Nat.  
+  - intros * ? ihP ? ihz ? ihs ? iht ? hc.
+    eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
+    2:{ eapply tr_Nat. eassumption. }
+    specialize ihP with (1 := hcn).
+    eapply keep_sort in ihP. destruct ihP as (P' & ihP).
+    specialize ihz with (1 := hc).
+    eapply change_type in ihz.
+    2:{ eapply tr_substitution_one_sort. all: eauto using tr_zero_full. }
+    destruct ihz as (?z' & ihz).
+    eapply tr_ctx_cons in hcn as hcns. 2: eassumption.
+    specialize ihs with (1 := hcns).
+    eapply change_type in ihs.
+    2:{
+      eapply tr_substitution_sort. 1,2: eassumption.
+      eapply autosubst_simpl_tr_subst_data. 1: exact _. 1: repeat constructor.
+      eapply tr_subst_scons with (A := Nat).
+      2:{
+        cbn. eapply tr_succ_full.
+        eapply tr_var_known. 3: eassumption.
+        - eapply BasicMetaTheory.varty_meta.
+          { repeat econstructor. }
+          reflexivity.
+        - eapply varty_meta.
+          { repeat econstructor. }
+          reflexivity.
+      }
+      eapply tr_subst_ren. 1: eassumption.
+      eapply WellRen_comp. all: eapply WellRen_S.
+    }
+    destruct ihs as (?s' & ihs).
+    specialize iht with (1 := hc).
+    eapply change_type in iht. 2:{ eapply tr_Nat. eassumption. }
+    destruct iht as (?t' & iht).
+    destruct
+      ihP as (? & ? & _),
+      ihz as (? & ? & _),
+      ihs as (? & ? & _),
+      iht as (? & ? & _).
+    assert (Γ' ⊢< l > rec l P' z' s' (succ t') ≡ s' <[ rec l P' z' s' t' .: t'..] : P' <[ (succ t')..]) by eauto using conversion.
+    destruct l; eexists _,_,_,_,_. 
+    + econstructor. 2:econstructor. 3:econstructor. 4:econstructor. 5:econstructor. 6:econstructor.
+      3:econstructor. 1,2:eapply substs_decs_one.
+      1-8:eauto. 1-3:econstructor; eauto.
+      1:eapply substs_decs_two. 2:econstructor. all:eauto.
+      1,2:eauto using validity_conv_left, validity_conv_right.
+      eapply type_conv.
+      1:eapply type_heq_refl.
+      3:eapply conv_heq.
+      3,4,6:eapply conv_refl.
+      all: eauto using validity_conv_left, validity_conv_right, conv_sym.
+      all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
+    + econstructor. Unshelve. all:exact Nat.
+  - intros. admit.
   - admit.
   - admit.
 Admitted.
