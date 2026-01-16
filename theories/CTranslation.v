@@ -1894,7 +1894,27 @@ Proof.
   - admit.
   - admit.
   - admit.
-  - admit.
+  - intros. 
+    assert (⊢ Γ') by (destruct H4; eauto).
+
+    eapply tr_ctx_cons with (i := ty 0) in H4 as hcn.
+    2:{ eapply tr_Nat. eassumption. }
+
+    assert (exists e, Γ' ⊢< prop > e : heq (Ax (ty 0)) (Sort (ty 0)) (Sort (ty 0)) Nat Nat).
+    1:{ eexists. eapply type_heq_refl; eauto using typing. }
+    destruct H6.
+        
+
+    eapply H0 in hcn as h0.
+    eapply ty_conv_cons_get_sort in h0.
+    6:eapply H6.
+    all:eauto using typing, decoration.
+    destruct h0 as (P_ & P'_ & k). intuition eauto.
+    destruct H12.
+
+    admit.
+
+
   - admit.
   - intros. admit.
   - admit.
