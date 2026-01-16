@@ -2913,7 +2913,34 @@ Proof.
     
 
 
-  - intros. admit.
+  - intros. eapply eqtrans_hetero_to_homo.
+    assert (⊢ Γ') by (destruct H3; eauto).
+    eapply H0 in H3 as h0. eapply tr_conv_change_ty' in h0.
+    2:econstructor.
+    2:eauto using typing.
+    eapply ty_conv_homo_destruct in h0 as (A0 & A'0 & e' & h1 & h2 & h3).
+
+    assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
+    1:eapply tr_ctx_cons. 1,2:eauto.
+
+    eapply H1 in H5 as h1'. eapply tr_conv_change_ty' in h1'.
+    2:econstructor.
+    2:eauto using typing, ctx_typing;admit.
+    eapply ty_conv_homo_destruct in h1' as (B0 & B'0 & e'' & k1 & k2 & k3).
+
+    eapply H2 in H5 as h2'. eapply eqtrans_homo_to_hetero , tr_conv_change_ty in h2'.
+    4:eapply type_hetero_to_homo; eauto.
+    all:eauto.
+    2-5:admit. 
+    destruct h2' as (_t0 & _t'0 & e & h).
+    destruct j. 2:admit. 
+    destruct h as (l1 & l2 & l3 & l4 & l5 & l6).
+    (* exists (Pi i j A0 B0). exists (Pi i j A'0 B'0).
+    exists (Sort (Ru i j)). exists (Sort (Ru i j)).
+    eexists.
+    split.
+    2:split. 3:split. 4:split. 5:split. 6:split. *)
+    admit.intros. admit.
   - admit.
   - admit.
   - admit.
