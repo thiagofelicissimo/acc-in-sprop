@@ -1291,3 +1291,117 @@ Proof.
   rasimpl in H2.
   eauto.
 Qed.
+
+
+Lemma assoc (f : nat -> nat) (g : nat -> term) (h : term -> term) :
+  pointwise_relation _ eq (f >> (g >> h)) ((f >> g) >> h).
+Proof.
+  unfold pointwise_relation. unfold ">>". reflexivity.
+Qed.
+
+Lemma ctx_extend_Wt Γ l A1 A2 :
+  Γ ⊢< Ax l > A1 : Sort l ->
+  Γ ⊢< Ax l > A2 : Sort l ->
+  ⊢ Γ -> 
+  let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  ⊢ Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq).
+Proof.
+  intros. econstructor.
+  1:econstructor.
+  1:econstructor.
+  all:eauto.
+  1:eapply type_ren; eauto using WellRen_S, ctx_typing.
+  unfold Aeq. eapply type_heq.
+  1,2:eapply type_ren; eauto using WellRen_weak, WellRen_S, ctx_typing, type_ren.
+  all:econstructor; eauto using WellRen_weak, WellRen_S, ctx_typing, type_ren.
+  all:eapply varty_meta.
+  1,3:econstructor. 1:econstructor.
+  all:rasimpl;reflexivity.
+Qed.
+
+Lemma pack_refl_cons_Wt l A1 A2 Γ : 
+  Γ ⊢< Ax l > A1 : Sort l ->
+  Γ ⊢< Ax l > A2 : Sort l ->
+  ⊢ Γ -> 
+  let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢s (var 0 .: ((var 1) .: ((var 2) .: (pack_refl Γ >> ren_term (S >> S >> S))))) : pack (Γ ,, (l, A1)) (Γ ,, (l, A2)).
+Proof.
+  intros.
+  simpl. econstructor. 1:econstructor. 1:econstructor. 
+  all:ssimpl;rasimpl.
+  1:eapply WellSubst_weak_three. 1:eapply pack_refl_Wt; eauto.
+  1:eapply ctx_extend_Wt; eauto.
+  1:{ setoid_rewrite assoc; setoid_rewrite comp_refl_renL.
+      rasimpl. econstructor.   1:eapply ctx_extend_Wt; eauto.
+      eapply varty_meta.
+      1:econstructor. 1:econstructor. 1:econstructor.
+      rasimpl; reflexivity. }
+  1:{ setoid_rewrite assoc; setoid_rewrite comp_refl_renR.
+      rasimpl. econstructor.   1:eapply ctx_extend_Wt; eauto.
+      eapply varty_meta.
+      1:econstructor. 1:econstructor.
+      rasimpl; reflexivity. }
+  rewrite heq_subst. ssimpl.
+  setoid_rewrite assoc.
+  setoid_rewrite comp_refl_renL.
+  setoid_rewrite comp_refl_renR.
+  ssimpl.
+  econstructor.   1:eapply ctx_extend_Wt; eauto.
+  eapply varty_meta.
+  1:econstructor. unfold Aeq;rewrite heq_ren ;rasimpl;reflexivity.
+Qed.
+
+
+Lemma renL_jump (a b c : term) σ :
+  pointwise_relation nat eq (renL >> (a .: (b .: (c .: σ)))) (c .: (renL >> σ)).
+Proof.
+  unfold pointwise_relation. intros.
+  destruct a0.
+  1:unfold ">>";simpl;reflexivity.
+  unfold ">>". simpl. unfold renL.
+  f_equal. lia.
+Qed.
+
+Lemma renR_jump (a b c : term) σ :
+  pointwise_relation nat eq (renR >> (a .: (b .: (c .: σ)))) (b .: (renR >> σ)).
+Proof.
+  unfold pointwise_relation. intros.
+  destruct a0.
+  1:unfold ">>";simpl;reflexivity.
+  unfold ">>". simpl. 
+  replace ((a0 + S (a0 + S (a0 + 0)))) with (S a0 + (a0 + S (a0 + 0))) by lia. simpl. 
+  unfold renR.
+  f_equal. lia.
+Qed.
+
+
+Corollary sim_heq_same_ctx_cons i l Γ t1 t2 B1 B2 A1 A2 :
+  t1 ~ t2 →
+  Γ ,, (l, A1) ⊢< ty i > t1 : B1 →
+  Γ ,, (l, A2) ⊢< ty i > t2 : B2 →
+  let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  ∃ e, Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢< prop > 
+    e : heq (ty i) ((S >> S) ⋅ B1) ((up_ren S >> S) ⋅ B2) ((S >> S) ⋅ t1) ((up_ren S >> S) ⋅ t2).
+Proof.
+  intros. edestruct sim_heq.
+  3:eapply H0. 3:eapply H1. 2:eapply H. 1:eauto using ctx_compat, compat_refl.
+
+  eapply validity_ty_ctx in H0 as h0. dependent destruction h0.
+  eapply validity_ty_ctx in H1 as h1. dependent destruction h1. clear h0 h1.
+  eapply subst_ty in H2.
+  3:eapply pack_refl_cons_Wt; eauto using validity_ty_ctx.
+  2:eapply ctx_extend_Wt; eauto using validity_ty_ctx.
+  2:reflexivity.
+  rewrite heq_subst in H2. rasimpl in H2. 
+  setoid_rewrite renL_jump in H2.
+  setoid_rewrite assoc in H2. setoid_rewrite comp_refl_renL in H2.
+  setoid_rewrite renR_jump in H2.
+  setoid_rewrite assoc in H2. setoid_rewrite comp_refl_renR in H2.
+  asimpl in H2.
+  eexists. eapply meta_conv.
+  1:eapply H2.
+  1:f_equal; rasimpl.
+  all:substify.
+  all:eapply subst_term_morphism; eauto.
+  all:unfold pointwise_relation; intros; destruct a; simpl; eauto.
+Qed.

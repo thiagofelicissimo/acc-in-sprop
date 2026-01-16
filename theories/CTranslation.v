@@ -312,6 +312,229 @@ Proof.
 Admitted.
 
 
+
+
+
+Lemma decombine_subst2 Γ i A1 A2 e :
+  Γ ⊢< Ax i > A1 : Sort i ->
+  Γ ⊢< Ax i > A2 : Sort i ->
+  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A2 A1 ->
+  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in    
+  exists e',
+  Γ ,, (i, A2) ⊢s (e' .: ((var 0) .: ((cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ e) (var 0)) .: (S >> var)))) : Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq).
+Proof.
+  intros.
+  eapply decombine_subst_aux in H1 as h1; eauto.
+  eexists. 
+  econstructor. 1:econstructor.
+  2,3:unfold ">>"; simpl; rasimpl.
+  2:econstructor. 3:econstructor. 2:eauto using validity_ty_ctx, ctx_typing.
+  2:unfold Aeq. 2:rewrite heq_subst. 2:rasimpl.
+  2:eapply type_heq_sym; eauto.
+  2:econstructor. 3:econstructor. 2:eauto using validity_ty_ctx, ctx_typing.
+  2:eapply type_heq_cast; eauto using type_ren, ctx_typing, WellRen_S, validity_ty_ctx.
+  2:econstructor. 3:econstructor. 2:eauto using validity_ty_ctx, ctx_typing.
+  ssimpl.
+  econstructor. 
+  2:ssimpl. 2:renamify; eauto.
+  eapply WellSubst_morphism.
+  4:eapply WellSubst_weak.
+  4:eapply subst_id.
+  3:{ unfold pointwise_relation. intros.
+      destruct a; unfold ">>". 1:simpl;reflexivity.
+      simpl. reflexivity. }
+  all:eauto using validity_ty_ctx.
+Qed. 
+
+Lemma renproj1 Γ A1 A2 Aeq i : 
+  Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq) ⊢r (S >> S) : Γ ,, (i, A1).
+Proof.
+  eauto using WellRen_weak, WellRen_S.
+Qed.
+
+Lemma renproj2 Γ A1 A2 Aeq i : 
+  Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq) ⊢r (up_ren S >> S) : Γ ,, (i, A2).
+Proof.
+  eapply WellRen_weak.
+  eapply WellRen_up.
+  all:eauto using WellRen_S.
+Qed.
+
+(* Lemma separate_eq Γ' l i A1 A2 
+  let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
+  Γ' ,, (i, A1') ⊢< Ax l > B1' : Sort l ->
+  Γ' ,, (i, A2') ⊢< Ax l > B2' : Sort l ->
+  Γ' ,, (i, A1') ⊢< prop > heq i B1' B1' t' u' ->
+  Γ' ⊢< prop > e : obseq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e : heq (Ax l) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
+  Γ' ,, (i, A1') ,, (i, A2') ,,  *)
+
+Lemma ty_conv_cons_get Γ' l i A1 A2 A1' A2' B1 B2 B1' B2' t u  e e_ :
+  A1 ⊏ A1' ->
+  B1 ⊏ B1' ->
+  A2 ⊏ A2' ->
+  B2 ⊏ B2' ->
+  let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
+  Γ' ,, (i, A1') ⊢< Ax l > B1' : Sort l ->
+  Γ' ,, (i, A2') ⊢< Ax l > B2' : Sort l ->
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e : heq (Ax l) (Sort l) (Sort l) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
+  Γ' ⊢< prop > e_ : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ,, (i, A1') ⊨⟨ l ⟩ t = u : B1 ->
+  exists t' u',
+    t ⊏ t' /\
+    u ⊏ u' /\
+    Γ' ,, (i, A1') ⊢< l > t' : B1' /\
+    Γ' ,, (i, A2') ⊢< l > u' : B2' /\
+    exists e',
+      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e' : heq l ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2')  
+        ((S >> S) ⋅ t') ((up_ren S >> S) ⋅ u').
+Proof.
+  intros.
+  assert (exists e_, Γ' ⊢< prop > e_ : obseq (Ax i) (Sort i) A1' A2') as K by admit.   destruct K as (K1 & K2).
+  assert (Γ' ⊢< Ax i > A1' : Sort i) as A1'_Wt. 1:eapply validity_ty_ctx in H3; dependent destruction H3; eauto.
+  assert (Γ' ⊢< Ax i > A2' : Sort i) as A2'_Wt. 1:eapply validity_ty_ctx in H4; dependent destruction H4; eauto.
+  destruct H7 as (t' & u' & B1'' & e__ & h).
+  destruct l. 2:admit.
+  repeat destruct h as (? & h).
+  assert (B1'' ~ B1') by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H12; eauto using validity_ty_ty.
+  destruct H12.
+  eapply type_hetero_to_homo in H12; eauto using validity_ty_ty.
+  pose proof H10 as h10'.
+  eapply type_cast in H10. 4:eapply H12. all:eauto using validity_ty_ty.
+  rename H10 into t_final.
+  eapply type_heq_cast in h10'. 4:eapply H12. all:eauto using validity_ty_ty.
+  rename h10' into t_final_eq.
+  eapply subst_ty in H11 as H11'.
+  3:eapply cast_subst. 5:eapply type_obseq_sym, K2.
+  all:eauto using ctx_typing, validity_ty_ctx.
+  rename H11' into u_intermediate.
+  assert (u' ~ u' <[ cast i (S ⋅ A2') (S ⋅ A1') (S ⋅ obseq_sym (ty (ax i)) (Sort i) A1' A2' K1) (var 0) .: S >> var]) as k_
+  by eauto 10 using dec_to_sim, cast_subst_refines, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx_cons in k_.
+  2:eapply H11. 2:eauto.  
+  eapply type_obseq_sym in K2 as k2'.
+  eapply decombine_subst2 in k2'; eauto. destruct k2'.
+  pose proof H5 as H5'.
+  eapply subst_ty in H5.
+  3:eapply H10.
+  all:eauto using ctx_typing, validity_ty_ctx.
+  rewrite heq_subst in H5. rasimpl in H5.
+  setoid_rewrite subst_id_reduce1 in H5. rasimpl in H5.
+  assert (Γ',,(i,A2') ⊢< Ax (ty n) > B1' <[ cast i (S ⋅ A2') (S ⋅ A1') (S ⋅ obseq_sym (ty (ax i)) (Sort i) A1' A2' K1) (var 0) .: S >> var] : Sort (ty n)).
+  1:{ dependent destruction H10. dependent destruction H10.
+      asimpl in H10.
+      eapply subst_ty. 3:eauto. 2: eauto.
+      all:eauto using ctx_typing, validity_ty_ctx. }
+  assert (B1' <[ cast i (S ⋅ A2') (S ⋅ A1') (S ⋅ obseq_sym (ty (ax i)) (Sort i) A1' A2' K1) (var 0) .: S >> var]
+    ~ B1'' <[ cast i (S ⋅ A2') (S ⋅ A1') (S ⋅ obseq_sym (ty (ax i)) (Sort i) A1' A2' K1) (var 0) .: S >> var])
+    by eauto 10 using dec_to_sim, cast_subst_refines, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H14;eauto using validity_ty_ty.
+  destruct H14.
+  eapply type_heq_sym in H14;eauto using validity_ty_ty.
+  eapply type_heq_trans in H5. 5:eapply H14.
+  all:eauto using validity_ty_ty.
+  eapply type_hetero_to_homo in H5; eauto using validity_ty_ty.
+  assert (exists e_, Γ',, (i, A2') ⊢< prop > e_ 
+      : obseq (ty (ax (ty n))) (Sort (ty n)) 
+      (B1'' <[ cast i (S ⋅ A2') (S ⋅ A1') (S ⋅ obseq_sym (ty (ax i)) (Sort i) A1' A2' K1) (var 0) .: S >> var]) B2') by eauto.
+  clear H5 H14.
+  destruct H15.
+  eapply type_cast in u_intermediate as u_final.
+  4:eapply H5. all:eauto using validity_ty_ty.
+  eapply type_heq_cast in u_intermediate as u_final_eq.
+  4:eapply H5. all:eauto using validity_ty_ty.
+  eexists. eexists. split. 2:split. 3:split. 4:split.
+  3:eapply t_final. 3:eapply u_final.
+  1,2:econstructor; eauto using cast_subst_refines.
+  eapply type_ren in t_final_eq. 3:eapply renproj1.
+  3:reflexivity. 
+  all:eauto using validity_ty_ctx.
+  eapply type_ren in u_final_eq. 3:eapply renproj2.
+  3:reflexivity. 
+  all:eauto using validity_ty_ctx.
+  rewrite heq_ren in t_final_eq, u_final_eq.
+  destruct k_.
+  eapply type_ren in h as h'. 3:eapply renproj1.
+  3:reflexivity. 
+  all:eauto using validity_ty_ctx.
+  rename h' into t'_eq_u'.
+  rewrite heq_ren in t'_eq_u'.
+  rename H14 into u'_eq_ui'.
+  eapply type_heq_trans in u_final_eq. 5:eapply u'_eq_ui'.
+  2-4:admit.
+  eapply type_heq_trans in u_final_eq. 5:eapply t'_eq_u'.
+  2-4:admit.
+  eapply type_heq_sym in t_final_eq. 2,3:admit.
+  eapply type_heq_trans in u_final_eq. 5:eapply t_final_eq.
+  2-4:admit.
+  eexists. eauto.
+Admitted.
+
+
+Lemma ty_conv_cons_get_sort Γ' l i A1 A2 A1' A2'  t u  e :
+  A1 ⊏ A1' ->
+  A2 ⊏ A2' ->
+  let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
+  Γ' ⊢< Ax i > A1' : Sort i ->
+  Γ' ⊢< Ax i > A2' : Sort i ->
+  Γ' ⊢< prop > e : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ,, (i, A1') ⊨⟨ Ax l ⟩ t = u : Sort l ->
+  exists t' u',
+    t ⊏ t' /\
+    u ⊏ u' /\
+    Γ' ,, (i, A1') ⊢< Ax l > t' : Sort l /\
+    Γ' ,, (i, A2') ⊢< Ax l > u' : Sort l /\
+    exists e',
+      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e' : heq (Ax l) (Sort l) (Sort l) ((S >> S) ⋅ t') ((up_ren S >> S) ⋅ u').
+Proof.
+  intros.
+  eapply ty_conv_cons_get; eauto.
+  1,2:econstructor.
+  1,2:econstructor; eauto using ctx_typing, validity_ty_ctx.
+  rasimpl. eapply type_heq_refl.
+  all:econstructor; eapply ctx_extend_Wt; eauto using validity_ty_ctx.
+Qed.
+(* 
+Lemma tr_conv_change_ty'' Γ' l t u A A' :
+
+  Γ' ,, (i, A1') ⊢< Ax i > B1' : Sort l ->
+  Γ' ,, (i, A2') ⊢< Ax i > B2' : Sort l ->
+  Γ' ⊢< prop > e : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ,, (i, A1') ⊨⟨ l ⟩ t = u : B1 ->
+  exists t' u' e,
+    Γ' ,, (i, A1') ⊨⟨ l ⟩ t : B1 ↦ t' : B1' /\
+    Γ' ,, (i, A2') ⊨⟨ l ⟩ u : B2 ↦ u' : B2' /\
+  Γ' ,, (i, A1') ⊨⟨ l ⟩ t : B1 ↦ t' : B1' /\
+
+  Γ' ,, (i, B') ⊢< Ax l > A' : Sort l ->
+  Γ' ⊨⟨ l ⟩ t = u : A ↦ A'.
+Proof.
+  intros.
+  destruct H0 as (t' & u' &  A0' & e & h').
+  destruct l. 2:admit.
+  destruct h' as (h1 & h2 & h3 & h4 & h5 & h6).
+  assert (A' ~ A0') by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H0; eauto using validity_ty_ty.
+  destruct H0.
+  eapply type_heq_sym in H0; eauto using validity_ty_ty.
+  eapply type_hetero_to_homo in H0; eauto using validity_ty_ty.
+  eapply type_cast in h4 as h4'; eauto using validity_ty_ty.
+  eapply type_cast in h5 as h5'; eauto using validity_ty_ty.
+  eapply type_heq_cast in h4 as h4''; eauto using validity_ty_ty.
+  eapply type_heq_cast in h5 as h5''; eauto using validity_ty_ty.
+  eapply type_heq_trans in h5''. 5:eauto.
+  all:eauto. 
+  eapply type_heq_sym in h4''; eauto using validity_ty_ty.
+  eapply type_heq_trans in h5''. 5:eauto. all:eauto using validity_ty_ty.
+  eexists _, _, _.
+  split. 2:split. 3:split. 4:split. 5:split.
+  6:eapply h5''.
+  all:eauto using decoration.
+Admitted. *)
+
+
+
 Lemma ty_conv_homo_destruct Γ l t u A A' : 
   Γ ⊨⟨ l ⟩ t = u : A ↦ A' ->
   exists t' u' e,
@@ -1567,7 +1790,11 @@ Proof.
     assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
     1:eapply tr_ctx_cons. 1,2:eauto.
 
-    eapply H1 in H4 as h1'. eapply tr_conv_change_ty' in h1'.
+    eapply H1 in H4 as h1'. 
+    
+    
+    (* eapply ty_conv_cons_get_sort in h1'. *)
+    eapply tr_conv_change_ty' in h1'.
     2:econstructor.
     2:eauto using typing, ctx_typing;admit.
     eapply ty_conv_homo_destruct in h1' as (B0 & B'0 & e'' & k1 & k2 & k3). 
