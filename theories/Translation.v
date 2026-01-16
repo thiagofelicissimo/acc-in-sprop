@@ -1842,6 +1842,92 @@ Proof.
   all:eauto.
 Admitted.
 
+
+Notation "D ⊨⟨ l ⟩ t : A ≃ u : B" := (* heterogeneous A *)
+  (exists t' u' A' B' e, B ⊏ B' /\ eqtrans D l t u A t' A' u' B' e)
+  (at level 50, t, A, u, B at next level).
+
+Lemma tr_eq_make_hetero Γ' e l A A' B B' t u :
+  Γ' ⊢< Ax l > A' : Sort l ->
+  Γ' ⊢< Ax l > B' : Sort l ->
+  Γ' ⊢< prop > e : heq (Ax l) (Sort l) (Sort l) A' B' -> 
+  A ⊏ A' ->
+  B ⊏ B' ->
+  Γ' ⊨⟨ l ⟩ t : A ≃ u : B ->
+  Γ' ⊨⟨ l ⟩ t = u : A.
+Proof.
+  intros.
+  rewrite eqtrans_homo_hetero.
+  destruct l. 2:admit.
+  destruct H4 as (t' & u' & A_ & A__ & e' & H4).
+  (* eapply validity_ty_ty in H as H'. eapply type_inv in H'. dependent destruction H'. *)
+  repeat destruct H4 as (? & H4).
+  assert (B' ~ A__) by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H11; eauto using validity_ty_ty. destruct H11.
+  eapply type_heq_trans in H11. 5:eauto. all:eauto using validity_ty_ty.
+  eapply type_hetero_to_homo in H11; eauto using validity_ty_ty.
+  eapply type_obseq_sym in H11.
+  eapply type_heq_cast in H10 as H10'. 4:eapply H11. all: eauto using validity_ty_ty.
+  eapply type_heq_trans in H10'. 5:eauto. all:eauto. 2:econstructor;eauto using validity_ty_ty.
+  eexists _,_,_,_,_. split. 2:unfold eqtrans. 
+  2:split. 3:split. 4:split. 5:split. 6:split. 
+  7:eapply H10'.
+  all:eauto.
+  1:econstructor; eauto.
+  econstructor; eauto using validity_ty_ty.
+Admitted.
+
+
+Lemma tr_eq_conclude Γ' e l A A' B B' t t' u u' :
+  t ⊏ t' ->
+  u ⊏ u' ->
+  A ⊏ A' ->
+  B ⊏ B' ->
+  Γ' ⊢< l > t' : A' ->
+  Γ' ⊢< l > u' : B' ->
+  Γ' ⊢< prop > e : heq l A' B' t' u' ->
+  Γ' ⊨⟨ l ⟩ t = u : A.
+Proof.
+  intros. 
+  destruct l. 2:admit.
+  assert (exists e', Γ' ⊢< prop > e' : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A' B') by admit.
+  destruct H6.
+  eapply tr_eq_make_hetero in H6; eauto using validity_ty_ty.
+  eexists _,_,_,_,_. split.
+  2:split. 3:split. 4:split. 5:split. 6:split.
+  7:eapply H5. all:eauto.
+Admitted.
+
+
+Lemma aaux_old Γ' e l A A' B B' t u :
+  Γ' ⊢< Ax l > A' : Sort l ->
+  Γ' ⊢< Ax l > B' : Sort l ->
+  Γ' ⊢< prop > e : heq (Ax l) (Sort l) (Sort l) A' B' -> 
+  A ⊏ A' ->
+  B ⊏ B' ->
+  Γ' ⊨⟨ l ⟩ t ≃ u : A ->
+  Γ' ⊨⟨ l ⟩ t : A ≃ u : B.
+Proof.
+  intros.
+  destruct l. 2:admit.
+  destruct H4 as (t' & u' & A_ & A__ & e' & H4).
+  (* eapply validity_ty_ty in H as H'. eapply type_inv in H'. dependent destruction H'. *)
+  repeat destruct H4 as (? & H4).
+  assert (A__ ~ A') by eauto using dec_to_sim, sim_sym, sim_trans.
+  eapply sim_heq_same_ctx in H11; eauto using validity_ty_ty. destruct H11.
+  eapply type_heq_trans in H1. 5:eauto. all:eauto using validity_ty_ty.
+  eapply type_hetero_to_homo in H1; eauto using validity_ty_ty.
+  eapply type_heq_cast in H10 as H10'; eauto using validity_ty_ty.
+  eapply type_heq_trans in H10'. 5:eauto. all:eauto.
+  2:econstructor; eauto using validity_ty_ty.
+  eexists _,_,_,_,_. intuition eauto. unfold eqtrans. 
+  split. 2:split. 3:split. 4:split. 5:split. 
+  6:eapply H10'.
+  all:eauto.
+  1:econstructor; eauto.
+  econstructor; eauto using validity_ty_ty.
+Admitted.
+
 (* Lemma ty_conv_hetero_destruct Γ l t u A A' B B': 
   Γ ⊨⟨ l ⟩ t ≃ u : A ↦ A' B' ->
   exists t' u' e,
@@ -2981,7 +3067,7 @@ Proof.
 
   - admit.
   - intros. admit.
-  - intros. eapply eqtrans_hetero_to_homo.
+  - intros. 
     assert (⊢ Γ') by (destruct H2; eauto).
     eapply H0 in H2 as h0. eapply tr_conv_change_ty' in h0.
     2:econstructor.
@@ -3009,19 +3095,14 @@ Proof.
     eapply type_heq_pi in h3 as h3'.
     2,3:eauto. 2:eapply H9. 2:eapply H11.
     2:admit.
-    eexists _, _,_,_,_.
-    split. 2:split. 3:split. 4:split. 5:split. 6:split.
+    eapply tr_eq_conclude. 
     7:eapply h3'.
-    5,6:econstructor;eauto.
-    all:econstructor;intuition eauto.
-    eapply cast_subst_refines; eauto.
-
-
-
+    all:intuition eauto 8 using typing, decoration, cast_subst_refines. 
     
-
-
-  - intros. eapply eqtrans_hetero_to_homo.
+    Unshelve. exact Nat.
+    
+  - intros.
+   (* eapply eqtrans_hetero_to_homo. *)
     assert (⊢ Γ') by (destruct H3; eauto).
     eapply H0 in H3 as h0. eapply tr_conv_change_ty' in h0.
     2:econstructor.
@@ -3058,7 +3139,12 @@ Proof.
     eapply type_heq_lam in h3 as h3'.
     2:eapply H21. 2:eapply H22.
     2:admit.
-    admit.
+
+    eapply tr_eq_conclude. 7:eapply h3'.
+    all:eauto using typing. 
+    all:econstructor;eauto.
+    all:eapply cast_subst_refines; eauto. Unshelve. all:exact Nat.
+
   - admit.
   - admit.
   - admit.
