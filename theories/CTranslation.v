@@ -1780,6 +1780,8 @@ Proof.
 
   - admit.
   - intros. admit.
+
+  (* case pi *)
   - intros. 
     assert (⊢ Γ') by (destruct H2; eauto).
     eapply H0 in H2 as h0. eapply tr_conv_change_ty' in h0.
@@ -1790,36 +1792,24 @@ Proof.
     assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
     1:eapply tr_ctx_cons. 1,2:eauto.
 
-    eapply H1 in H4 as h1'. 
+    eapply H1 in H4 as h1'.
+    destruct h1. destruct h2. intuition eauto. 
     
     
-    (* eapply ty_conv_cons_get_sort in h1'. *)
-    eapply tr_conv_change_ty' in h1'.
-    2:econstructor.
-    2:eauto using typing, ctx_typing;admit.
-    eapply ty_conv_homo_destruct in h1' as (B0 & B'0 & e'' & k1 & k2 & k3). 
-    destruct h1. destruct h2. destruct k1. destruct k2.
-    assert (exists e', Γ' ⊢< prop > e' : obseq (Ax i) (Sort i) A'0 A0).
-    1:{ eexists. eapply type_hetero_to_homo in h3; eauto. eapply type_obseq_sym; eauto. }
-    destruct H13.
-    (* eapply type_hetero_to_homo in h3 as temp; eauto. *)
-    (* eapply type_obseq_sym in temp. *)
-    (* eapply decombine_subst in temp; eauto. destruct temp. *)
-    eapply subst_ty in H11. 3:eapply cast_subst. 5:eauto.
-    all:eauto using ctx_typing, validity_ty_ctx.
-    rasimpl in H11.
+    eapply ty_conv_cons_get_sort in h1'.
+    5:eapply H7.
+    all:eauto.
+    destruct h1' as (B0 & B'0 & k). intuition eauto.
+    destruct H16.
 
-    eapply type_heq_pi in h3 as h3'.
-    2,3:eauto. 2:eapply H9. 2:eapply H11.
-    2:admit.
+    eapply type_heq_pi in h3 as h3'; eauto.
     eapply tr_eq_conclude. 
     7:eapply h3'.
-    all:intuition eauto 8 using typing, decoration, cast_subst_refines. 
-    
-    Unshelve. exact Nat.
-    
-  - intros.
-   (* eapply eqtrans_hetero_to_homo. *)
+    all:intuition eauto 8 using typing, decoration, cast_subst_refines.
+
+
+  (* case lam. *)
+  - intros. 
     assert (⊢ Γ') by (destruct H3; eauto).
     eapply H0 in H3 as h0. eapply tr_conv_change_ty' in h0.
     2:econstructor.
@@ -1829,41 +1819,78 @@ Proof.
     assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
     1:eapply tr_ctx_cons. 1,2:eauto.
 
-    eapply H1 in H5 as h1'. eapply tr_conv_change_ty' in h1'.
-    2:econstructor.
-    2:eauto using typing, ctx_typing;admit.
-    eapply ty_conv_homo_destruct in h1' as (B0 & B'0 & e'' & k1 & k2 & k3).
-
-    eapply H2 in H5 as h2'. 
+    eapply H1 in H5 as h1'.
+    eapply H2 in H5 as h2'.
+    destruct h1. destruct h2. intuition eauto. 
     
-    destruct h1, h2, k1, k2.
-    eapply eqtrans_homo_to_hetero , tr_conv_change_ty in h2'.
-    4:eapply type_hetero_to_homo. 4:eapply H10. 4:eapply H12.
-    4:eauto. all:intuition eauto.
-    destruct h2' as (t_ & t'_ & e_ & h).
-    destruct j. 2:admit.
-    unfold eqtrans in h; intuition eauto.
-    assert (exists e', Γ' ⊢< prop > e' : obseq (Ax i) (Sort i) A'0 A0).
-    1:{ eexists. eapply type_hetero_to_homo in h3; eauto. eapply type_obseq_sym; eauto. }
-    destruct H23.
-    eapply subst_ty in H12. 3:eapply cast_subst. 5:eauto.
-    all:eauto using ctx_typing, validity_ty_ctx.
-    eapply subst_ty in H22. 3:eapply cast_subst. 5:eauto.
-    all:eauto using ctx_typing, validity_ty_ctx.
-    rasimpl in H22.
+    
+    eapply ty_conv_cons_get_sort in h1'.
+    6:eapply h3.
+    all:eauto.
+    destruct h1' as (B0 & B'0 & k). intuition eauto.
+    destruct H17.
+
+    eapply ty_conv_cons_get in h2'.
+    8:eapply H16.
+    all:eauto.
+    destruct h2' as (t_ & t'_ & k). intuition eauto.
+    destruct H22.
+
+    eapply type_heq_lam in H21; eauto.
+
+    eapply tr_eq_conclude. 
+    7:eapply H21.
+    all:intuition eauto 8 using typing, decoration, cast_subst_refines.
+
+  (* case app *)
+  - intros. 
+    assert (⊢ Γ') by (destruct H4; eauto).
+    eapply H0 in H4 as h0. eapply tr_conv_change_ty' in h0.
+    2:econstructor.
+    2:eauto using typing.
+    eapply ty_conv_homo_destruct in h0 as (A0 & A'0 & e' & h1 & h2 & h3).
+
+    assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
+    1:eapply tr_ctx_cons. 1,2:eauto.
+
+    eapply H1 in H6 as h1'.
+    destruct h1. destruct h2. intuition eauto. 
+    
+    
+    eapply ty_conv_cons_get_sort in h1'.
+    6:eapply h3.
+    all:eauto.
+    destruct h1' as (B0 & B'0 & k). intuition eauto.
+    destruct H18.
 
 
-    eapply type_heq_lam in h3 as h3'.
-    2:eapply H21. 2:eapply H22.
-    2:admit.
+    eapply H3 in H4 as h3'.
+    rewrite eqtrans_homo_hetero in h3'.
+    assert (exists _e, Γ' ⊢< prop > _e : obseq (Ax i) (Sort i) A0 A'0) by admit.
+    destruct H18.
 
-    eapply tr_eq_conclude. 7:eapply h3'.
-    all:eauto using typing. 
-    all:econstructor;eauto.
-    all:eapply cast_subst_refines; eauto. Unshelve. all:exact Nat.
+    eapply tr_conv_change_ty in h3'. 4:eapply H18. all:eauto.
+    destruct h3' as (u_ & u'_ & e0 & k).
+    destruct i. 2:admit. (* we need more hypothesis here *)
+    unfold eqtrans in k. intuition eauto.
 
-  - admit.
-  - admit.
+
+
+    eapply H2 in H4 as h2'.
+    rewrite eqtrans_homo_hetero in h2'.
+    eapply type_heq_pi,type_hetero_to_homo in h3 as h3'; eauto using typing.
+    eapply tr_conv_change_ty in h2'. 4:eapply h3'. 2,3:econstructor;eauto.
+    destruct h2' as (t_ & t'_ & e1 & k).
+    destruct j. 2:admit. 
+    unfold eqtrans in k. simpl in k. intuition eauto.
+    eapply type_heq_app in H25. 6:change (ty (Init.Nat.max n n0)) with (Ru (ty n) (ty n0)) in H31; eapply H31.
+    all:eauto.
+
+
+    eapply tr_eq_conclude. 
+    7:eapply H25.
+    all:intuition eauto 8 using typing, decoration, cast_subst_refines, substs_decs_one.
+    
   - admit.
   - admit.
   - admit.
@@ -1883,6 +1910,9 @@ Proof.
   - admit.
   - admit.
   - admit.
+  - admit. 
+
+  (* case natrec_zero *)
   - intros * ? ihP ? ihz ? ihs ?  hc.
     eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
     2:{ eapply tr_Nat. eassumption. }
@@ -1931,6 +1961,8 @@ Proof.
       all:eauto.
       all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
     + econstructor. Unshelve. all:exact Nat.   *)
+
+  (* case natrec_succ *)
   - intros * ? ihP ? ihz ? ihs ? iht ? hc.
     eapply tr_ctx_cons with (i := ty 0) in hc as hcn.
     2:{ eapply tr_Nat. eassumption. }
