@@ -77,7 +77,7 @@ Notation "D ⊨⟨ l ⟩ t : A" :=
 
 Definition eqtrans Γ' l u v A u' A' v' A'' e :=
   match l with
-  | prop => A ⊏ A' 
+  | prop => True
   | ty i =>
     A ⊏ A' ∧
     (* A ⊏ A'' ∧ *)
@@ -235,9 +235,9 @@ Proof.
   destruct l.
   - eexists _, _, _, _, _.
     split; [|eassumption]. now destruct h.
-  - eexists _, _, _, _, _.
-    split; eauto.
-Qed.
+  - eexists _, _, _, _, _.     
+    split; eauto. destruct h.
+Admitted.
 
 Corollary eqtrans_homo_hetero  Γ' l t u A :
   Γ' ⊨⟨ l ⟩ t = u : A <-> Γ' ⊨⟨ l ⟩ t ≃ u : A.
@@ -1844,8 +1844,9 @@ Proof.
 
   (* case app *)
   - intros. 
-    assert (⊢ Γ') by (destruct H4; eauto).
-    eapply H0 in H4 as h0. eapply tr_conv_change_ty' in h0.
+    destruct j. 2:admit.
+    assert (⊢ Γ') by (destruct H6; eauto).
+    eapply H0 in H6 as h0. eapply tr_conv_change_ty' in h0.
     2:econstructor.
     2:eauto using typing.
     eapply ty_conv_homo_destruct in h0 as (A0 & A'0 & e' & h1 & h2 & h3).
@@ -1853,7 +1854,7 @@ Proof.
     assert (tr_ctx (Γ,, (i, A)) (Γ',, (i, A0))).
     1:eapply tr_ctx_cons. 1,2:eauto.
 
-    eapply H1 in H6 as h1'.
+    eapply H1 in H8 as h1'.
     destruct h1. destruct h2. intuition eauto. 
     
     
@@ -1861,35 +1862,29 @@ Proof.
     6:eapply h3.
     all:eauto.
     destruct h1' as (B0 & B'0 & k). intuition eauto.
-    destruct H18.
-
-
-    eapply H3 in H4 as h3'.
-    rewrite eqtrans_homo_hetero in h3'.
-    assert (exists _e, Γ' ⊢< prop > _e : obseq (Ax i) (Sort i) A0 A'0) by admit.
-    destruct H18.
-
-    eapply tr_conv_change_ty in h3'. 4:eapply H18. all:eauto.
-    destruct h3' as (u_ & u'_ & e0 & k).
-    destruct i. 2:admit. (* we need more hypothesis here *)
-    unfold eqtrans in k. intuition eauto.
+    destruct H20.
 
 
 
-    eapply H2 in H4 as h2'.
+
+    eapply H2 in H6 as h2'.
     rewrite eqtrans_homo_hetero in h2'.
     eapply type_heq_pi,type_hetero_to_homo in h3 as h3'; eauto using typing.
     eapply tr_conv_change_ty in h2'. 4:eapply h3'. 2,3:econstructor;eauto.
     destruct h2' as (t_ & t'_ & e1 & k).
-    destruct j. 2:admit. 
     unfold eqtrans in k. simpl in k. intuition eauto.
-    eapply type_heq_app in H25. 6:change (ty (Init.Nat.max n n0)) with (Ru (ty n) (ty n0)) in H31; eapply H31.
+
+
+    admit.
+(* 
+    eapply type_heq_app in H26. 6:change (ty (Init.Nat.max n n0)) with (Ru (ty n) (ty n0)) in H31; eapply H31.
     all:eauto.
+
 
 
     eapply tr_eq_conclude. 
     7:eapply H25.
-    all:intuition eauto 8 using typing, decoration, cast_subst_refines, substs_decs_one.
+    all:intuition eauto 8 using typing, decoration, cast_subst_refines, substs_decs_one. *)
     
   - admit.
   - admit.

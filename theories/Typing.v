@@ -245,6 +245,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
       Γ ⊢< Ax i > A ≡ A' : Sort i →
       Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
       Γ ⊢< Ru i j > t ≡ t' : Pi i j A B →
+      Γ ⊢< i > u : A →
+      Γ ⊢< i > u' : A' →
       Γ ⊢< i > u ≡ u' : A →
       Γ ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B <[ u .. ]
 
@@ -320,6 +322,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
     let P'' := (1.: (S >> S)) ⋅ P in
     Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p ≡ p' : P'' ->
     Γ ⊢< ty n > a ≡ a': A ->
+    Γ ⊢< prop > q : acc (ty n) A R a ->
+    Γ ⊢< prop > q' : acc (ty n) A' R' a' ->
     Γ ⊢< prop > q ≡ q' : acc (ty n) A R a ->
     Γ ⊢< l > accel (ty n) l A R P p a q ≡ accel (ty n) l A' R' P' p' a' q' : P <[a ..]
 
