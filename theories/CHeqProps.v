@@ -223,6 +223,7 @@ Axiom type_heq_accel : forall Γ l n A1 A2 R1 R2 P1 P2 p1 p2 q1 q2 a1 a2 e1 e2 e
 
 Axiom heq_obseq : forall (l : level) (A1 A2 a1 a2 b1 b2 e1 e2 : term), term.
 
+
 Axiom type_heq_obseq : forall Γ n A1 a1 b1 A2 a2 b2 e1 e2, 
   Γ ⊢< ty n > a1 : A1 ->
   Γ ⊢< ty n > b1 : A1 ->
@@ -232,7 +233,7 @@ Axiom type_heq_obseq : forall Γ n A1 a1 b1 A2 a2 b2 e1 e2,
   Γ ⊢< prop > e2 : heq (ty n) A1 A2 b1 b2 ->
   Γ ⊢< prop > heq_obseq (ty n) A1 A2 a1 a2 b1 b2 e1 e2 : heq (Ax prop) (Sort prop) (Sort prop) (obseq (ty n) A1 a1 b1) (obseq (ty n) A2 a2 b2).
 
-
+  
 Axiom hetero_to_homo : forall (l : level) (A t u e : term), term.
 
 Axiom type_hetero_to_homo : forall n Γ t u A e,
@@ -240,3 +241,10 @@ Axiom type_hetero_to_homo : forall n Γ t u A e,
   Γ ⊢< ty n > u : A ->
   Γ ⊢< prop > e : heq (ty n) A A t u ->
   Γ ⊢< prop > hetero_to_homo (ty n) A t u e : obseq (ty n) A t u.
+
+Axiom type_hetero_to_type : forall n Γ t u A B e,
+  Γ ⊢< ty n > t : A ->
+  Γ ⊢< ty n > u : B ->
+  Γ ⊢< prop > e : heq (ty n) A B t u ->
+  exists e', Γ ⊢< prop > e' : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A B.
+

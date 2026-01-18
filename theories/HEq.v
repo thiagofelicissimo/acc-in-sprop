@@ -141,7 +141,7 @@ Definition heq_prop (A B : SProp) (a : A) (b : B) : SProp := True.
 
 Notation "a ~~ b" := (heq_prop _ _ a b) (at level 90).
 
-(* auxiliary lemmas *)
+
 
 Lemma homo_to_hetero {A : Type} {a b : A} (e : a ~ b) : a == b.
 Proof.
@@ -154,6 +154,13 @@ Proof.
     eapply fst in e as e1. pose proof (e2 := snd e).
     destruct e1. destruct e2. eapply obseq_sym. eapply cast_refl.
 Qed.
+
+Lemma hetero_to_type_eq {A B : Type} {a : A} {b : B} (e : a == b) : A == B.
+Proof. 
+    eapply fst in e as e1. eapply homo_to_hetero. assumption. 
+Qed.
+
+(* auxiliary lemmas *)
 
 Lemma ap' {A B} (f g : forall x : A, B x) (t : A): f ~ g -> f t ~ g t.
 Proof.
