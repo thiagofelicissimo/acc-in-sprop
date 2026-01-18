@@ -356,6 +356,8 @@ with conversion : ctx -> level -> term -> term -> term -> Prop :=
   ∀ Γ i A A' B B' e e' a a',
     Γ ⊢< Ax i > A ≡ A' : Sort i ->
     Γ ⊢< Ax i > B ≡ B' : Sort i ->
+    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢< prop > e' : obseq (Ax i) (Sort i) A' B' ->
     Γ ⊢< prop > e ≡ e' : obseq (Ax i) (Sort i) A B ->
     Γ ⊢< i > a ≡ a' : A ->
     Γ ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B

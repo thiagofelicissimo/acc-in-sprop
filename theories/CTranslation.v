@@ -1741,7 +1741,45 @@ Proof.
     eapply tr_eq_conclude. 7:eapply H14.
     all:eauto using decoration, typing.
 
-  - admit.
+  (* case cast *)
+  - intros. destruct i. 2:econstructor.
+    rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
+    rename B into B1. rename B' into B2. rename e into e1. rename e' into e2.
+    assert (⊢ Γ') as Γ'_Wf by (destruct H5; eauto).
+
+    eapply H in H5 as h'. clear H.
+    eapply H0 in H5 as h0'. clear H0.
+    eapply H4 in H5 as h4'. clear H4.
+    eapply H1 in H5 as h1'. clear H1.
+    eapply H2 in H5 as h2'. clear H2.
+
+    eapply tr_eq_ty_sgeth in h'; eauto using typing, decoration.
+    eapply tr_eq_ty_sgeth in h0'; eauto using typing, decoration.
+    destruct h'. destruct h0'.
+    rename t' into A1'. rename u' into A2'. rename t'0 into B1'. rename u'0 into B2'.
+
+    eapply tr_eq_ty_geth in h4'. 6:eapply H4. all:eauto. destruct h4'.
+    rename t' into a1'. rename u' into a2'.
+
+    eapply tr_tm_get in h1'. 2:econstructor;eauto using decoration.
+    2:eauto using typing.
+    eapply tr_tm_get in h2'. 2:econstructor;eauto using decoration.
+    2:eauto using typing.
+    destruct h1'. destruct h2'. intuition eauto.
+
+    eapply type_heq_cast in H13 as h13. 4:eapply H19. all:eauto.
+    eapply type_heq_cast in H14 as h14. 4:eapply H20. all:eauto.
+    eapply type_heq_trans' in h14. 5:eauto. all:eauto using typing.
+    destruct h14.
+
+    eapply type_heq_sym in h13; eauto using typing.
+    eapply type_heq_trans' in H17. 5:eauto. all:eauto using typing.
+    destruct H17.
+
+    eapply tr_eq_conclude.
+    7:eapply H17.
+    all:eauto using typing, decoration.
+
   - admit.
   - admit.
   - admit.

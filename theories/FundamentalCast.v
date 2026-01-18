@@ -255,7 +255,7 @@ Proof.
     refine (LR_ind _ _ _ _ _); intros.
     - eapply LR_prop_inv in LR_B12. destruct LR_B12.
       destruct p.
-      split; intros; try rewrite H0 in *; try rewrite H2 in *; eapply conv_cast; eauto.
+      split; intros; try rewrite H0 in *; try rewrite H2 in *; eapply conv_cast'; eauto.
     - eapply LR_to_red in LR_B12 as temp. destruct temp as (B1' & B1_red).
       unshelve eapply LR_ty_inv in LR_B12 ; eauto.
       simpl in LR_B12. destruct B1'.
@@ -319,7 +319,7 @@ Proof.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
            destruct temp as (eq1 & eq2). dependent elimination eq2. subst.
            unfold ϵPi. intros. split.
-           eapply conv_conv; eauto using conv_cast, LR_escape_ty, redd_whnf_to_conv.
+           eapply conv_conv; eauto using conv_cast', LR_escape_ty, redd_whnf_to_conv.
            (* clear LR_A12' LR_B12'. *)
            intros s1 s2 ϵs.
            eapply H0 in LR_S12' as temp; eauto. clear H0.
@@ -333,7 +333,7 @@ Proof.
             destruct temp as (K1 & _). eapply LR_irred_tm; eauto. 3:eapply K1; eauto. all:clear K1 K2.
             4:{ eapply conv_injpi2 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
-            3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast; eauto using LR_escape_ty, LR_escape_tm.
+            3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast'; eauto using LR_escape_ty, LR_escape_tm.
                 eapply conv_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                 eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
             1,2: destruct A1_red_pi, A2_red_pi, B1_red, B2_red.
@@ -344,7 +344,7 @@ Proof.
         ++ eapply pi_sort_inj_red in A1_red_pi as temp; eauto using validity_conv_left, type_obseq_sym.
            destruct temp as (eq1 & eq2). dependent elimination eq2. subst.
            unfold ϵPi. intros. split.
-           eapply conv_conv; eauto using conv_cast, LR_escape_ty, redd_whnf_to_conv.
+           eapply conv_conv; eauto using conv_cast', LR_escape_ty, redd_whnf_to_conv.
            intros s1 s2 ϵs.
            eapply H0 in LR_S12' as temp; eauto.
            destruct temp as (K2 & _).
@@ -357,7 +357,7 @@ Proof.
             destruct _temp as (_ & K1). eapply LR_irred_tm; eauto. 3:eapply K1; eauto. all:clear K1 K2.
             4:{ eapply conv_injpi2 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
-            3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast; eauto using LR_escape_ty, LR_escape_tm.
+            3:{ eapply conv_app'; eauto using LR_escape_ty. eapply conv_cast'; eauto using LR_escape_ty, LR_escape_tm.
                 eapply conv_injpi1 ; eauto using LR_escape_tm, validity_conv_left, LR_escape_ty.
                 eapply conv_conv; eauto using validity_conv_left. eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conversion. }
             1,2: destruct A1_red_pi, A2_red_pi, B1_red, B2_red.

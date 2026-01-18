@@ -2571,12 +2571,12 @@ Proof.
       1:eapply pre_conv_in_ctx_ty; eauto using ctx_typing, validity_ty_ctx, conv_ccons, ctx_conv_refl, conv_sym.
       1:eapply type_conv; eauto.
       1,2: eapply pre_subst_conv; eauto using subst_one, validity_ty_ctx, substs_one, conv_sym.
-  - intuition eauto.
+  (* - intuition eauto.
     1:econstructor.
     5: eapply type_conv. 5:econstructor.
     all:eauto using type_conv, conv_sym.
     eapply type_conv; eauto.
-    econstructor; eauto using conversion, validity_ty_ctx.
+    econstructor; eauto using conversion, validity_ty_ctx. *)
   - intuition eauto.
     1:econstructor.
     6:eapply type_conv.
@@ -2600,6 +2600,11 @@ Proof.
     1:eapply subst_one.
     2:eapply substs_one.
     2: { eapply conv_conv. 1:econstructor; eauto using conv_sym, conv_conv.
+    1:{ econstructor; eauto. 1,2:eapply pre_conv_in_ctx_ty; eauto using ctx_typing, validity_ty_ctx.
+    1,2:econstructor; eauto using conv_sym, ctx_conv_refl, validity_ty_ctx.
+    eapply type_conv; eauto.
+    econstructor; eauto using conversion, validity_ty_ctx. }
+    1: econstructor; eauto. 
     1:econstructor; eauto using conv_sym.  
     1,2:eapply pre_conv_in_ctx_conv; eauto using conv_sym.
     1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.   
@@ -2614,7 +2619,7 @@ Proof.
     1,2:eapply pre_conv_in_ctx_ty; eauto using conv_sym.
     1-4:econstructor; eauto using validity_ty_ctx, ctx_conv_refl, conv_sym.
     eapply type_conv; eauto.
-    econstructor; eauto using conv_sym, conversion, validity_ty_ctx. 
+    econstructor; eauto using conv_sym, conversion, validity_ty_ctx.  
   - intuition eauto. 
     * econstructor. 
       1,2:econstructor; eauto.
@@ -3271,7 +3276,18 @@ Proof.
   all:eapply type_ren; eauto using ctx_typing, WellRen_S, validity_ty_ctx.
 Qed.
 
-
+Lemma conv_cast' :
+  ∀ Γ i A A' B B' e e' a a',
+    Γ ⊢< Ax i > A ≡ A' : Sort i ->
+    Γ ⊢< Ax i > B ≡ B' : Sort i ->
+    Γ ⊢< prop > e ≡ e' : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢< i > a ≡ a' : A ->
+    Γ ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B.
+Proof.
+  intros. eapply conv_cast; eauto using validity_conv_left.
+  eapply type_conv. 1:eauto using validity_conv_right. 
+  econstructor;eauto using conversion, validity_ty_ctx, validity_conv_left.
+Qed.
 
 Lemma conv_cast_refl' Γ i A B e a :
   Γ ⊢< Ax i > A ≡ B : Sort i ->
@@ -3284,6 +3300,8 @@ Proof.
   - econstructor.
     + eapply conv_refl_conv. eassumption.
     + apply conv_sym. eassumption.
+    + eassumption.
+    + eapply type_conv; eauto 7 using conversion, validity_ty_ctx, conv_refl.
     + apply conv_refl. assumption.
     + apply conv_refl. assumption.
   - econstructor. 2: eassumption.
