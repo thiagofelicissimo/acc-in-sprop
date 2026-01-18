@@ -236,3 +236,89 @@ Proof.
     + eapply ZFuniv_trans. now apply nat_to_ω_typing. apply ZFuniv_uncountable.
     + apply typeToGraph_sorting. now apply HA. now apply (typeExt_typing HA HB).
 Qed.
+
+(* Restricting the domain of higher-order functions to get funext *)
+(* Requires excluded middle! *)
+
+Definition clip (Γ : ZFSet) (f : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  fun γ => ι { x ϵ { ∅ ; f γ } ∣ (γ ∈ Γ ∧ x ≡ f γ) ∨ (¬ γ ∈ Γ ∧ x ≡ ∅) }.
+
+Lemma clip_typing (Γ : ZFSet) (f : ZFSet -> ZFSet) (γ : ZFSet) :
+  clip Γ f γ ∈ { x ϵ { ∅ ; f γ } ∣ (γ ∈ Γ ∧ x ≡ f γ) ∨ (¬ γ ∈ Γ ∧ x ≡ ∅) }.
+Proof.
+  apply ZFindescr. destruct (EM (γ ∈ Γ)).
+  - exists (f γ). econstructor.
+    + apply ZFincomp. split.
+      * apply ZFinpairing. now right.
+      * left. now split.
+    + intros y Hy. apply ZFincomp in Hy. destruct Hy as [ Hy1 [ [ _ Hy2 ] | [ Hy2 _ ] ] ] ; easy.
+  - exists ∅. econstructor.
+    + apply ZFincomp. split.
+      * apply ZFinpairing. now left.
+      * right. now split.
+    + intros y Hy. apply ZFincomp in Hy. destruct Hy as [ Hy1 [ [ Hy2 _ ] | [ _ Hy2 ] ] ] ; easy.
+Qed.
+
+Lemma clip_inside (Γ : ZFSet) (f : ZFSet -> ZFSet) : ∀ γ ∈ Γ, clip Γ f γ ≡ f γ.
+Proof.
+  intros γ Hγ. cbn. pose proof (clip_typing Γ f γ) as H. apply ZFincomp in H.
+  destruct H as [ H1 [ [ _ H2 ] | [ H2 _ ] ] ] ; easy.
+Qed.
+
+Lemma clip_outside (Γ : ZFSet) (f : ZFSet -> ZFSet) : forall γ, (¬ γ ∈ Γ) -> clip Γ f γ ≡ ∅.
+Proof.
+  intros γ Hγ. cbn. pose proof (clip_typing Γ f γ) as H. apply ZFincomp in H.
+  destruct H as [ H1 [ [ H2 _ ] | [ _ H2 ] ] ] ; easy.
+Qed.
+
+Lemma clip_funext (Γ : ZFSet) {f g : ZFSet -> ZFSet} :
+  (∀ γ ∈ Γ, f γ ≡ g γ) -> clip Γ f ≡ clip Γ g.
+Proof.
+  intro H. apply funext. intro γ. destruct (EM (γ ∈ Γ)) as [ Hγ | Hγ ].
+  - pose proof (sym (clip_inside Γ f γ Hγ)) as Hf. cbn in Hf. destruct Hf.
+    pose proof (sym (clip_inside Γ g γ Hγ)) as Hg. cbn in Hg. destruct Hg.
+    now apply H.
+  - pose proof (sym (clip_outside Γ f γ Hγ)) as Hf. cbn in Hf. destruct Hf.
+    pose proof (sym (clip_outside Γ g γ Hγ)) as Hg. cbn in Hg. destruct Hg.
+    reflexivity.
+Qed.
+
+Lemma clipped_typing_𝕌 {n : nat} (Γ : ZFSet) (t : ZFSet -> ZFSet) :
+  (∀ γ ∈ Γ, t γ ∈ 𝕌 n) -> (∀ γ ∈ Γ, clip Γ t γ ∈ 𝕌 n).
+Proof.
+  intros H γ Hγ. cbn. destruct (sym (clip_inside Γ t γ Hγ)). now apply H.
+Qed.
+
+Lemma clipped_typing {n : nat} (Γ : ZFSet) (t : ZFSet -> ZFSet) (A : ZFSet -> ZFSet) :
+  (∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) -> (∀ γ ∈ Γ, clip Γ t γ ∈ 𝕌el n (clip Γ A γ)).
+Proof.
+  intros H γ Hγ. cbn. destruct (sym (clip_inside Γ t γ Hγ)).
+  destruct (sym (clip_inside Γ A γ Hγ)). now apply H.
+Qed.
+
+Lemma clipped_detyping {n : nat} (Γ : ZFSet) (t : ZFSet -> ZFSet) (A : ZFSet -> ZFSet) :
+  (∀ γ ∈ Γ, t γ ∈ 𝕌el n (clip Γ A γ)) -> (∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)).
+Proof.
+  intros H γ Hγ. cbn. destruct (clip_inside Γ A γ Hγ). now apply H.
+Qed.
+
+Lemma clipped_ext (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) :
+  ctxExt n Γ (clip Γ A) ≡ ctxExt n Γ A.
+Proof.
+  unfold ctxExt. apply setSigma_cong. intros γ Hγ.
+  destruct (sym (clip_inside Γ A γ Hγ)). reflexivity.
+Qed.  
+
+Lemma clipped_wk (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) (γa : ZFSet) :
+  ctx_wk n Γ (clip Γ A) γa ≡ ctx_wk n Γ A γa.
+Proof.
+  unfold ctx_wk. unfold setFstSigma. refine (fequal (fun X => setFstPair Γ X γa) _).
+  apply setFamUnion_cong. intros γ Hγ. destruct (sym (clip_inside Γ A γ Hγ)). reflexivity.
+Qed.
+
+Lemma clipped_var0 (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) (γa : ZFSet) :
+  ctx_var0 n Γ (clip Γ A) γa ≡ ctx_var0 n Γ A γa.
+Proof.
+  unfold ctx_wk. unfold setSndSigma. refine (fequal (fun X => setSndPair Γ X γa) _).
+  apply setFamUnion_cong. intros γ Hγ. destruct (sym (clip_inside Γ A γ Hγ)). reflexivity.
+Qed.

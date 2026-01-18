@@ -158,3 +158,122 @@ Proof.
     + exact (transpS (fun X => m γ ∈ X) el_natTy (Hm γ Hγ)).
   - reflexivity.
 Qed.
+
+(* Clipped versions (requires excluded middle) *)
+
+Definition natTy_cl (Γ : ZFSet) : ZFSet -> ZFSet :=
+  clip Γ natTy_HO.
+
+Definition zeroTm_cl (Γ : ZFSet) : ZFSet -> ZFSet :=
+  clip Γ zeroTm_HO.
+
+Definition sucTm_cl (Γ : ZFSet) (t : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (sucTm_HO t).
+
+Definition natrecTm_cl (Γ : ZFSet) (n : nat) (P pz ps m : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (natrecTm_HO n P pz ps m).
+
+(* Porting the typing rules and equations to the clipped versions *)
+
+Lemma natTy_cl_typing {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, natTy_cl Γ γ ∈ 𝕌 n.
+Proof.
+  apply clipped_typing_𝕌. now apply natTy_HO_typing.
+Qed.  
+
+Lemma zeroTm_cl_typing (n : nat) {Γ : ZFSet} : ∀ γ ∈ Γ, zeroTm_cl Γ γ ∈ 𝕌el n (natTy_cl Γ γ).
+Proof.
+  apply clipped_typing. intros. now apply zeroTm_HO_typing.
+Qed.
+
+Lemma sucTm_cl_typing {n : nat} {Γ γ : ZFSet} {t : ZFSet -> ZFSet}
+  (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (natTy_cl Γ γ)) (Hγ : γ ∈ Γ) :
+  sucTm_cl Γ t γ ∈ 𝕌el n (natTy_cl Γ γ).
+Proof.
+  pose proof (clipped_detyping Γ t natTy_HO Ht) as Ht'. clear Ht.
+  apply clipped_typing. intros. now apply (sucTm_HO_typing (Γ := Γ)). easy.
+Qed.
+
+Lemma natrecTm_cl_typing {n : nat} {Γ : ZFSet} {P pz ps m : ZFSet -> ZFSet}
+  (HP : ∀ γm ∈ ctxExt 0 Γ (natTy_cl Γ), P γm ∈ 𝕌 n) (Hpz : ∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_cl Γ γ ⟩))
+  (Hps : ∀ γmp ∈ ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)
+                        ; sucTm_cl (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) 
+                                   (fun γmp => ctx_var0 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)) γmp ⟩))
+  (Hm : ∀ γ ∈ Γ, m γ ∈ 𝕌el 0 (natTy_cl Γ γ)) :
+  ∀ γ ∈ Γ, natrecTm_cl Γ n P pz ps m γ ∈ 𝕌el n (P ⟨ γ ; m γ ⟩).
+Proof.
+  assert (∀ γm ∈ ctxExt 0 Γ natTy_HO, P γm ∈ 𝕌 n) as HP'.
+  { destruct (clipped_ext 0 Γ natTy_HO). exact HP. } clear HP.
+  assert (∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_HO γ ⟩)) as Hpz'.
+  { intros γ Hγ. destruct (clip_inside Γ zeroTm_HO γ Hγ). now apply Hpz. } clear Hpz.
+  assert (∀ γmp ∈ ctxExt n (ctxExt 0 Γ natTy_HO) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)
+                        ; sucTm_HO (fun γmp => ctx_var0 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)) γmp ⟩)) as Hps'.
+  { intros γmp Hγmp. destruct (clipped_ext 0 Γ natTy_HO).
+    refine (transp2S (fun X Y => ps γmp ∈ 𝕌el n (P ⟨ X ; Y ⟩)) _ _ (Hps γmp Hγmp)).
+    - apply clipped_wk.
+    - refine (trans (clip_inside (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) _ γmp Hγmp) _).
+      unfold sucTm_HO. refine (fequal ZFsuc _). apply clipped_var0. } clear Hps.
+  assert (∀ γ ∈ Γ, m γ ∈ 𝕌el 0 (natTy_HO γ)) as Hm'.
+  { intros γ Hγ. destruct (clip_inside Γ natTy_HO γ Hγ). now apply Hm. } clear Hm.
+  intros γ Hγ. unfold natrecTm_cl. destruct (sym (clip_inside Γ (natrecTm_HO n P pz ps m) γ Hγ)).
+  now apply (natrecTm_HO_typing HP' Hpz' Hps' Hm').
+Qed.
+
+Lemma natrecTm_cl_β1 {n : nat} {Γ : ZFSet} {P pz ps : ZFSet -> ZFSet}
+  (HP : ∀ γm ∈ ctxExt 0 Γ (natTy_cl Γ), P γm ∈ 𝕌 n) (Hpz : ∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_cl Γ γ ⟩))
+  (Hps : ∀ γmp ∈ ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)
+                        ; sucTm_cl (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) 
+                                   (fun γmp => ctx_var0 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)) γmp ⟩)) :
+  ∀ γ ∈ Γ, natrecTm_cl Γ n P pz ps (zeroTm_cl Γ) γ ≡ pz γ.
+Proof.
+  assert (∀ γm ∈ ctxExt 0 Γ natTy_HO, P γm ∈ 𝕌 n) as HP'.
+  { destruct (clipped_ext 0 Γ natTy_HO). exact HP. } clear HP.
+  assert (∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_HO γ ⟩)) as Hpz'.
+  { intros γ Hγ. destruct (clip_inside Γ zeroTm_HO γ Hγ). now apply Hpz. } clear Hpz.
+  assert (∀ γmp ∈ ctxExt n (ctxExt 0 Γ natTy_HO) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)
+                        ; sucTm_HO (fun γmp => ctx_var0 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)) γmp ⟩)) as Hps'.
+  { intros γmp Hγmp. destruct (clipped_ext 0 Γ natTy_HO).
+    refine (transp2S (fun X Y => ps γmp ∈ 𝕌el n (P ⟨ X ; Y ⟩)) _ _ (Hps γmp Hγmp)).
+    - apply clipped_wk.
+    - refine (trans (clip_inside (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) _ γmp Hγmp) _).
+      unfold sucTm_HO. refine (fequal ZFsuc _). apply clipped_var0. } clear Hps.
+  intros γ Hγ. cbn. unfold natrecTm_cl.
+  destruct (sym (clip_inside Γ (natrecTm_HO n P pz ps (zeroTm_cl Γ)) γ Hγ)).
+  refine (trans _ (natrecTm_HO_β1 HP' Hpz' Hps' γ Hγ)).
+  apply (natrecTm_HO_cong n (Γ := Γ)) ; try (intros ; reflexivity) ; try assumption.
+  clear γ Hγ. intros γ Hγ. now apply clip_inside.
+Qed.
+
+Lemma natrecTm_cl_β2 {n : nat} {Γ : ZFSet} {P pz ps m : ZFSet -> ZFSet}
+  (HP : ∀ γm ∈ ctxExt 0 Γ (natTy_cl Γ), P γm ∈ 𝕌 n) (Hpz : ∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_cl Γ γ ⟩))
+  (Hps : ∀ γmp ∈ ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)
+                        ; sucTm_cl (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) 
+                                   (fun γmp => ctx_var0 0 Γ (natTy_cl Γ) (ctx_wk n (ctxExt 0 Γ (natTy_cl Γ)) P γmp)) γmp ⟩))
+  (Hm : ∀ γ ∈ Γ, m γ ∈ 𝕌el 0 (natTy_cl Γ γ)) :
+  ∀ γ ∈ Γ, natrecTm_cl Γ n P pz ps (sucTm_cl Γ m) γ ≡ ps ⟨ ⟨ γ ; m γ ⟩ ; natrecTm_cl Γ n P pz ps m γ ⟩.
+Proof.
+  assert (∀ γm ∈ ctxExt 0 Γ natTy_HO, P γm ∈ 𝕌 n) as HP'.
+  { destruct (clipped_ext 0 Γ natTy_HO). exact HP. } clear HP.
+  assert (∀ γ ∈ Γ, pz γ ∈ 𝕌el n (P ⟨ γ ; zeroTm_HO γ ⟩)) as Hpz'.
+  { intros γ Hγ. destruct (clip_inside Γ zeroTm_HO γ Hγ). now apply Hpz. } clear Hpz.
+  assert (∀ γmp ∈ ctxExt n (ctxExt 0 Γ natTy_HO) P,
+      ps γmp ∈ 𝕌el n (P ⟨ ctx_wk 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)
+                        ; sucTm_HO (fun γmp => ctx_var0 0 Γ natTy_HO (ctx_wk n (ctxExt 0 Γ natTy_HO) P γmp)) γmp ⟩)) as Hps'.
+  { intros γmp Hγmp. destruct (clipped_ext 0 Γ natTy_HO).
+    refine (transp2S (fun X Y => ps γmp ∈ 𝕌el n (P ⟨ X ; Y ⟩)) _ _ (Hps γmp Hγmp)).
+    - apply clipped_wk.
+    - refine (trans (clip_inside (ctxExt n (ctxExt 0 Γ (natTy_cl Γ)) P) _ γmp Hγmp) _).
+      unfold sucTm_HO. refine (fequal ZFsuc _). apply clipped_var0. } clear Hps.
+  assert (∀ γ ∈ Γ, m γ ∈ 𝕌el 0 (natTy_HO γ)) as Hm'.
+  { intros γ Hγ. destruct (clip_inside Γ natTy_HO γ Hγ). now apply Hm. } clear Hm.
+  intros γ Hγ. cbn. unfold natrecTm_cl.
+  destruct (sym (clip_inside Γ (natrecTm_HO n P pz ps (sucTm_cl Γ m)) γ Hγ)).
+  destruct (sym (clip_inside Γ (natrecTm_HO n P pz ps m) γ Hγ)).
+  refine (trans _ (natrecTm_HO_β2 HP' Hpz' Hps' Hm' γ Hγ)).
+  apply (natrecTm_HO_cong n (Γ := Γ)) ; try (intros ; reflexivity) ; try assumption.
+  clear γ Hγ. intros γ Hγ. now apply clip_inside.
+Qed.
