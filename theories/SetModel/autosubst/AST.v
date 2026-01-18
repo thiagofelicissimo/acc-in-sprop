@@ -19,6 +19,8 @@ Inductive term : Type :=
   | accinv : level -> term -> term -> term -> term -> term -> term -> term
   | accel :
       level -> level -> term -> term -> term -> term -> term -> term -> term
+  | accelcomp :
+      level -> level -> term -> term -> term -> term -> term -> term -> term
   | obseq : level -> term -> term -> term -> term
   | obsrefl : level -> term -> term -> term
   | J : level -> term -> term -> term -> term -> term -> term -> term
@@ -191,6 +193,32 @@ exact (eq_trans
          (ap (fun x => accel t0 t1 t2 t3 t4 t5 t6 x) H7)).
 Qed.
 
+Lemma congr_accelcomp {s0 : level} {s1 : level} {s2 : term} {s3 : term}
+  {s4 : term} {s5 : term} {s6 : term} {s7 : term} {t0 : level} {t1 : level}
+  {t2 : term} {t3 : term} {t4 : term} {t5 : term} {t6 : term} {t7 : term}
+  (H0 : s0 = t0) (H1 : s1 = t1) (H2 : s2 = t2) (H3 : s3 = t3) (H4 : s4 = t4)
+  (H5 : s5 = t5) (H6 : s6 = t6) (H7 : s7 = t7) :
+  accelcomp s0 s1 s2 s3 s4 s5 s6 s7 = accelcomp t0 t1 t2 t3 t4 t5 t6 t7.
+Proof.
+exact (eq_trans
+         (eq_trans
+            (eq_trans
+               (eq_trans
+                  (eq_trans
+                     (eq_trans
+                        (eq_trans
+                           (eq_trans eq_refl
+                              (ap (fun x => accelcomp x s1 s2 s3 s4 s5 s6 s7)
+                                 H0))
+                           (ap (fun x => accelcomp t0 x s2 s3 s4 s5 s6 s7) H1))
+                        (ap (fun x => accelcomp t0 t1 x s3 s4 s5 s6 s7) H2))
+                     (ap (fun x => accelcomp t0 t1 t2 x s4 s5 s6 s7) H3))
+                  (ap (fun x => accelcomp t0 t1 t2 t3 x s5 s6 s7) H4))
+               (ap (fun x => accelcomp t0 t1 t2 t3 t4 x s6 s7) H5))
+            (ap (fun x => accelcomp t0 t1 t2 t3 t4 t5 x s7) H6))
+         (ap (fun x => accelcomp t0 t1 t2 t3 t4 t5 t6 x) H7)).
+Qed.
+
 Lemma congr_obseq {s0 : level} {s1 : term} {s2 : term} {s3 : term}
   {t0 : level} {t1 : term} {t2 : term} {t3 : term} (H0 : s0 = t0)
   (H1 : s1 = t1) (H2 : s2 = t2) (H3 : s3 = t3) :
@@ -343,6 +371,12 @@ Fixpoint ren_term (xi_term : nat -> nat) (s : term) {struct s} : term :=
         (ren_term (upRen_term_term xi_term) s4)
         (ren_term (upRen_term_term (upRen_term_term xi_term)) s5)
         (ren_term xi_term s6) (ren_term xi_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      accelcomp s0 s1 (ren_term xi_term s2)
+        (ren_term (upRen_term_term (upRen_term_term xi_term)) s3)
+        (ren_term (upRen_term_term xi_term) s4)
+        (ren_term (upRen_term_term (upRen_term_term xi_term)) s5)
+        (ren_term xi_term s6) (ren_term xi_term s7)
   | obseq s0 s1 s2 s3 =>
       obseq s0 (ren_term xi_term s1) (ren_term xi_term s2)
         (ren_term xi_term s3)
@@ -411,6 +445,12 @@ term :=
         (subst_term sigma_term s5) (subst_term sigma_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       accel s0 s1 (subst_term sigma_term s2)
+        (subst_term (up_term_term (up_term_term sigma_term)) s3)
+        (subst_term (up_term_term sigma_term) s4)
+        (subst_term (up_term_term (up_term_term sigma_term)) s5)
+        (subst_term sigma_term s6) (subst_term sigma_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      accelcomp s0 s1 (subst_term sigma_term s2)
         (subst_term (up_term_term (up_term_term sigma_term)) s3)
         (subst_term (up_term_term sigma_term) s4)
         (subst_term (up_term_term (up_term_term sigma_term)) s5)
@@ -500,6 +540,16 @@ subst_term sigma_term s = s :=
         (idSubst_term sigma_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (idSubst_term sigma_term Eq_term s2)
+        (idSubst_term (up_term_term (up_term_term sigma_term))
+           (upId_term_term _ (upId_term_term _ Eq_term)) s3)
+        (idSubst_term (up_term_term sigma_term) (upId_term_term _ Eq_term) s4)
+        (idSubst_term (up_term_term (up_term_term sigma_term))
+           (upId_term_term _ (upId_term_term _ Eq_term)) s5)
+        (idSubst_term sigma_term Eq_term s6)
+        (idSubst_term sigma_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (idSubst_term sigma_term Eq_term s2)
         (idSubst_term (up_term_term (up_term_term sigma_term))
            (upId_term_term _ (upId_term_term _ Eq_term)) s3)
@@ -627,6 +677,19 @@ ren_term xi_term s = ren_term zeta_term s :=
            (upExtRen_term_term _ _ (upExtRen_term_term _ _ Eq_term)) s5)
         (extRen_term xi_term zeta_term Eq_term s6)
         (extRen_term xi_term zeta_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
+        (extRen_term xi_term zeta_term Eq_term s2)
+        (extRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upExtRen_term_term _ _ (upExtRen_term_term _ _ Eq_term)) s3)
+        (extRen_term (upRen_term_term xi_term) (upRen_term_term zeta_term)
+           (upExtRen_term_term _ _ Eq_term) s4)
+        (extRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upExtRen_term_term _ _ (upExtRen_term_term _ _ Eq_term)) s5)
+        (extRen_term xi_term zeta_term Eq_term s6)
+        (extRen_term xi_term zeta_term Eq_term s7)
   | obseq s0 s1 s2 s3 =>
       congr_obseq (eq_refl s0) (extRen_term xi_term zeta_term Eq_term s1)
         (extRen_term xi_term zeta_term Eq_term s2)
@@ -741,6 +804,19 @@ subst_term sigma_term s = subst_term tau_term s :=
         (ext_term sigma_term tau_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (ext_term sigma_term tau_term Eq_term s2)
+        (ext_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (upExt_term_term _ _ (upExt_term_term _ _ Eq_term)) s3)
+        (ext_term (up_term_term sigma_term) (up_term_term tau_term)
+           (upExt_term_term _ _ Eq_term) s4)
+        (ext_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (upExt_term_term _ _ (upExt_term_term _ _ Eq_term)) s5)
+        (ext_term sigma_term tau_term Eq_term s6)
+        (ext_term sigma_term tau_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (ext_term sigma_term tau_term Eq_term s2)
         (ext_term (up_term_term (up_term_term sigma_term))
            (up_term_term (up_term_term tau_term))
@@ -878,6 +954,22 @@ Fixpoint compRenRen_term (xi_term : nat -> nat) (zeta_term : nat -> nat)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s2)
+        (compRenRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upRen_term_term (upRen_term_term rho_term))
+           (up_ren_ren _ _ _ (up_ren_ren _ _ _ Eq_term)) s3)
+        (compRenRen_term (upRen_term_term xi_term)
+           (upRen_term_term zeta_term) (upRen_term_term rho_term)
+           (up_ren_ren _ _ _ Eq_term) s4)
+        (compRenRen_term (upRen_term_term (upRen_term_term xi_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (upRen_term_term (upRen_term_term rho_term))
+           (up_ren_ren _ _ _ (up_ren_ren _ _ _ Eq_term)) s5)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s6)
+        (compRenRen_term xi_term zeta_term rho_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (compRenRen_term xi_term zeta_term rho_term Eq_term s2)
         (compRenRen_term (upRen_term_term (upRen_term_term xi_term))
            (upRen_term_term (upRen_term_term zeta_term))
@@ -1039,6 +1131,26 @@ subst_term tau_term (ren_term xi_term s) = subst_term theta_term s :=
         (compRenSubst_term xi_term tau_term theta_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s2)
+        (compRenSubst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_ren_subst_term_term _ _ _
+              (up_ren_subst_term_term _ _ _ Eq_term))
+           s3)
+        (compRenSubst_term (upRen_term_term xi_term) (up_term_term tau_term)
+           (up_term_term theta_term) (up_ren_subst_term_term _ _ _ Eq_term)
+           s4)
+        (compRenSubst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_ren_subst_term_term _ _ _
+              (up_ren_subst_term_term _ _ _ Eq_term))
+           s5)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s6)
+        (compRenSubst_term xi_term tau_term theta_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (compRenSubst_term xi_term tau_term theta_term Eq_term s2)
         (compRenSubst_term (upRen_term_term (upRen_term_term xi_term))
            (up_term_term (up_term_term tau_term))
@@ -1233,6 +1345,26 @@ ren_term zeta_term (subst_term sigma_term s) = subst_term theta_term s :=
            s5)
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s6)
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s2)
+        (compSubstRen_term (up_term_term (up_term_term sigma_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_ren_term_term _ _ _
+              (up_subst_ren_term_term _ _ _ Eq_term))
+           s3)
+        (compSubstRen_term (up_term_term sigma_term)
+           (upRen_term_term zeta_term) (up_term_term theta_term)
+           (up_subst_ren_term_term _ _ _ Eq_term) s4)
+        (compSubstRen_term (up_term_term (up_term_term sigma_term))
+           (upRen_term_term (upRen_term_term zeta_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_ren_term_term _ _ _
+              (up_subst_ren_term_term _ _ _ Eq_term))
+           s5)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s6)
+        (compSubstRen_term sigma_term zeta_term theta_term Eq_term s7)
   | obseq s0 s1 s2 s3 =>
       congr_obseq (eq_refl s0)
         (compSubstRen_term sigma_term zeta_term theta_term Eq_term s1)
@@ -1394,6 +1526,26 @@ subst_term tau_term (subst_term sigma_term s) = subst_term theta_term s :=
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s2)
+        (compSubstSubst_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_subst_term_term _ _ _
+              (up_subst_subst_term_term _ _ _ Eq_term))
+           s3)
+        (compSubstSubst_term (up_term_term sigma_term)
+           (up_term_term tau_term) (up_term_term theta_term)
+           (up_subst_subst_term_term _ _ _ Eq_term) s4)
+        (compSubstSubst_term (up_term_term (up_term_term sigma_term))
+           (up_term_term (up_term_term tau_term))
+           (up_term_term (up_term_term theta_term))
+           (up_subst_subst_term_term _ _ _
+              (up_subst_subst_term_term _ _ _ Eq_term))
+           s5)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s6)
+        (compSubstSubst_term sigma_term tau_term theta_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (compSubstSubst_term sigma_term tau_term theta_term Eq_term s2)
         (compSubstSubst_term (up_term_term (up_term_term sigma_term))
            (up_term_term (up_term_term tau_term))
@@ -1608,6 +1760,21 @@ Fixpoint rinst_inst_term (xi_term : nat -> nat) (sigma_term : nat -> term)
         (rinst_inst_term xi_term sigma_term Eq_term s6)
   | accel s0 s1 s2 s3 s4 s5 s6 s7 =>
       congr_accel (eq_refl s0) (eq_refl s1)
+        (rinst_inst_term xi_term sigma_term Eq_term s2)
+        (rinst_inst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term sigma_term))
+           (rinstInst_up_term_term _ _ (rinstInst_up_term_term _ _ Eq_term))
+           s3)
+        (rinst_inst_term (upRen_term_term xi_term) (up_term_term sigma_term)
+           (rinstInst_up_term_term _ _ Eq_term) s4)
+        (rinst_inst_term (upRen_term_term (upRen_term_term xi_term))
+           (up_term_term (up_term_term sigma_term))
+           (rinstInst_up_term_term _ _ (rinstInst_up_term_term _ _ Eq_term))
+           s5)
+        (rinst_inst_term xi_term sigma_term Eq_term s6)
+        (rinst_inst_term xi_term sigma_term Eq_term s7)
+  | accelcomp s0 s1 s2 s3 s4 s5 s6 s7 =>
+      congr_accelcomp (eq_refl s0) (eq_refl s1)
         (rinst_inst_term xi_term sigma_term Eq_term s2)
         (rinst_inst_term (upRen_term_term (upRen_term_term xi_term))
            (up_term_term (up_term_term sigma_term))

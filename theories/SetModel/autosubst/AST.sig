@@ -23,6 +23,7 @@ acc    : level -> term -> (bind term , term in term) -> term -> term
 accin  : level -> term -> (bind term , term in term) -> term -> term -> term
 accinv : level -> term -> (bind term , term in term) -> term -> term -> term -> term -> term
 accel  : level -> level -> term -> (bind term , term in term) -> (bind term in term) -> (bind term, term in term) -> term -> term -> term
+accelcomp  : level -> level -> term -> (bind term , term in term) -> (bind term in term) -> (bind term, term in term) -> term -> term -> term
 
 obseq   : level -> term -> term -> term -> term
 -- we add obsrefl and J so that we can derive obs_sym, which avoids adding the symmetric axioms 
