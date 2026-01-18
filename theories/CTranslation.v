@@ -1782,7 +1782,34 @@ Proof.
 
   - admit.
   - admit.
-  - admit.
+  - intros. destruct l. 2:econstructor. rename t' into u.
+    eapply H in H1 as h1.
+    eapply H0 in H1 as h0. clear H H0. 
+    dependent destruction h1. 
+    
+    eapply tr_eq_ty_sgeth in h0; eauto using decoration, typing, validity_ty_ctx.
+    dependent destruction h0. rename t'0 into A''. rename u'0 into B'.
+
+    assert (A' ~ A'') by eauto using dec_to_sim, sim_sym, sim_trans.
+    eapply sim_heq_same_ctx in H11; eauto using validity_ty_ty.
+    destruct H11. eapply type_heq_trans' in H10. 5:eapply H11. 
+    all:eauto using validity_ty_ty.
+    destruct H10.
+
+    eapply type_heq_cast in H3 as H3'; eauto using validity_ty_ty, type_hetero_to_homo.
+    eapply type_heq_cast in H4 as H4'; eauto using validity_ty_ty, type_hetero_to_homo.
+
+    eapply type_heq_trans' in  H4'. 5:eapply H5. all:eauto using typing, type_hetero_to_homo, validity_ty_ty.
+
+    eapply type_heq_sym in H3'; eauto using validity_ty_ty, type_hetero_to_homo, typing.
+    destruct H4'.
+    eapply type_heq_trans' in  H12. 5:eapply H3'. all:eauto using typing, type_hetero_to_homo, validity_ty_ty.
+    destruct H12.
+
+    eapply tr_eq_conclude. 7:eapply H12.
+    all:eauto using decoration, typing, type_hetero_to_homo, validity_ty_ty.
+    
+
   - admit.
   - admit. 
 
@@ -1891,8 +1918,38 @@ Proof.
       all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
     + econstructor. Unshelve. all:exact Nat. *)
   - intros. admit.
-  - admit.
-  - admit.
+
+  (* case sym *)
+  - intros. destruct l. 2:econstructor.
+    eapply H in H0.
+    dependent destruction H0.
+    eapply type_heq_sym in H5; eauto using validity_ty_ty.
+    
+    eapply tr_eq_conclude. 7:eapply H5.
+    all:eauto.
+
+  (* case trans *)
+  - intros. destruct l. 2:econstructor.
+    eapply H in H1 as h. eapply H0 in H1 as h0.
+    clear H H0.
+    dependent destruction h.
+    eapply tr_eq_ty_geth in h0.
+    5:eauto using validity_ty_ty.
+    all:eauto using validity_ty_ty, type_heq_refl.
+    dependent destruction h0.
+
+    rename t'0 into u''. rename u'0 into v'.
+
+    assert (u' ~ u'') by eauto using dec_to_sim, sim_sym, sim_trans.
+    eapply sim_heq_same_ctx in H11; eauto.
+    destruct H11.
+
+    eapply type_heq_trans in H11. 5:eapply H5. all:eauto.
+    eapply type_heq_trans in H10. 5:eapply H11. all:eauto.
+
+    eapply tr_eq_conclude.
+    7:eapply H10.
+    all:eauto.
 Admitted.
 
 Lemma conservativity_ty A A0 :
