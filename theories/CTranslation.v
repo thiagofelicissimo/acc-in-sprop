@@ -1062,6 +1062,41 @@ Proof.
   all:econstructor; eapply ctx_extend_Wt; eauto using validity_ty_ctx.
 Qed.
 
+
+Lemma tr_eq_ty_cons2_geth Γ' n i j A1 A2 A1' A2' B1 B2 B1' B2' C1 C2 C1' C2' t u eA eB eC :
+  A1 ⊏ A1' ->
+  A2 ⊏ A2' ->
+  B1 ⊏ B1' ->
+  B2 ⊏ B2' ->
+  C1 ⊏ C1' ->
+  C2 ⊏ C2' ->
+
+  Γ' ,, (i, A1') ,, (j, B1') ⊢< Ax (ty n) > C1' : Sort (ty n) ->
+  Γ' ,, (i, A2') ,, (j, B2') ⊢< Ax (ty n) > C2' : Sort (ty n) ->
+
+  Γ' ⊢< prop > eA : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+
+  let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > eB : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
+
+  let Beq := heq j ((S >> S >> S >> S) ⋅ B1') ((up_ren S >> S >> S >> S) ⋅ B2') (var 1) (var 0) in
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) 
+    ,, (j, (S >> S) ⋅ B1') ,, (j,  (up_ren S >> S >> S) ⋅ B2') ,, (prop, Beq)
+    ⊢< prop > eC : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') ->
+  
+  Γ' ,, (i, A1') ,, (j, B1') ⊨⟨ ty n ⟩ t = u : C1 ->
+  exists t' u',
+    t ⊏ t' /\
+    u ⊏ u' /\
+    Γ' ,, (i, A1') ,, (j, B1') ⊢< ty n > t' : C1' /\
+    Γ' ,, (i, A2') ,, (j, B2') ⊢< ty n > u' : C2' /\
+    exists e',
+    Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) 
+      ,, (j, (S >> S) ⋅ B1') ,, (j,  (up_ren S >> S >> S) ⋅ B2') ,, (prop, Beq)
+      ⊢< prop > e' : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') 
+        ((up_ren (S >> S) >> S >> S) ⋅ t') ((up_ren (up_ren S >> S >> S) >> S) ⋅ u').
+Proof. Admitted.
+
 Lemma tr_eq_conclude Γ' e l A A' B B' t t' u u' :
   t ⊏ t' ->
   u ⊏ u' ->
@@ -1735,9 +1770,188 @@ Proof.
   - intros. rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
     rename R into R1. rename R' into R2.
     assert (⊢ Γ') as Γ'_Wf by (destruct H3; eauto).
-    admit.
 
-  - intros. admit.
+    specialize H0 with (1:=H3).
+    eapply tr_eq_ty_sgeth in H0; eauto using decoration, typing.
+    destruct H0. rename t' into A1'. rename u' into A2'.
+
+
+
+    assert (tr_ctx ((Γ,, (ty n, A1)),, (ty n, S ⋅ A1)) ((Γ',, (ty n, A1')),, (ty n, S ⋅ A1'))).
+    { eapply tr_ctx_cons'. 1:eapply tr_ctx_cons'.
+      all:eauto using rename_dec. eapply type_ren; eauto using WellRen_S, validity_ty_ctx, ctx_typing. }
+
+    specialize H1 with (1:=H8).
+    eapply tr_eq_ty_cons2_geth in H1.
+    10:eapply H7.
+    10:{eapply type_ren. 1:eapply H7.
+      2:eauto using WellRen_S, WellRen_weak.
+      2:rewrite (heq_ren ((S >> S) >> S) ); f_equal.
+      Unshelve. 11:exact (S ⋅ A2'). 
+      4-11:shelve. 2,3:rasimpl;reflexivity.
+      eapply ctx_extend_Wt; eauto using validity_ty_ctx. }
+    10:{
+      eapply meta_conv.
+      1:eapply type_heq_refl.
+      2:eapply type_sort. 1:econstructor.
+      Unshelve. 11:exact prop. 10:exact (Sort prop). 9:exact (Sort prop). 4-8:shelve.
+      3:simpl; f_equal. 1,2:eapply ctx_extend2_Wt; eauto using type_ren, WellRen_S, ctx_typing. }
+    all:eauto using decoration, rename_dec.
+    2,3:eauto 7 using typing, ctx_typing, type_ren, WellRen_S.
+    destruct H1 as (R1' & R2' & ?). intuition eauto.
+    destruct H13.
+
+    specialize H2 with (1:=H3).
+    eapply tr_eq_ty_geth in H2. 6:eapply H7. all:eauto.
+    destruct H2. rename t' into a1'. rename u' into a2'.
+
+
+    rasimpl in H12.
+    eapply type_heq_acc in H16.  
+    6:eapply meta_conv. 6:rasimpl. 6:eapply H12. 2:eapply H10. 3:eapply H11.
+    4:f_equal; rasimpl; reflexivity.
+    all:eauto.
+    
+    eapply tr_eq_conclude.
+    7:eapply H16.
+    all:eauto using decoration, typing.
+    
+
+  - intros * _ _ _ ihA _ _ _ ihR _ _ _ ihP * _ ihp _ iha _ ihq1 _ ihq2 _ _ * hc.
+    destruct l. 2:econstructor.
+    assert (⊢ Γ') as Γ'_Wf by (destruct hc;eauto).
+    rename A into A1. rename A' into A2. rename R into R1. rename R' into R2.
+    rename P into P1. rename P' into P2. rename p into p1. rename p' into p2.
+    rename a into a1. rename a' into a2. rename q into q1. rename q' into q2.
+    specialize ihA with (1:=hc).
+    specialize iha with (1:=hc).
+    specialize ihq1 with (1:=hc).
+    specialize ihq2 with (1:=hc).
+    
+    eapply tr_eq_ty_sgeth in ihA; eauto using typing, decoration.
+    destruct ihA. rename t' into A1'. rename u' into A2'.
+
+    eapply tr_eq_ty_geth in iha. 6:eapply H3. all:eauto.
+    destruct iha. rename t' into a1'. rename u' into a2'.
+
+
+    assert (tr_ctx ((Γ,, (ty n, A1)),, (ty n, S ⋅ A1)) ((Γ',, (ty n, A1')),, (ty n, S ⋅ A1'))).
+    { eapply tr_ctx_cons'. 1:eapply tr_ctx_cons'.
+      all:eauto using rename_dec. eapply type_ren; eauto using WellRen_S, validity_ty_ctx, ctx_typing. }
+
+    specialize ihR with (1:=H9).
+    eapply tr_eq_ty_cons2_geth in ihR.
+    10:eapply H3.
+    10:{eapply type_ren. 1:eapply H3.
+      2:eauto using WellRen_S, WellRen_weak.
+      2:rewrite (heq_ren ((S >> S) >> S) ); f_equal.
+      Unshelve. 11:exact (S ⋅ A2'). 
+      4-11:shelve. 2,3:rasimpl;reflexivity.
+      eapply ctx_extend_Wt; eauto using validity_ty_ctx. }
+    10:{
+      eapply meta_conv.
+      1:eapply type_heq_refl.
+      2:eapply type_sort. 1:econstructor.
+      Unshelve. 11:exact prop. 10:exact (Sort prop). 9:exact (Sort prop). 4-8:shelve.
+      3:simpl; f_equal. 1,2:eapply ctx_extend2_Wt; eauto using type_ren, WellRen_S, ctx_typing. }
+    all:eauto using decoration, rename_dec.
+    2,3:eauto 7 using typing, ctx_typing, type_ren, WellRen_S.
+    destruct ihR as (R1' & R2' & ?). intuition eauto.
+    destruct H15.
+
+
+    eapply tr_tm_get in ihq1. 2:econstructor; eauto. 2:eauto using typing.
+    eapply tr_tm_get in ihq2. 2:econstructor; eauto. 2:eauto using typing.
+    destruct ihq1 as (q1' & ? & ?).
+    destruct ihq2 as (q2' & ? & ?).
+
+
+    assert (tr_ctx ((Γ,, (ty n, A1))) ((Γ',, (ty n, A1')))).
+    { eapply tr_ctx_cons'; eauto. }
+    specialize ihP with (1:= H19).
+
+    eapply tr_eq_ty_cons_geth_sort in ihP. 6:eassumption. all: eauto using decoration, typing, ctx_typing.
+    destruct ihP as (P1' & P2' & ?). intuition eauto. destruct H25.
+
+
+    pose (R_1' := (1 .: (0 .: (S >> S))) ⋅ R1').
+    pose (P_1' := (1 .: (S >> S >> S)) ⋅ P1').
+    pose (B1' := Pi (ty n) (ty n0 ) (S ⋅ A1') (Pi prop (ty n0) R_1' P_1')).
+    pose (P01' := (1.: (S >> S)) ⋅ P1').
+
+    pose (R_2' := (1 .: (0 .: (S >> S))) ⋅ R2').
+    pose (P_2' := (1 .: (S >> S >> S)) ⋅ P2').
+    pose (B2' := Pi (ty n) (ty n0 ) (S ⋅ A2') (Pi prop (ty n0) R_2' P_2')).
+    pose (P02' := (1.: (S >> S)) ⋅ P2').
+
+    rename B into B1.
+    assert (B1 ⊏ B1') as B1_dec_B1'.
+    { unfold B1, B1'. econstructor. 2:econstructor. 2,3:unfold R_, P_, R_1', R_2'. all:eauto using rename_dec. }
+
+    assert (Pi (ty n) (ty n0) (S ⋅ A2) (Pi prop (ty n0) ((1 .: (0 .: S >> S)) ⋅ R2) ((1 .: (S >> S) >> S) ⋅ P2)) ⊏ B2')
+      as B2_dec_B2'.
+    { unfold B2', R_2', P_2'. econstructor. 2:econstructor. all:eauto using rename_dec. }
+
+    rename P'' into P01.
+    assert (P01 ⊏ P01') as P01_dec_P01'.
+    { unfold P01, P01'. eauto using rename_dec. }
+    assert ((1 .: S >> S) ⋅ P2 ⊏ P02') as P02_dec_P02'.
+    { unfold P02'. eauto using rename_dec. }
+
+
+
+    (* eassert (_ ⊢< _ > R_1' : _) by eauto using R0Wt.
+    eassert (_ ⊢< _ > R_2' : _) by eauto using R0Wt.
+    eassert (_ ⊢< _ > P_1' : _) by eauto using P0Wt.
+    eassert (_ ⊢< _ > P_2' : _) by eauto using P0Wt.
+    eassert (_ ⊢< _ > B2' : _) by eauto using BWt. *)
+
+    assert (exists e', Γ',, (ty n, A1'),, (ty n, S ⋅ A2'),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0)) 
+      ⊢< prop > e' : heq (Ax (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) ((S >> S) ⋅ B1') (((up_ren S >> S) ⋅ B2')))
+      as (? & B1'_eq_B2').
+      1:admit.
+
+
+    assert (exists e, (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (Ru (ty n) (ty n0), (S >> S) ⋅ B1')),, (Ru (ty n) (ty n0), ((up_ren S >> S) >> S) ⋅ B2')),, 
+      (prop, heq (Ru (ty n) (ty n0)) ((((S >> S) >> S) >> S) ⋅ B1') ((((up_ren S >> S) >> S) >> S) ⋅ B2') (var 1) (var 0)) 
+      ⊢< prop > e : heq (Ax (ty n0)) (Sort (ty n0)) (Sort (ty n0)) (((up_ren (S >> S) >> S) >> S) ⋅ P01') ((up_ren ((up_ren S >> S) >> S) >> S) ⋅ P02'))
+      as (? & P01'_eq_P02').
+    1:admit.
+
+
+
+    assert ((Γ',, (ty n, A1')),, (ty n, S ⋅ A1') ⊢r (1 .: (0 .: S >> S)) : (Γ',, (ty n, A1')),, (ty n, S ⋅ A1')).
+    { econstructor. 1:econstructor. 1:ssimpl; eauto using WellRen_weak, WellRen_S.
+      all:eapply varty_meta.
+      1,3:econstructor. 1:econstructor. all:rasimpl;reflexivity. }
+
+
+
+
+
+    eassert (_ ⊢< _ > B1' : _) by eauto using BWt.
+
+    assert (tr_ctx ((Γ,, (ty n, A1)),, (Ru (ty n) (ty n0), B1)) ((Γ',, (ty n, A1')),, (Ru (ty n) (ty n0), B1'))) as trΓAB
+    by eauto using  tr_ctx_cons'.
+
+    specialize ihp with (1:=trΓAB).
+
+    eapply tr_eq_ty_cons2_geth in ihp.
+    10:eapply H3.
+    10:eapply B1'_eq_B2'.
+    10:eapply P01'_eq_P02'.
+    8,9:eapply P00Wt; eauto.
+    all:eauto.
+
+    destruct ihp as (p1' & p2' & ?). intuition eauto. destruct H32.
+
+
+    eapply type_heq_accel in H31; eauto. 2:rasimpl in H14; rasimpl; eapply H14.
+
+    eapply tr_eq_conclude. 7:eapply H31.
+    all:eauto using typing, decoration, substs_decs_one.
+
 
   (* case obseq *)
   - intros. 

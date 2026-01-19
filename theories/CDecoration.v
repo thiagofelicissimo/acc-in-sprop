@@ -1351,6 +1351,31 @@ Proof.
   1:econstructor. unfold Aeq;rewrite heq_ren ;rasimpl;reflexivity.
 Qed.
 
+Lemma ctx_extend2_Wt Γ i j A1 A2 B1 B2 :
+  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
+  ⊢ Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq).
+Proof.
+  intros.
+  assert (⊢ ((Γ,, (i, A1)),, (i, S ⋅ A2)),, (prop, Aeq))  by 
+    (eapply validity_ty_ctx in H,H0; inversion H; inversion H0; eapply ctx_extend_Wt; eauto).
+  (* assert  *)
+  econstructor.
+  1:econstructor.
+  1:econstructor.
+  1:eassumption.
+  1,2:eapply type_ren; eauto using WellRen_weak, WellRen_S, ctx_typing, type_ren, WellRen_up.
+  eapply type_heq; eauto.
+  1,2:eapply type_ren; eauto 12 using WellRen_weak, WellRen_S, ctx_typing, type_ren, WellRen_up.
+  1,2:econstructor.
+  1,3:eauto 12 using WellRen_weak, WellRen_S, ctx_typing, type_ren, WellRen_up.
+  1,2:eapply varty_meta.
+  1,3:econstructor. 1:econstructor.
+  all:rasimpl;reflexivity.
+Qed.
+
 
 Lemma renL_jump (a b c : term) σ :
   pointwise_relation nat eq (renL >> (a .: (b .: (c .: σ)))) (c .: (renL >> σ)).
