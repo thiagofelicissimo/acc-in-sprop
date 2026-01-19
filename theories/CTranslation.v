@@ -1952,22 +1952,28 @@ Proof.
     all:eauto.
 Admitted.
 
-Lemma conservativity_ty A A0 :
-  A ⊏ A0 ->
-  ∙ ⊢< Ax prop > A : Sort prop -> 
-  ∙ ⊢< Ax prop > A0 : Sort prop -> 
-  exists e, ∙ ⊢< prop > e : obseq (Ax prop) (Sort prop) A0 A.
+Lemma conservativity_trans l t u A :
+  t ⊏ u ->
+  ∙ ⊢< ty l > t : A -> 
+  ∙ ⊢< ty l > u : A -> 
+  exists e, ∙ ⊢< prop > e : obseq (ty l) A u t.
 Proof.
   intros Hinc Hty Hty0.
-  unshelve epose proof (H := sim_heq 0 ∙ ∙ A A0 (Sort prop) (Sort prop) _ _ Hty Hty0).
+  unshelve epose proof (H := sim_heq l ∙ ∙ t u A A _ _ Hty Hty0).
   1: econstructor.
   1: now eapply dec_to_sim. 
   assert (renL ⋅ A = A). 
+  { apply closed_ren. eapply typing_closed; eauto. 
+    eapply validity_ty_ty in Hty. eapply Hty. }
+  assert (renR ⋅ A = A). 
+  { apply closed_ren. eapply typing_closed; eauto. 
+    eapply validity_ty_ty in Hty. eapply Hty. }
+  assert (renL ⋅ t = t). 
   { apply closed_ren. eapply typing_closed; eauto. }
-  assert (renR ⋅ A0 = A0).
+  assert (renR ⋅ u = u).
   { apply closed_ren. eapply typing_closed; eauto. }
   destruct H as [e H].
-  rewrite H0, H1 in H. cbn in H.
+  rewrite H0, H1, H2, H3 in H. clear H0 H1 H2 H3. cbn in H.
   eapply type_hetero_to_homo in H; eauto.
   eapply type_obseq_sym in H.
   eexists; eauto.
@@ -1983,7 +1989,7 @@ Proof.
   2: repeat econstructor.
   destruct HP as [P' [e' [HP [Hincl Hincl']]]].
   assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
-  destruct (conservativity_ty _ _ Hincl' Hty HP') as [eqp Heq].
+  destruct (conservativity_trans _ _ _ _ Hincl' Hty HP') as [eqp Heq].
   eexists (cast _ P' P eqp e').
   eapply type_cast; eauto.
 Qed.  
