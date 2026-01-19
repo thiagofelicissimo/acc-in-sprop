@@ -242,6 +242,14 @@ Axiom type_hetero_to_homo : forall n Γ t u A e,
   Γ ⊢< prop > e : heq (ty n) A A t u ->
   Γ ⊢< prop > hetero_to_homo (ty n) A t u e : obseq (ty n) A t u.
 
+Axiom homo_to_hetero : forall (l : level) (A t u e : term), term.
+
+Axiom type_homo_to_hetero : forall n Γ t u A e,
+  Γ ⊢< ty n > t : A ->
+  Γ ⊢< ty n > u : A ->
+  Γ ⊢< prop > e : obseq (ty n) A t u ->
+  Γ ⊢< prop > homo_to_hetero (ty n) A t u e : heq (ty n) A A t u.  
+
 Axiom type_hetero_to_type : forall n Γ t u A B e,
   Γ ⊢< ty n > t : A ->
   Γ ⊢< ty n > u : B ->

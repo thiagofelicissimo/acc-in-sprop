@@ -1088,6 +1088,22 @@ Proof.
   all:eauto using validity_ty_ty.
 Qed.
 
+Lemma tr_eq_conclude_by_refl Γ' l A A' t t' u u' :
+  t ⊏ t' ->
+  u ⊏ u' ->
+  A ⊏ A' ->
+  Γ' ⊢< l > t' ≡ u' : A' ->
+  Γ' ⊨⟨ l ⟩ t = u : A.
+Proof.
+  intros.
+  eapply tr_eq_conclude; eauto using validity_conv_left, validity_conv_right.
+  eapply type_conv.
+  1:eapply type_heq_refl.
+  3:eapply conv_heq.
+  6:eassumption.
+  all:eauto using validity_conv_left, validity_ty_ty, conv_refl.
+Qed. 
+
 Lemma tr_ctx_cons' Γ Γ' A A' l : 
   tr_ctx Γ Γ' ->
   A ⊏ A' ->
@@ -1785,8 +1801,67 @@ Proof.
     7:eapply H17.
     all:eauto using typing, decoration.
 
-  - intros. admit.
-  - admit.
+  - intros *  ? ihe ? ihA ? iha ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    specialize ihe with (1 := hc). eapply change_type in ihe.
+    2:{
+      eapply tr_obseq. 2,3: eassumption.
+      eapply tr_Sort. eassumption.
+    }
+    destruct ihe as [e' ihe].
+    specialize iha with (1 := hc). eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    destruct ihA, ihe, iha.
+    intuition eauto.
+    eapply tr_eq_conclude_by_refl.
+    4:eapply conv_cast_refl; eauto.
+    all:eauto using decoration.
+
+
+  - intros * ? ihA1 ? ihB1 ? ihA2 ? ihB2 ? ihe ? ihf ? *  hc.
+    specialize ihA1 with (1 := hc).
+    eapply keep_sort in ihA1. destruct ihA1 as (A' & ihA1).
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    specialize ihB1 with (1 := hca).
+    eapply keep_sort in ihB1. destruct ihB1 as (B' & ihB1).
+    specialize ihA2 with (1 := hc).
+    eapply keep_sort in ihA2. destruct ihA2 as (A'2 & ihA2).
+    eapply tr_ctx_cons in hc as hca2. 2: eassumption.
+    specialize ihB2 with (1 := hca2).
+    eapply keep_sort in ihB2. destruct ihB2 as (B'2 & ihB2).
+    specialize ihf with (1 := hc).
+    eapply change_type in ihf. 2:{ eapply tr_Pi. all: eassumption. }
+    destruct
+      ihA1 as (? & ? & _),
+      ihB1 as (? & ? & _),
+      ihA2 as (? & ? & _),
+      ihB2 as (? & ? & _),
+      ihf as (? & ? & ?). intuition eauto.
+      
+  
+    specialize ihe with (1 := hc).
+    eapply tr_tm_get in ihe.
+    2:econstructor. 2-4:econstructor. all:eauto.
+    2:econstructor; eauto using typing, validity_ty_ctx.
+    destruct ihe. destruct H8.
+
+    eapply tr_eq_conclude_by_refl.
+    4:eapply conv_cast_pi. 8:eapply H11. 8:eapply H7.
+    all:eauto using decoration.
+    unfold t8, t7, t6, t5, B2', B1', A2', A1'.
+    econstructor; eauto.
+    econstructor; eauto.
+    2:econstructor; eauto using rename_dec, decoration.
+    2:econstructor; eauto using rename_dec, decoration.
+    2:econstructor; eauto using rename_dec, decoration.
+    2:econstructor; eauto using rename_dec, decoration.
+    eapply substs_decs; eauto.
+    unfold dec_subst. intros.
+    destruct x1;simpl.
+    2:unfold ">>";econstructor.
+    econstructor; eauto 8 using decoration, rename_dec.
+    
   - intros. destruct l. 2:econstructor. rename t' into u.
     eapply H in H1 as h1.
     eapply H0 in H1 as h0. clear H H0. 
@@ -1815,7 +1890,24 @@ Proof.
     all:eauto using decoration, typing, type_hetero_to_homo, validity_ty_ty.
     
 
-  - admit.
+  - intros * ? ihA ? ihB ? iht ? ihu ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as (A' & ihA).
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    specialize ihB with (1 := hca). eapply keep_sort in ihB.
+    destruct ihB as (B' & ihB).
+    specialize iht with (1 := hca).
+    eapply change_type in iht. 2: eassumption.
+    specialize ihu with (1 := hc).
+    eapply change_type in ihu. 2: eassumption.
+    destruct ihu as (u' & ihu).
+    destruct iht as (t' & iht).
+    destruct ihA as (? & ? & _), ihB as (? & ? & _), iht as (? & ? & _).
+    destruct ihu as (? & ? & _).
+    eapply tr_eq_conclude_by_refl.
+    4:eapply conv_beta.
+    all:eauto using decoration, substs_decs_one.
+
   - intros. admit.
 
   (* case natrec_zero *)
@@ -1853,20 +1945,9 @@ Proof.
       ihP as (? & ? & _),
       ihz as (? & ? & _),
       ihs as (? & ? & _). 
-      admit.
-    (* destruct l; eexists _,_,_,_,_. 
-    + econstructor. 2:econstructor. 3:econstructor. 4:econstructor. 5:econstructor. 6:econstructor.
-      3:econstructor. all:eauto. 3:econstructor.
-      3:econstructor; eauto using typing, validity_ty_ctx.
-      1,2:eapply substs_decs_one; eauto using decoration.
-      eapply type_conv.
-      1:eapply type_heq_refl.
-      3:eapply conv_heq.
-      3,4,6:eapply conv_refl.
-      6:eapply conv_sym, conv_rec_zero; eauto.
-      all:eauto.
-      all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
-    + econstructor. Unshelve. all:exact Nat.   *)
+    eassert (Γ' ⊢< l > rec l P' z' s' zero ≡ z' : _) by eauto using conversion.
+    eapply tr_eq_conclude_by_refl. 4:eapply H5.
+    all:eauto using decoration, substs_decs_two, substs_decs_one.
 
   (* case natrec_succ *)
   - intros * ? ihP ? ihz ? ihs ? iht ? hc.
@@ -1908,23 +1989,90 @@ Proof.
       ihs as (? & ? & _),
       iht as (? & ? & _).
     assert (Γ' ⊢< l > rec l P' z' s' (succ t') ≡ s' <[ rec l P' z' s' t' .: t'..] : P' <[ (succ t')..]) by eauto using conversion.
-    admit.
-    (* destruct l; eexists _,_,_,_,_. 
-    + econstructor. 2:econstructor. 3:econstructor. 4:econstructor. 5:econstructor. 6:econstructor.
-      3:econstructor. 1,2:eapply substs_decs_one.
-      1-8:eauto. 1-3:econstructor; eauto.
-      1:eapply substs_decs_two. 2:econstructor. all:eauto.
-      1,2:eauto using validity_conv_left, validity_conv_right.
-      eapply type_conv.
-      1:eapply type_heq_refl.
-      3:eapply conv_heq.
-      3,4,6:eapply conv_refl.
-      all: eauto using validity_conv_left, validity_conv_right, conv_sym.
-      all:eapply subst_ty; eauto using subst_one, typing, validity_ty_ctx.
-    + econstructor. Unshelve. all:exact Nat. *)
-  - intros. admit.
-
-  (* case sym *)
+    eapply tr_eq_conclude_by_refl. 4:eapply H7.
+    all:eauto using decoration, substs_decs_two, substs_decs_one.
+  - intros ?? l * ? ihA ? ihR ? ihP. cbn zeta. intros ? ihp ? iha ? ihq ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    eapply tr_ctx_cons in hca as hcaa.
+    2:{ eapply tr_rename_sort. 1,2: eauto. eapply WellRen_S. }
+    specialize ihR with (1 := hcaa). eapply keep_sort in ihR.
+    destruct ihR as [R' ihR].
+    specialize ihP with (1 := hca). eapply keep_sort in ihP.
+    destruct ihP as [P' ihP].
+    specialize iha with (1 := hc).
+    eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    lazymatch type of ihp with
+    | ∀ G', tr_ctx ?G G' → _ => eassert (hcap : tr_ctx G _)
+    end.
+    { eapply tr_ctx_cons. 1: eassumption.
+      eapply tr_Pi.
+      - eapply tr_rename_sort. 1,2: eassumption.
+        apply WellRen_S.
+      - eapply tr_meta.
+        { eapply tr_Pi.
+          - eapply tr_rename_sort. 1,2: eassumption.
+            apply well_rcons_alt. 1: apply well_rcons_alt.
+            + apply WellRen_weak. apply WellRen_S.
+            + eapply varty_meta.
+              { repeat constructor. }
+              rasimpl. reflexivity.
+            + eapply varty_meta.
+              { repeat constructor. }
+              rasimpl. reflexivity.
+          - eapply tr_rename_sort. 1: eassumption.
+            + eapply tr_ctx_cons. 1: eassumption.
+              eapply tr_rename_sort. 1,2: eassumption.
+              apply well_rcons_alt. 1: apply well_rcons_alt.
+              * apply WellRen_weak. apply WellRen_S.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+            + apply well_rcons_alt.
+              * do 2 apply WellRen_weak. apply WellRen_S.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+        }
+        all: destruct l ; reflexivity.
+    }
+    specialize ihp with (1 := hcap).
+    eapply change_type in ihp.
+    2:{
+      eapply tr_rename_sort. 1,2: eassumption.
+      apply well_rcons_alt.
+      - apply WellRen_weak. apply WellRen_S.
+      - eapply varty_meta.
+        { repeat constructor. }
+        rasimpl. reflexivity.
+    }
+    destruct ihp as [p' ihp].
+    specialize ihq with (1 := hc).
+    eapply change_type in ihq. 2:{ eapply tr_acc. all: eauto. }
+    destruct ihq as [q' ihq].
+    destruct ihA, ihR, ihP, iha, ihp, ihq.
+    intuition eauto.
+    eassert (_ ⊢< _ > _ : obseq _ _ (accel (ty n) (ty l) A' R' P' p' a' q') _) by eauto using typing.
+    eapply validity_ty_ty in H10 as H'. eapply type_inv in H'. dependent destruction H'.
+    eapply type_homo_to_hetero in H10; eauto.
+    eapply tr_eq_conclude.
+    7:eapply H10.
+    all:eauto 10 using decoration, substs_decs_one, substs_decs_two, rename_dec.
+    eapply substs_decs_two.
+    all:eauto.
+    econstructor; eauto.
+    1,2:econstructor; eauto.
+    3:econstructor. 8:econstructor.
+    all:eauto using decoration, rename_dec.
+    all:setoid_rewrite subst_id_reduce1.
+    1,2:eapply substs_decs_one; eauto using rename_dec.
+  
+    (* case sym *)
   - intros. destruct l. 2:econstructor.
     eapply H in H0.
     dependent destruction H0.
