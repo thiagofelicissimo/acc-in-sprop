@@ -80,3 +80,15 @@ Proof.
     refine (transpS (fun X => _ ∈ X) (sym (el_boxTy HP γ Hγ)) Hx).
 Qed.
     
+(* Boxed version *)
+
+Definition forallTy_cl (Γ : ZFSet) (n : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (forallTy_HO n A B).
+
+Lemma forallTy_cl_typing {n : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HB : ∀ γa ∈ ctxExt n Γ A, B γa ∈ Ω) :
+  ∀ γ ∈ Γ, forallTy_cl Γ n A B γ ∈ Ω.
+Proof.
+  intros γ Hγ. unfold forallTy_cl. destruct (sym (clip_inside Γ (forallTy_HO n A B) γ Hγ)).
+  now apply (forallTy_HO_typing HA HB γ Hγ).
+Qed.

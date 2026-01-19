@@ -210,3 +210,8 @@ Proof.
   now apply (zero_ne_suc ∅).
 Qed.
 
+(* Clipped versions *)
+
+Definition eqTy_cl (Γ : ZFSet) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (eqTy_HO A t u).
+

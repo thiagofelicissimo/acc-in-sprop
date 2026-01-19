@@ -1,4 +1,4 @@
-Require Import library.
+Require Import Arith library.
 Require Import ZF_axioms.
 
 (* In this file, we replicate the basic set theoretic constructions (cartesian products, function
@@ -382,34 +382,79 @@ Proof.
 Qed.
 
 (* Union of an indexed family in 𝕍 n *)
+(* Tweaked definition which uses excluded middle but has stronger rules *)
 
-Definition setFamUnion (n : nat) (A : ZFSet) (f : ZFSet -> ZFSet) : ZFSet :=
-  ⋃ (setIm A (𝕍 n) f).
+Definition setFamUnion' (m n : nat) (A : ZFSet) (f : ZFSet -> ZFSet) : ZFSet :=
+  ⋃ { b ϵ 𝕍 m ∣ ∃ a ∈ A, ((f a ∈ 𝕍 n ∧ f a ≡ b) ∨ (¬ f a ∈ 𝕍 n ∧ ∅ ≡ b)) }.
+
+Definition setFamUnion (n : nat) (A : ZFSet) (f : ZFSet -> ZFSet) : ZFSet := setFamUnion' n n A f.
 
 Lemma inSetFamUnion {n : nat} {A a b : ZFSet} {f : ZFSet -> ZFSet} (Hf : ∀ a ∈ A, f a ∈ 𝕍 n) (Ha : a ∈ A) (Hb : b ∈ f a) :
   b ∈ setFamUnion n A f.
 Proof.
   apply ZFinunion. exists (f a). split.
-  - exact (setIm_typing Hf Ha).
+  - apply ZFincomp. split.
+    + now apply Hf.
+    + exists a. split ; try assumption. left. split ; try easy. now apply Hf.
   - exact Hb.
+Qed.
+
+Lemma setFamUnion'_typing {n m : nat} (Hn : n <= m) {A : ZFSet} (HA : A ∈ 𝕍 m) (B : ZFSet -> ZFSet) :
+  setFamUnion' m n A B ∈ 𝕍 m.
+Proof.
+  apply ZFuniv_union. assumption. 
+  intros a Ha. destruct (EM (B a ∈ 𝕍 n)).
+  - exists (B a). constructor.
+    + split. apply (univ_le_incl Hn). assumption. left. now split. 
+    + intros x [ Hx1 [ Hx2 | Hx2 ] ] ; now destruct Hx2.
+  - exists ∅. constructor.
+    + split. apply empty_in_univ. right. now split.
+    + intros x [ Hx1 [ Hx2 | Hx2 ] ] ; now destruct Hx2.
 Qed.
 
 Lemma setFamUnion_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 n) (HB : ∀ a ∈ A, B a ∈ 𝕍 n) :
   setFamUnion n A B ∈ 𝕍 n.
 Proof.
-  apply ZFuniv_union. assumption. now apply HO_rel_typing.
+  now apply setFamUnion'_typing.
+Qed.
+
+Lemma setFamUnion_level_eq {n m : nat} (A : ZFSet) (B : ZFSet -> ZFSet) (Hn : n <= m) :
+  setFamUnion n A B ≡ setFamUnion' m n A B.
+Proof.
+  apply ZFext.
+  - intros x Hx. apply ZFinunion in Hx. destruct Hx as [ y [ Hy Hx ] ]. apply ZFincomp in Hy.
+    destruct Hy as [ Hy [ a [ Ha1 Ha2 ] ] ]. destruct (EM (B a ∈ 𝕍 n)).
+    + destruct Ha2 as [ [ Ha2 H ] | [ Ha2 _ ] ] ; try easy. destruct H. clear z.
+      apply ZFinunion. exists (B a). split ; try assumption. apply ZFincomp. split.
+      * apply (univ_le_incl Hn). assumption.
+      * exists a. split ; try assumption. left. now split.
+    + destruct Ha2 as [ [ Ha2 _ ] | [ Ha2 H ] ] ; try easy. destruct H. apply ZFinempty in Hx. destruct Hx.
+  - intros x Hx. apply ZFinunion in Hx. destruct Hx as [ y [ Hy Hx ] ]. apply ZFincomp in Hy.
+    destruct Hy as [ Hy [ a [ Ha1 Ha2 ] ] ]. destruct (EM (B a ∈ 𝕍 n)).
+    + destruct Ha2 as [ [ Ha2 H ] | [ Ha2 _ ] ] ; try easy. destruct H. clear z.
+      apply ZFinunion. exists (B a). split ; try assumption. apply ZFincomp. split ; try assumption.
+      exists a. split ; try assumption. left. now split.
+    + destruct Ha2 as [ [ Ha2 _ ] | [ Ha2 H ] ] ; try easy. destruct H. apply ZFinempty in Hx. destruct Hx.
+Qed.
+
+Lemma setFamUnion_typing' {n m : nat} {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ 𝕍 m) :
+  setFamUnion n A B ∈ 𝕍 (max m n).
+Proof.
+  destruct (sym (setFamUnion_level_eq A B (Nat.le_max_r m n))). apply setFamUnion'_typing.
+  - apply Nat.le_max_r.
+  - apply (univ_le_incl (Nat.le_max_l m n)). assumption.
 Qed.
 
 Lemma setFamUnion_cong {l : nat} (A : ZFSet) {B1 B2 : ZFSet -> ZFSet} (HB : ∀ a ∈ A, B1 a ≡ B2 a) :
   setFamUnion l A B1 ≡ setFamUnion l A B2.
 Proof.
-  unfold setFamUnion. refine (fequal ⋃ _). unfold setIm. unfold setRelIm. apply ZFext.
+  unfold setFamUnion. unfold setFamUnion'. refine (fequal ⋃ _). apply ZFext.
   - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx [ y [ Hy1 Hy2 ] ] ].
-    apply ZFincomp. split ; try assumption. exists y. split ; try assumption. unfold HO_rel in *.
-    refine (trans (sym _) Hy2). now apply HB.
+    apply ZFincomp. split ; try assumption. exists y. split ; try assumption.
+    destruct (HB y Hy1). exact Hy2.
   - intros x Hx. apply ZFincomp in Hx. destruct Hx as [ Hx [ y [ Hy1 Hy2 ] ] ].
-    apply ZFincomp. split ; try assumption. exists y. split ; try assumption. unfold HO_rel in *.
-    refine (trans _ Hy2). now apply HB.
+    apply ZFincomp. split ; try assumption. exists y. split ; try assumption. 
+    destruct (HB y Hy1). exact Hy2.
 Qed.
 
 (* Sigma types *)
@@ -510,6 +555,14 @@ Lemma setSigma_typing (n : nat) {A : ZFSet} {B : ZFSet -> ZFSet} (HA : A ∈ �
 Proof.
   unfold setSigma. apply setComp_sorting. apply setProd_typing.
   assumption. now apply setFamUnion_typing.
+Qed.
+
+Lemma setSigma_typing' {n m : nat} {A : ZFSet} (HA : A ∈ 𝕍 m) (B : ZFSet -> ZFSet) :
+  setSigma n A B ∈ 𝕍 (max m n).
+Proof.
+  unfold setSigma. apply setComp_sorting. apply setProd_typing.
+  - eapply univ_le_incl. apply Nat.le_max_l. exact HA.
+  - now apply setFamUnion_typing'.
 Qed.
 
 (* Function types (exponentials) as sets of graphs *)

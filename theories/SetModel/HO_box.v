@@ -50,3 +50,13 @@ Lemma boxTy_HO_η {n : nat} {Γ : ZFSet} {P p : ZFSet -> ZFSet} (HP : ∀ γ ∈
 Proof.
   intros γ Hγ. cbn. reflexivity.
 Qed.
+
+(* Clipped version *)
+
+Definition boxTy_cl (Γ : ZFSet) (P : ZFSet -> ZFSet) : ZFSet -> ZFSet := clip Γ (boxTy_HO P).
+
+Lemma boxTy_cl_typing {n : nat} {Γ : ZFSet} {P : ZFSet -> ZFSet} (HP : ∀ γ ∈ Γ, P γ ∈ Ω) :
+  ∀ γ ∈ Γ, boxTy_cl Γ P γ ∈ 𝕌 n.
+Proof.
+  apply clipped_typing_𝕌. now apply boxTy_HO_typing.
+Qed.

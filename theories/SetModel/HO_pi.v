@@ -9,7 +9,7 @@ Definition piTy_HO (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFS
   fun γ => ⟨ setPi (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩))
            ; ⟨ ZFone ; typeTelescope2 nA nB A B γ ⟩ ⟩.
 
-Definition piTy_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
+Lemma piTy_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
   (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HBe : ∀ γa ∈ ctxExt nA Γ A1, B1 γa ≡ B2 γa) :
   ∀ γ ∈ Γ, piTy_HO nA nB A1 B1 γ ≡ piTy_HO nA nB A2 B2 γ.
 Proof.
@@ -239,7 +239,7 @@ Qed.
 Definition lamTm_HO (nA nB : nat) (A t : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => relToGraph (𝕌el nA (A γ)) (𝕍 (max nA nB)) (HO_rel (fun a => t ⟨ γ ; a ⟩)).
 
-Definition lamTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 : ZFSet -> ZFSet} 
+Lemma lamTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 : ZFSet -> ZFSet} 
   (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (Hte : ∀ γa ∈ ctxExt nA Γ A1, t1 γa ≡ t2 γa) :
   ∀ γ ∈ Γ, lamTm_HO nA nB A1 t1 γ ≡ lamTm_HO nA nB A2 t2 γ.
 Proof.
@@ -288,7 +288,7 @@ Qed.
 Definition appTm_HO (nA nB : nat) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => setAppArr (𝕌el nA (A γ)) (𝕍 (max nA nB)) (t γ) (u γ).
 
-Definition appTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 u1 u2 : ZFSet -> ZFSet} 
+Lemma appTm_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 t1 t2 u1 u2 : ZFSet -> ZFSet} 
   (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (Hte : ∀ γ ∈ Γ, t1 γ ≡ t2 γ) (Hue : ∀ γ ∈ Γ, u1 γ ≡ u2 γ) :
   ∀ γ ∈ Γ, appTm_HO nA nB A1 t1 u1 γ ≡ appTm_HO nA nB A2 t2 u2 γ.
 Proof.
@@ -342,3 +342,18 @@ Proof.
     + refine (fequal2 (fun X Y => setAppArr (𝕌el nA (A X)) (𝕍 (max nA nB)) (t X) Y)
                 ((ctxExtβ1 HA Hγ Ha)) ((ctxExtβ2 HA Hγ Ha))).
 Qed.
+
+(* Clipped versions (requires excluded middle) *)
+
+Definition piTy_cl (Γ : ZFSet) (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (piTy_HO nA nB A B).
+
+Definition lamTm_cl (Γ : ZFSet) (nA nB : nat) (A t : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (lamTm_HO nA nB A t).
+
+Definition appTm_cl (Γ : ZFSet) (nA nB : nat) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (appTm_HO nA nB A t u).
+
+(* Lemma piTy_cl_typing {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet} *)
+(*   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) : *)
+(*   ∀ γ ∈ Γ, piTy_cl Γ nA nB A B γ ∈ 𝕌 (max nA nB). *)

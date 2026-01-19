@@ -29,3 +29,10 @@ Qed.
 Definition accelimTm_HO (n : nat) (A R P p a : ZFSet -> ZFSet) :=
   fun γ => accrec n (A γ) (fun x y => ∅ ∈ R ⟨ ⟨ γ ; y ⟩ ; x ⟩) (fun x => P ⟨ γ ; x ⟩) (fun x f => p ⟨ ⟨ γ ; x ⟩ ; f ⟩) (a γ).
 
+(* Clipped version *)
+
+Definition accTy_cl (Γ : ZFSet) (A R a : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
+  clip Γ (accTy_HO A R a).
+
+Definition accelimTm_cl (Γ : ZFSet) (n : nat) (A R P p a : ZFSet -> ZFSet) :=
+  clip Γ (accelimTm_HO n A R P p a).

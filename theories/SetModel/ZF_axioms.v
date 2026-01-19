@@ -97,3 +97,7 @@ Axiom ZFuniv_union : forall n I (φ : ZFSet -> ZFSet -> SProp), I ∈ 𝕍 n -> 
 Axiom ZFuniv_descr : forall n x, x ⊂ 𝕍 n -> ι x ∈ 𝕍 n.
 Axiom EM : forall A : SProp, A ∨ (¬ A).
 Axiom funext : forall {f g : ZFSet -> ZFSet}, (forall x, f x ≡ g x) -> f ≡ g.
+
+(* We add one atom that is not in any universe (can easily be encoded away) *)
+Parameter atom : ZFSet.
+Axiom atom_not_in_univ : forall n, ¬ (atom ∈ 𝕍 n).

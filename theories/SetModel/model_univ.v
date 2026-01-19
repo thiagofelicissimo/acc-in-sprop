@@ -18,13 +18,13 @@ Proof.
   (* Type *)
   + econstructor.
     * exact fΓ.
-    * apply interp_type.
-    * apply univTy_HO_typing.
+    * apply interp_type. exact fΓ.
+    * apply univTy_cl_typing.
   (* Prop *)
   + econstructor.
     * exact fΓ.
-    * apply interp_prop.
-    * apply propTy_HO_typing.
+    * apply interp_prop. exact fΓ.
+    * apply propTy_cl_typing.
 Qed.
 
 Lemma model_univ_cong (Γ : ctx) (l : level) (tΓ : ⊢ Γ) (mΓ : model_ctx Γ) :
@@ -33,14 +33,14 @@ Proof.
   apply to_model_conv_univ. destruct mΓ as [ iΓ fΓ ]. destruct l as [ l | ].
   + econstructor.
     * exact fΓ.
-    * apply interp_type.
-    * apply interp_type.
-    * apply univTy_HO_typing.
+    * apply interp_type. exact fΓ.
+    * apply interp_type. exact fΓ.
+    * apply univTy_cl_typing.
     * easy.
   + econstructor.
     * exact fΓ.
-    * apply interp_prop.
-    * apply interp_prop.
-    * apply propTy_HO_typing.
+    * apply interp_prop. exact fΓ.
+    * apply interp_prop. exact fΓ.
+    * apply propTy_cl_typing.
     * easy.
 Qed.

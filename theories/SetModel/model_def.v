@@ -115,18 +115,20 @@ Definition model_conv_univ (Γ : ctx) (l : level) (A B : term) : Prop :=
 
 Lemma of_model_type (Γ : ctx) (l : nat) (A : term) : model_typing_rel Γ (S l) A (Sort (ty l)) -> model_typing_type Γ l A.
 Proof.
-  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS. econstructor.
+  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS.
+  destruct (functional_ctx Γ fΓ H1) ; clear H1. econstructor.
   + exact fΓ.
   + exact fA.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy_cl.
 Qed.
 
 Lemma of_model_prop (Γ : ctx) (A : term) : model_typing_rel Γ 0 A (Sort prop) -> model_typing_prop Γ A.
 Proof.
-  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS. econstructor.
+  intros [ iΓ fΓ iS fS iA fA vS vA ]. inversion fS ; subst ; clear fS.
+  destruct (functional_ctx Γ fΓ H) ; clear H. econstructor.
   + exact fΓ.
   + exact fA.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy_cl.
 Qed.
 
 Lemma of_model_univ (Γ : ctx) (l : level) (A : term) : model_typing Γ (Ax l) A (Sort l) -> model_typing_univ Γ l A.
@@ -140,20 +142,20 @@ Lemma to_model_type (Γ : ctx) (l : nat) (A : term) : model_typing_type Γ l A -
 Proof.
   intros [ iΓ fΓ iA fA vA ]. econstructor.
   + exact fΓ.
-  + apply interp_type.
+  + apply interp_type. exact fΓ.
   + exact fA.
-  + apply univTy_HO_typing.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy.
+  + apply univTy_cl_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy_cl.
 Qed.
 
 Lemma to_model_prop (Γ : ctx) (A : term) : model_typing_prop Γ A -> model_typing_rel Γ 0 A (Sort prop).
 Proof.
   intros [ iΓ fΓ iA fA vA ]. econstructor.
   + exact fΓ.
-  + apply interp_prop.
+  + apply interp_prop. exact fΓ.
   + exact fA.
-  + apply propTy_HO_typing.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy.
+  + apply propTy_cl_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy_cl.
 Qed.
 
 Lemma to_model_univ (Γ : ctx) (l : level) (A : term) : model_typing_univ Γ l A -> model_typing Γ (Ax l) A (Sort l).
@@ -165,21 +167,23 @@ Qed.
 
 Lemma of_model_conv_type (Γ : ctx) (l : nat) (A B : term) : model_conv_rel Γ (S l) A B (Sort (ty l)) -> model_conv_type Γ l A B.
 Proof.
-  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS. econstructor.
+  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS.
+  destruct (functional_ctx Γ fΓ H1) ; clear H1. econstructor.
   + exact fΓ.
   + exact fA.
   + exact fB.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_univTy_cl.
   + exact vB.
 Qed.
 
 Lemma of_model_conv_prop (Γ : ctx) (A B : term) : model_conv_rel Γ 0 A B (Sort prop) -> model_conv_prop Γ A B.
 Proof.
-  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS. econstructor.
+  intros [ iΓ fΓ iS fS iA fA iB fB vS vA vB ]. inversion fS ; subst ; clear fS. 
+  destruct (functional_ctx Γ fΓ H) ; clear H. econstructor.
   + exact fΓ.
   + exact fA.
   + exact fB.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) _ (vA γ Hγ)). now apply el_propTy_cl.
   + exact vB.
 Qed.
 
@@ -194,11 +198,11 @@ Lemma to_model_conv_type (Γ : ctx) (l : nat) (A B : term) : model_conv_type Γ 
 Proof.
   intros [ iΓ fΓ iA fA iB fB vA vB ]. econstructor.
   + exact fΓ.
-  + apply interp_type.
+  + apply interp_type. exact fΓ.
   + exact fA.
   + exact fB.
-  + apply univTy_HO_typing.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy.
+  + apply univTy_cl_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_univTy_cl.
   + exact vB.
 Qed.
 
@@ -206,11 +210,11 @@ Lemma to_model_conv_prop (Γ : ctx) (A B : term) : model_conv_prop Γ A B -> mod
 Proof.
   intros [ iΓ fΓ iA fA iB fB vA vB ]. econstructor.
   + exact fΓ.
-  + apply interp_prop.
+  + apply interp_prop. apply fΓ.
   + exact fA.
   + exact fB.
-  + apply propTy_HO_typing.
-  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy.
+  + apply propTy_cl_typing.
+  + intros γ Hγ. refine (transpS (fun X => _ ∈ X) (sym _) (vA γ Hγ)). now apply el_propTy_cl.
   + exact vB.
 Qed.
 
