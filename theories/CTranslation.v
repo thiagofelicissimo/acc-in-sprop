@@ -1540,7 +1540,12 @@ Proof.
 
   (* Conversion rules *)
 
-  - intros * ??? hc. admit.
+  - intros * ??? hc. 
+    eapply tr_var in v; eauto.
+    destruct v as (A' & x' & h1 & h2 & h3).
+    eapply tr_eq_conclude.
+    7:eapply type_heq_refl. 8:eapply h1.
+    all:eauto using validity_ty_ty.
 
   - intros.
     assert (⊢ Γ') as Γ'_Wf by (destruct H; eauto).
@@ -1780,7 +1785,7 @@ Proof.
     7:eapply H17.
     all:eauto using typing, decoration.
 
-  - admit.
+  - intros. admit.
   - admit.
   - intros. destruct l. 2:econstructor. rename t' into u.
     eapply H in H1 as h1.
@@ -1811,7 +1816,7 @@ Proof.
     
 
   - admit.
-  - admit. 
+  - intros. admit.
 
   (* case natrec_zero *)
   - intros * ? ihP ? ihz ? ihs ?  hc.
