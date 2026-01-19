@@ -326,6 +326,16 @@ Proof.
       eapply heq_ty_trans. 2:eapply heq_ty_cast. eapply heq_ty_refl.
 Qed.
 
+Definition heq_sprop_sprop_funext : forall {A : SProp} {B1 B2 : A -> SProp} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x ~~ g x), f ~~ g.
+Proof.
+    intros. econstructor.
+Qed.
+
+Definition heq_ty_sprop_funext : forall {A : Type} {B1 B2 : A -> SProp} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x ~~ g x), f ~~ g.
+Proof.
+    intros. econstructor.
+Qed.
+
 Definition heq_ty_ty_funext' {A1 A2 : Type} {B1 : A1 -> Type} {B2 : A2 -> Type} 
     {f : forall x : A1, B1 x} {g : forall x : A2, B2 x} (e : A1 ~ A2) (p : forall x, f x == g (e # x)) : f == g.   
 Proof.

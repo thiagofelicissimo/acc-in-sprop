@@ -1861,7 +1861,7 @@ Proof.
     destruct x1;simpl.
     2:unfold ">>";econstructor.
     econstructor; eauto 8 using decoration, rename_dec.
-    
+
   - intros. destruct l. 2:econstructor. rename t' into u.
     eapply H in H1 as h1.
     eapply H0 in H1 as h0. clear H H0. 
@@ -1908,7 +1908,65 @@ Proof.
     4:eapply conv_beta.
     all:eauto using decoration, substs_decs_one.
 
-  - intros. admit.
+  - intros * ? ihA ? ihB ? iht ? ihu * ? iheq * hc.
+    destruct j. 2:econstructor.
+
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as (A' & ihA).
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    specialize ihB with (1 := hca). eapply keep_sort in ihB.
+    destruct ihB as (B' & ihB).
+    destruct ihA as (? & ? & _), ihB as (? & ? & _).
+    specialize iht with (1 := hc).
+    eapply tr_tm_get in iht. 2:econstructor;eauto. 2:eauto using typing.
+    specialize ihu with (1 := hc). 
+    eapply tr_tm_get in ihu. 2:econstructor;eauto. 2:eauto using typing.
+    destruct iht as (t' & ? & ?).
+    destruct ihu as (u' & ? & ?).
+
+    specialize iheq with (1 := hca).
+    eapply tr_eq_ty_sgeth in iheq; eauto.
+    destruct iheq.
+
+    eassert (Γ' ,, (i, A') ⊢< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ t') (var 0) : _).
+    { eapply type_app. 3:eapply type_ren. 3:eapply H4.
+      5:rasimpl;reflexivity.
+      1,2:eapply type_ren. 
+      all: eauto using WellRen_S, WellRen_up, ctx_typing, validity_ty_ctx, type_ren.
+      econstructor. 2:econstructor. eauto using ctx_typing, validity_ty_ctx. } 
+    eassert (Γ' ,, (i, A') ⊢< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ u') (var 0) : _).
+    { eapply type_app. 3:eapply type_ren. 3:eapply H6.
+      5:rasimpl;reflexivity.
+      1,2:eapply type_ren. 
+      all: eauto using WellRen_S, WellRen_up, ctx_typing, validity_ty_ctx, type_ren.
+      econstructor. 2:econstructor. eauto using ctx_typing, validity_ty_ctx. }
+
+      
+   
+    assert (t'0 ~ app i (ty n) (S ⋅ A') (up_ren S ⋅ B') (S ⋅ t') (var 0)).
+    { unfold t_app_x in H7.  
+      eapply dec_to_sim in H7. eapply sim_sym in H7. eapply sim_trans; eauto.
+      econstructor. 4:econstructor. all: eauto using rename_dec, dec_to_sim. }
+    assert (u'0 ~ app i (ty n) (S ⋅ A') (up_ren S ⋅ B') (S ⋅ u') (var 0)).
+    { unfold u_app_x in H8. 
+      eapply dec_to_sim in H8. eapply sim_sym in H8. eapply sim_trans; eauto.
+      econstructor. 4:econstructor. all: eauto using rename_dec, dec_to_sim. }
+
+    eapply sim_heq_same_ctx in H14; eauto.
+    eapply sim_heq_same_ctx in H15; eauto.
+    destruct H14, H15.
+    eapply type_heq_trans in H15. 5:eapply H11. all:eauto.
+    eapply type_heq_sym in H14;eauto. eapply type_heq_trans in H15. 5:eapply H14. all:eauto.
+    rasimpl in H15. rewrite subst_id_reduce1 in H15. rasimpl in H15.
+
+    eapply type_heq_funext in H15; eauto.
+
+
+    
+    eapply tr_eq_conclude.  7:eapply H15.
+    all:eauto using decoration.
+
+
 
   (* case natrec_zero *)
   - intros * ? ihP ? ihz ? ihs ?  hc.

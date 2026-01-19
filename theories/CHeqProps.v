@@ -256,3 +256,12 @@ Axiom type_hetero_to_type : forall n Γ t u A B e,
   Γ ⊢< prop > e : heq (ty n) A B t u ->
   exists e', Γ ⊢< prop > e' : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A B.
 
+Axiom heq_funext : forall (i j : level) (A B1 B2 t u e : term), term.
+
+Axiom type_heq_funext : forall Γ i j A B1 B2 t u e,
+  Γ ⊢< Ru i j > t : Pi i j A B1 →
+  Γ ⊢< Ru i j > u : Pi i j A B2 →
+  let t_app_x := app i j (S ⋅ A) ((up_ren S) ⋅ B1) (S ⋅ t) (var 0) in
+  let u_app_x := app i j (S ⋅ A) ((up_ren S) ⋅ B2) (S ⋅ u) (var 0) in
+  Γ ,, (i , A) ⊢< prop > e : heq j B1 B2 t_app_x u_app_x ->
+  Γ ⊢< prop > heq_funext i j A B1 B2 t u e : heq (Ru i j) (Pi i j A B1) (Pi i j A B2) t u.
