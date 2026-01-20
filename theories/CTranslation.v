@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP Fundamental CHeqProps CDecoration.
+Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP Fundamental ReductionUntyped CHeqProps CDecoration.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -3187,24 +3187,24 @@ Proof.
 Qed. 
 
 
-
-Lemma prop_canonicity n : 
-  ∙ ⊢< ty 0 > n : Nat ->
-  exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
+Theorem prop_canonicity n : 
+    ∙ ⊢< ty 0 > n : Nat ->
+    exists k e, eval (erasure n) k /\ 
+    ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k) /\
+    (forall k', eval (erasure n) k' -> k = k').
 Proof.
   intros. eapply included in H as H'.
-  eapply canonicity_conv in H'.
-  destruct H' as [k H']. exists k.  
+  
+  eapply computational_canonicity in H' as (k & ? & H' & ?).
+  exists k.  
   eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat n (mk_Nat k)) as Hcan.
   1:eapply Typing.type_conv.
   1:eapply Typing.type_obsrefl.
   3:econstructor.
   5:eauto.
   all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
-  eapply conservativity in Hcan; eauto.
-  eapply type_obseq; eauto.
-  1: eapply type_nat; econstructor.
-  eapply type_mk_Nat.
+  eapply conservativity in Hcan; eauto using typing, type_mk_Nat, ctx_typing. destruct Hcan.
+  eexists. split. 2:split. all:eassumption.
 Qed.
 
 Print Assumptions conservativity.

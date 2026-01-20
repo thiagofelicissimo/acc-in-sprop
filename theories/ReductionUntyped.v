@@ -320,8 +320,7 @@ Inductive eval : term -> nat -> Prop :=
     eval u n ->
     eval t (S n).
 
-
-Theorem eval_red_untyped n :
+Lemma eval_red_untyped n :
     ∙ ⊢< ty 0 > n : Nat ->
     exists k, eval (erasure n) k.
 Proof.
@@ -336,10 +335,11 @@ Proof.
       econstructor; eauto.
 Qed.
 
+
 Derive Signature for LRDef.ϵNat.
 Derive Signature for ReductionUntyped.eval.
 
-Theorem eval_red_untyped_correct k n :
+Lemma eval_red_untyped_correct k n :
     ∙ ⊢< ty 0 > n : Nat ->
     eval (erasure n) k ->
     ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat.
@@ -368,4 +368,33 @@ Proof.
         eapply IHeval. 2:reflexivity.
         eapply redd_to_conv, validity_conv_right, type_inv_succ in H0.
         eauto.
+Qed.
+
+Lemma eval_functional t n m :
+  eval t n -> eval t m -> n = m.
+Proof.
+  intro. generalize m. clear m. dependent induction H.
+  - intros. dependent destruction H0; eauto.
+    eapply reddu_fun in H0. 2:eapply H. 
+    inversion H0. all: eauto.
+  - intros. dependent destruction H1; eauto.
+    * eapply reddu_fun in H. 2:eapply H1. 
+      inversion H. all: eauto.
+    * eapply reddu_fun in H. 2:eapply H1.
+      2,3:eauto. dependent destruction H.
+      eapply IHeval in H2. subst. reflexivity.
+Qed.
+
+
+Theorem computational_canonicity n : 
+    ∙ ⊢< ty 0 > n : Nat ->
+    exists k, eval (erasure n) k /\ 
+    ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat /\
+    (forall k', eval (erasure n) k' -> k = k').
+Proof.
+  intros. eapply eval_red_untyped in H as H'. destruct H'.
+  eapply eval_red_untyped_correct in H0 as H1; eauto.
+  eexists. split. 2:split. 
+  1,2:eassumption.
+  intros. eauto using eval_functional.
 Qed.
