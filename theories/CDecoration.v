@@ -1376,6 +1376,14 @@ Proof.
   all:rasimpl;reflexivity.
 Qed.
 
+(* Lemma pack_refl_cons2_Wt Γ i j A1 A2 B1 B2 :
+  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+  let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
+  Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) 
+      ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq)
+      ⊢s (var 0 .: ((var 1) .: ((var 2) .: (pack_refl Γ >> ren_term (S >> S >> S))))) : pack (Γ ,, (i, A1) ,, (j, B1)) (Γ ,, (i, A2) ,, (j, B2)). *)
 
 Lemma renL_jump (a b c : term) σ :
   pointwise_relation nat eq (renL >> (a .: (b .: (c .: σ)))) (c .: (renL >> σ)).
@@ -1429,4 +1437,66 @@ Proof.
   all:substify.
   all:eapply subst_term_morphism; eauto.
   all:unfold pointwise_relation; intros; destruct a; simpl; eauto.
+Qed.
+
+
+Corollary sim_heq_same_ctx_cons2 i j n Γ t1 t2 C1 C2 B1 B2 A1 A2 :
+  t1 ~ t2 →
+  Γ ,, (i, A1) ,, (j, B1) ⊢< ty n > t1 : C1 →
+  Γ ,, (i, A2) ,, (j, B2) ⊢< ty n > t2 : C2 →
+
+  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
+  let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
+  exists e,
+    Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) 
+      ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq)
+      ⊢< prop > e : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2) 
+        ((up_ren (S >> S) >> S >> S) ⋅ t1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ t2).
+Proof.
+  intros. 
+  eapply validity_ty_ctx in H0 as H0'. dependent destruction H0'. clear H0'.
+  eapply validity_ty_ctx in H1 as H1'. dependent destruction H1'. clear H1'.
+  eapply validity_ty_ctx in H2 as H2'. dependent destruction H2'. clear H2'.
+  eapply validity_ty_ctx in H3 as H3'. dependent destruction H3'. clear H3'.
+
+  eapply ctx_extend2_Wt in H3 as ctx_ext2. 2:eapply H2.
+  eapply sim_heq in H; eauto.
+  2:eauto using ctx_compat, compat_refl.
+  destruct H.
+  eapply subst_ty in H.
+  3:simpl.
+  3:eapply WellSubst_up_two.
+  3:eapply WellSubst_up_two.
+  3:eapply WellSubst_up_two.
+  3:eapply pack_refl_Wt; eauto. 
+  all:eauto using validity_ty_ctx.
+  all:rasimpl; try rewrite heq_subst; try rewrite heq_ren; rasimpl.
+  1,2:setoid_rewrite comp_refl_renL; rasimpl.
+  1,3:setoid_rewrite assoc; setoid_rewrite comp_refl_renR; rasimpl.
+  2,3:reflexivity.
+  1: eauto using ctx_typing, type_ren, WellRen_S, validity_ty_ctx.
+  1,2:setoid_rewrite assoc; setoid_rewrite comp_refl_renL; setoid_rewrite comp_refl_renR.
+  2:unfold Aeq; rasimpl; reflexivity.
+  2:setoid_rewrite renL_jump; setoid_rewrite assoc; setoid_rewrite comp_refl_renL; rasimpl.
+  2:substify; eapply subst_term_morphism; eauto. 2:unfold pointwise_relation; intro x'; destruct x'; reflexivity.
+  all:try setoid_rewrite renL_jump. all:try setoid_rewrite renL_jump.
+  all:try setoid_rewrite renR_jump. all:try setoid_rewrite renR_jump.
+  1:replace ((λ x0 : nat, x0) >> pack_refl Γ) with (pack_refl Γ) by (rasimpl;reflexivity).
+  all:setoid_rewrite assoc; try setoid_rewrite comp_refl_renL; try setoid_rewrite comp_refl_renR.
+  all:rasimpl.
+  3:substify;ssimpl;reflexivity.
+  3:unfold Beq;substify;ssimpl; f_equal.
+  3:eapply subst_term_morphism; eauto. 3:unfold pointwise_relation; intros x'; destruct x'; eauto.
+  3:f_equal;substify;ssimpl; try reflexivity.
+  3,4:eapply subst_term_morphism; eauto. 3,4:unfold pointwise_relation; intros x'; destruct x';try destruct x'; eauto.
+  1:{ 
+    dependent destruction ctx_ext2.
+    dependent destruction ctx_ext2.
+    replace (B1 <[ (var 2) .: (S >> (S >> S)) >> var]) with ((S >> S) ⋅ B1). 1:eassumption.
+    substify; ssimpl. eapply subst_term_morphism; eauto. unfold pointwise_relation; intros x'; destruct x'; eauto. }
+  1:{ 
+    assert (forall x y, x =y -> ⊢ x -> ⊢ y) by (intros; subst; eassumption).
+    eapply H6. 2:eapply ctx_ext2.
+    f_equal. 1:f_equal. 1:f_equal. 3:f_equal. 3:f_equal. 
+    all:substify; ssimpl;eapply subst_term_morphism; eauto. all:unfold pointwise_relation; intros x'; destruct x'; eauto. }
 Qed.
