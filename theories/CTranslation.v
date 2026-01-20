@@ -362,14 +362,18 @@ Proof.
   intuition constructor.
 Qed.
 
-(* Not ideal, but given circumstances there is not much else we can do. *)
 
+(* we suppose the two theories have the same axioms, and that the type of an axiom is
+  well-typed in a theory if and only if it is well-typed in the other *)
 Axiom tr_assm_sig :
   ∀ c A,
-    nth_error Typing.assm_sig c = Some A →
-    ∃ A',
-      nth_error assm_sig c = Some A' ∧ A ⊏ A' ∧ ∙ ⊢< Ax prop > A' : Sort prop.
+    nth_error Typing.assm_sig c = Some A <-> nth_error assm_sig c = Some A.
 
+Axiom tr_assm2_sig :
+  ∀ c A,
+    nth_error assm_sig c = Some A -> 
+    ∙ ⊢< Ax prop > A : Sort prop <-> Typing.typing ∙ (Ax prop) A (Sort prop).
+    
 Lemma tr_ctx_cons Γ Γ' A A' i :
   tr_ctx Γ Γ' →
   Γ' ⊨⟨ Ax i ⟩ A : Sort i ↦ A' : Sort i →
@@ -1577,10 +1581,16 @@ Proof.
   - intros * ?? hc.
     eexists _,_. eapply tr_Sort. eassumption.
   - intros * ? e ? ih ? hc.
-    eapply tr_assm_sig in e as e'. destruct e' as (A' & e' & ? & ?).
+    eapply tr_assm_sig in e as e'.
+    assert (tr_ctx ∙ ∙) by (econstructor; econstructor).
+
+    eapply ih in H. eapply tr_tm_get in H; eauto using typing, decoration, ctx_typing.
+    destruct H as (A' & ? & ?).
+
+    eapply tr_assm2_sig in t; eauto.
     eexists _, (assm _). split.
     { econstructor. 2,3: eassumption. apply hc. }
-    intuition constructor.
+    intuition eauto using decoration, dec_refl.
   - intros * ? ihA ? ihB ? hc.
     specialize ihA with (1 := hc). eapply keep_sort in ihA.
     destruct ihA as (A' & ihA).
@@ -3121,33 +3131,6 @@ Proof.
     all:eauto.
 Qed.
 
-Lemma conservativity_trans l t u A :
-  t ⊏ u ->
-  ∙ ⊢< ty l > t : A -> 
-  ∙ ⊢< ty l > u : A -> 
-  exists e, ∙ ⊢< prop > e : obseq (ty l) A u t.
-Proof.
-  intros Hinc Hty Hty0.
-  unshelve epose proof (H := sim_heq l ∙ ∙ t u A A _ _ Hty Hty0).
-  1: econstructor.
-  1: now eapply dec_to_sim. 
-  assert (renL ⋅ A = A). 
-  { apply closed_ren. eapply typing_closed; eauto. 
-    eapply validity_ty_ty in Hty. eapply Hty. }
-  assert (renR ⋅ A = A). 
-  { apply closed_ren. eapply typing_closed; eauto. 
-    eapply validity_ty_ty in Hty. eapply Hty. }
-  assert (renL ⋅ t = t). 
-  { apply closed_ren. eapply typing_closed; eauto. }
-  assert (renR ⋅ u = u).
-  { apply closed_ren. eapply typing_closed; eauto. }
-  destruct H as [e H].
-  rewrite H0, H1, H2, H3 in H. clear H0 H1 H2 H3. cbn in H.
-  eapply type_hetero_to_homo in H; eauto.
-  eapply type_obseq_sym in H.
-  eexists; eauto.
-Qed.
-
 Lemma conservativity e P :
   ∙ ⊢< ty 0 > P : Sort prop  ->
   ∙ ⊢< prop >× e : P ->
@@ -3158,10 +3141,43 @@ Proof.
   2: repeat econstructor.
   destruct HP as [P' [e' [HP [Hincl Hincl']]]].
   assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
-  destruct (conservativity_trans _ _ _ _ Hincl' Hty HP') as [eqp Heq].
-  eexists (cast _ P' P eqp e').
-  eapply type_cast; eauto.
-Qed.  
+  eapply dec_to_sim, sim_sym in Hincl'.
+  eapply sim_heq_same_ctx in Hincl'; eauto.
+  destruct Hincl'.
+  eapply type_hetero_to_homo in H; eauto.
+  eapply type_cast in HP; eauto.
+Qed.
+
+
+Scheme type_mut := Induction for typing Sort Prop
+with conv_mut := Induction for conversion Sort Prop
+with ctx_mut := Induction for ctx_typing Sort Prop.
+Combined Scheme type_conv_ctx_mut from type_mut, conv_mut, ctx_mut.
+
+
+Lemma included_varty Γ l x A :
+  Γ ∋< l > x : A -> Γ ∋< l >× x : A.
+Proof.
+  intros. induction H; eauto using Typing.varty.
+Qed.
+
+Lemma included :
+  (forall Γ l t A, 
+    Γ ⊢< l > t : A -> Typing.typing Γ l t A
+  ) /\ 
+  (forall Γ l t u A, 
+    Γ ⊢< l > t ≡ u : A -> Typing.conversion Γ l t u A
+  ) /\
+  (forall Γ, ⊢ Γ -> Typing.ctx_typing Γ).
+Proof.
+  eapply type_conv_ctx_mut; eauto 6 using Typing.typing, Typing.conversion, Typing.ctx_typing, included_varty, BasicMetaTheory.validity_conv_left, BasicMetaTheory.validity_conv_right, BasicMetaTheory.validity_ty_ctx.
+  - intros. eapply tr_assm_sig in e. econstructor; eauto.
+  - intros. eapply tr_assm_sig in e. econstructor; eauto. 
+  - intros. econstructor; eauto using BasicMetaTheory.validity_conv_left.
+    eapply BasicMetaTheory.validity_conv_right in H1. 
+    eapply Typing.type_conv; eauto.
+    econstructor; eauto. econstructor. eauto using BasicMetaTheory.validity_ty_ctx.
+Qed.
 
 Lemma type_mk_Nat k : ∙ ⊢< ty 0 > mk_Nat k : Nat.
 Proof.
@@ -3170,12 +3186,13 @@ Proof.
   - eapply type_succ; eauto. 
 Qed. 
 
+
+
 Lemma prop_canonicity n : 
   ∙ ⊢< ty 0 > n : Nat ->
-  ∙ ⊢< ty 0 >× n : Nat ->
   exists k e, ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k).
 Proof.
-  intros H H'.
+  intros. eapply included in H as H'.
   eapply canonicity_conv in H'.
   destruct H' as [k H']. exists k.  
   eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat n (mk_Nat k)) as Hcan.
