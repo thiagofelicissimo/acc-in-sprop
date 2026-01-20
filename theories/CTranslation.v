@@ -1270,6 +1270,21 @@ Proof.
 Qed.
 
 
+Lemma renproj1' Γ A1 A2 Aeq B1 B2 Beq j i : 
+  Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq) ,, (j, (S >> S) ⋅ B1) ,, (j, (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq) 
+    ⊢r (up_ren (S >> S) >> S >> S) : Γ ,, (i, A1) ,, (j, B1).
+Proof.
+  eauto 8 using WellRen_weak, WellRen_S, WellRen_up.
+Qed.
+
+Lemma renproj2' Γ A1 A2 Aeq B1 B2 Beq j i :
+  Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq) ,, (j, (S >> S) ⋅ B1) ,, (j, (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq) 
+    ⊢r (up_ren ((up_ren S >> S) >> S) >> S) : Γ ,, (i, A2) ,, (j, B2).
+Proof.
+  eauto 8 using WellRen_weak, WellRen_S, WellRen_up.
+Qed.
+
+
 Lemma tr_eq_ty_cons2_geth Γ' n i j A1 A2 A1' A2' B1 B2 B1' B2' C1 C2 C1' C2' t u eA eB eC :
   A1 ⊏ A1' ->
   A2 ⊏ A2' ->
@@ -1313,11 +1328,11 @@ Proof.
 
   assert (C1'' ~ C1') as temp by eauto using dec_to_sim, sim_sym, sim_trans.
   eapply sim_heq_same_ctx in temp as (? & C1''_heq_C1'); eauto using validity_ty_ty.
-  eapply type_hetero_to_homo' in C1''_heq_C1' as (? & C1''_eq_C1'); eauto using validity_ty_ty.
-  pose (t'' := cast (ty n) C1'' C1' x0 t').
+  eapply type_hetero_to_homo' in C1''_heq_C1' as temp; eauto using validity_ty_ty. destruct temp as (? & C1''_eq_C1').
+  pose (t'' := cast (ty n) C1'' C1' x1 t'). 
   eapply type_cast in t'Wt as t''Wt; eauto using validity_ty_ty.
-  eapply type_heq_cast in t'Wt as t''_heq_t'; eauto using validity_ty_ty.
-  fold t'' in t''Wt, t''_heq_t'.
+  eapply type_heq_cast in t'Wt as t'_heq_t''; eauto using validity_ty_ty.
+  fold t'' in t''Wt, t'_heq_t''. 
 
   eapply cast_subst2_aux in B1'_heq_B2' as temp; eauto. destruct temp as (? & B2'_eq_B1'cast).
 
@@ -1351,27 +1366,71 @@ Proof.
   all:eauto using validity_ty_ctx, ctx_typing.
   rewrite heq_subst in C1'_heq_C2'; rasimpl in C1'_heq_C2'; setoid_rewrite subst_id_reduce2 in C1'_heq_C2'; rasimpl in C1'_heq_C2'.
   rename C1'_heq_C2' into C1'''_heq_C2'.
-  
-  (* eapply subst_ty in C1'_heq_C2'. 3:eapply ΓA2B2_to_ΓA1B1.
-  
-  assert (C1''' )
+
+  eapply subst_ty in C1''_heq_C1'.  3:eapply ΓA2B2_to_ΓA1B1.
+  all:eauto using validity_ty_ctx.
+  rewrite heq_subst in C1''_heq_C1'; rasimpl in C1''_heq_C1'. 
+  eapply type_heq_trans' in C1'''_heq_C2'. 
+  5:eapply meta_conv. 5:eapply C1''_heq_C1'.
+  5:f_equal; rasimpl; f_equal; f_equal; f_equal; rasimpl; reflexivity.
+  2,3:eapply subst_ty; eauto using validity_ty_ty.
+  4:rasimpl; rasimpl in ΓA2B2_to_ΓA1B1; eapply ΓA2B2_to_ΓA1B1.
+  2-4:eauto using validity_ty_ctx, ctx_typing.
+
+  destruct C1'''_heq_C2' as (? & C1''cast_heq_C2'). 
+
+  eapply type_hetero_to_homo' in C1''cast_heq_C2' as temp; eauto.
+  destruct temp as (? & C1''cast_eq_C2').
+
+  eapply type_cast in u''Wt as u'''Wt. 4:eapply C1''cast_eq_C2'.
+  all:eauto.
+
+  eapply type_heq_cast in u''Wt as u''_heq_u'''.  4:eapply C1''cast_eq_C2'.
+  all:eauto.
+
+  pose (u''' := cast (ty n) C1''' C2' x7 u'').
+  fold u''' in u''_heq_u''', u'''Wt.
 
 
+  exists t''. exists u'''.
+  split. 2:split. 3:split. 4:split.
+  all:eauto.
+  1,2:unfold t'', u''', u''; eauto using decoration, cast_subst_refines2.
+
+  eapply type_ren in u''_heq_u'''. 3:eapply renproj2'. 
+  2,3:eauto using validity_ty_ctx.
+  rewrite heq_ren in u''_heq_u'''.
+
+  eapply type_ren in u'''Wt. 3:eapply renproj2'. 
+  2,3:eauto using validity_ty_ctx.
+
+  eapply type_ren in u''Wt. 3:eapply renproj2'. 
+  2,3:eauto using validity_ty_ctx.
+
+  eapply type_ren in u'Wt. 3:eapply renproj1'. 
+  2,3:eauto using validity_ty_ctx.
 
 
-  { unfold u''. replace u' with (u' <[var 0 .: (var 1 .: ((S >> S) >> var))]) at 1.
-    2:setoid_rewrite subst_id_reduce2; rasimpl; reflexivity. eapply dec_to_sim.
-    eapply substs_decs. 2:admit.
-    unfold dec_subst. intro x'. destruct x'. 2:destruct x'.
-    all:simpl; eauto using decoration.
-  
-  eapply dec_to_sim. eapply dec_subst_one.
+  eapply type_ren in t'Wt. 3:eapply renproj1'. 
+  2,3:eauto using validity_ty_ctx.
 
+  eapply type_ren in t''Wt. 3:eapply renproj1'. 
+  2,3:eauto using validity_ty_ctx.
 
-  2,3:eapply type_ren; eauto 6 using validity_ty_ctx, WellRen_S, WellRen_up, WellRen_weak, validity_ty_ty.
+  eapply type_ren in t'_heq_t''. 3:eapply renproj1'. 
+  2,3:eauto using validity_ty_ctx.
 
-   *)
-Admitted.
+  eapply type_ren in t'_heq_u'. 3:eapply renproj1'. 
+  2,3:eauto using validity_ty_ctx.
+
+  rewrite heq_ren in t'_heq_t'', t'_heq_u'.
+
+  eapply type_heq_sym in t'_heq_t'' as t''_heq_t'; eauto.
+
+  eapply type_heq_trans in t'_heq_u' as t''_heq_u'; eauto.
+  eapply type_heq_trans in u'_heq_u'' as t''_heq_u''; eauto.
+  eapply type_heq_trans in u''_heq_u''' as t''_heq_u'''; eauto.
+Qed.
 
 
 Lemma tr_eq_conclude Γ' e l A A' B B' t t' u u' :
