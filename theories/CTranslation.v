@@ -2014,7 +2014,11 @@ Proof.
     assert ((1 .: S >> S) ⋅ P2 ⊏ P02') as P02_dec_P02'.
     { unfold P02'. eauto using rename_dec. }
 
+    eassert (_ ⊢< _ > B2' : _) as B2'Wt by eauto using BWt.
+    eassert (_ ⊢< _ > B1' : _) as B1'Wt by eauto using BWt.
 
+    eapply type_inv in B1'Wt as temp. dependent destruction temp.
+    eapply type_inv in B2'Wt as temp. dependent destruction temp.
 
     (* eassert (_ ⊢< _ > R_1' : _) by eauto using R0Wt.
     eassert (_ ⊢< _ > R_2' : _) by eauto using R0Wt.
@@ -2025,7 +2029,37 @@ Proof.
     assert (exists e', Γ',, (ty n, A1'),, (ty n, S ⋅ A2'),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0)) 
       ⊢< prop > e' : heq (Ax (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) ((S >> S) ⋅ B1') (((up_ren S >> S) ⋅ B2')))
       as (? & B1'_eq_B2').
-      1:admit.
+    { eexists. 
+      eapply type_heq_pi; fold ren_term.
+      6:change (heq (Ax (ty n0)) (Sort (ty n0)) (Sort (ty n0))) with (heq (Ax (Ru prop (ty n0))) (Sort (Ru prop (ty n0))) (Sort (Ru prop (ty n0)))).
+      6:eapply type_heq_pi; fold ren_term.
+      10:{ 
+        eapply type_ren.
+        1:eapply H14.
+        Unshelve.
+        6:exact (3 .: (4  .: (5 .: (0 .: (1 .: (2 .: (S >> S >> S >> S >> S >> S))))))).
+        4,5:shelve.
+        3:rasimpl; rewrite heq_ren;unfold R_1', R_2'; rasimpl;reflexivity.
+        2:{ 
+          econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
+          all:ssimpl. 1:eauto 7 using WellRen_weak, WellRen_S.
+          all:eapply varty_meta.
+          1,3,5,7,9,11:eauto 7 using varty.
+          all:rasimpl;eauto.
+          all:rewrite heq_ren; rewrite heq_ren; rasimpl;f_equal. }
+        assert (∀ x y, x = y -> ⊢ x -> ⊢ y) by (intros; subst; eauto).
+        eapply H25. 2:eapply ctx_extend2_Wt.
+        2,3:eapply type_ren. 4,8:eapply WellRen_S.
+        2:eapply H1. 4:eapply H2.
+        2:econstructor. 3:eapply H1.
+        4:econstructor. 5:eapply H2.
+        all:eauto.
+        rasimpl. reflexivity. }
+      10:{
+        eapply type_ren. 1:eapply H24.
+        2:{eapply WellRen_weak, WellRen_weak, WellRen_weak. admit. }
+      all:admit. } all:admit. }
+
 
 
     assert (exists e, (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
@@ -2033,7 +2067,16 @@ Proof.
       (prop, heq (Ru (ty n) (ty n0)) ((((S >> S) >> S) >> S) ⋅ B1') ((((up_ren S >> S) >> S) >> S) ⋅ B2') (var 1) (var 0)) 
       ⊢< prop > e : heq (Ax (ty n0)) (Sort (ty n0)) (Sort (ty n0)) (((up_ren (S >> S) >> S) >> S) ⋅ P01') ((up_ren ((up_ren S >> S) >> S) >> S) ⋅ P02'))
       as (? & P01'_eq_P02').
-    1:admit.
+    { eexists.
+      eapply type_ren.
+      1:eapply H24. 
+      1:eapply ctx_extend2_Wt; eauto.
+      1:eapply WellRen_weak, WellRen_weak, WellRen_S.
+      rasimpl. rewrite heq_ren. f_equal; unfold P01', P02'; rasimpl; eauto.
+      eapply ren_term_morphism;eauto.
+      unfold pointwise_relation; intros.
+      destruct a. 2:destruct a. 3:destruct a. 4:destruct a.
+      all:reflexivity. }
 
 
 
@@ -2042,11 +2085,6 @@ Proof.
       all:eapply varty_meta.
       1,3:econstructor. 1:econstructor. all:rasimpl;reflexivity. }
 
-
-
-
-
-    eassert (_ ⊢< _ > B1' : _) by eauto using BWt.
 
     assert (tr_ctx ((Γ,, (ty n, A1)),, (Ru (ty n) (ty n0), B1)) ((Γ',, (ty n, A1')),, (Ru (ty n) (ty n0), B1'))) as trΓAB
     by eauto using  tr_ctx_cons'.
@@ -2060,12 +2098,12 @@ Proof.
     8,9:eapply P00Wt; eauto.
     all:eauto.
 
-    destruct ihp as (p1' & p2' & ?). intuition eauto. destruct H32.
+    destruct ihp as (p1' & p2' & k1 & k2 & k3 & k4 & k5 & k6). 
 
 
-    eapply type_heq_accel in H31; eauto. 2:rasimpl in H14; rasimpl; eapply H14.
+    eapply type_heq_accel in k6; eauto. 2:rasimpl in H14; rasimpl; eapply H14.
 
-    eapply tr_eq_conclude. 7:eapply H31.
+    eapply tr_eq_conclude. 7:eapply k6.
     all:eauto using typing, decoration, substs_decs_one.
 
 
