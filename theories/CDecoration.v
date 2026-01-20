@@ -90,6 +90,15 @@ Inductive decoration : term → term → Prop :=
     q ⊏ q' →
     accel i l A R P p a q ⊏ accel i l A' R' P' p' a' q'
 
+| dec_accelcomp i l A A' R R' P P' p p' a a' q q' :
+    A ⊏ A' →
+    R ⊏ R' →
+    P ⊏ P' →
+    p ⊏ p' →
+    a ⊏ a' →
+    q ⊏ q' →
+    accelcomp i l A R P p a q ⊏ accelcomp i l A' R' P' p' a' q'
+
 | dec_obseq i A A' a a' b b' :
     A ⊏ A' →
     a ⊏ a' →
@@ -228,6 +237,15 @@ Inductive simdec : term → term → Prop :=
     q ~ q' →
     accel i l A R P p a q ~ accel i l A' R' P' p' a' q'
 
+| sim_accelcomp i l A A' R R' P P' p p' a a' q q' :
+    A ~ A' →
+    R ~ R' →
+    P ~ P' →
+    p ~ p' →
+    a ~ a' →
+    q ~ q' →
+    accelcomp i l A R P p a q ~ accelcomp i l A' R' P' p' a' q'
+
 | sim_obseq i A A' a a' b b' :
     A ~ A' →
     a ~ a' →
@@ -290,44 +308,13 @@ Proof.
   intros. eauto using simdec.
 Qed.
 
-(* excludes acc_el_comp *)
-Inductive dterm : term -> Prop :=
-| dvar x : dterm (var x)
-| dsort l : dterm (Sort l)
-| dassm c : dterm (assm c)
-| dpi i j A B : dterm A -> dterm B -> dterm (Pi i j A B)
-| dlam i j A B t : dterm A -> dterm B -> dterm t -> dterm (lam i j A B t)
-| dapp i j A B t u : dterm A -> dterm B -> dterm t -> dterm u -> dterm (app i j A B t u)
-| dnat : dterm Nat 
-| dzero : dterm zero 
-| dsucc t : dterm t -> dterm (succ t)
-| drec l P p0 pS n : dterm P -> dterm p0 -> dterm pS -> dterm n -> dterm (rec l P p0 pS n)
-| deq l A a b : dterm A -> dterm a -> dterm b -> dterm (obseq l A a b)
-| drefl l A a : dterm A -> dterm a -> dterm (obsrefl l A a)
-| dcast l A B e a : dterm A -> dterm B -> dterm e -> dterm a -> dterm (cast l A B e a)
-| dJ l A a P p b e : dterm A -> dterm a -> dterm P -> dterm p -> dterm b -> dterm e -> dterm (J l A a P p b e)
-| dinjpi1 i j A1 A2 B1 B2 e : dterm A1 -> dterm A2 -> dterm B1 -> dterm B2 -> dterm e -> dterm (injpi1 i j A1 A2 B1 B2 e)
-| dinjpi2 i j A1 A2 B1 B2 e a : dterm A1 -> dterm A2 -> dterm B1 -> dterm B2 -> dterm e -> dterm a -> dterm (injpi2 i j A1 A2 B1 B2 e a)
-| dacc l A R a : dterm A -> dterm R -> dterm a -> dterm (acc l A R a)
-| daccin i A R a p : dterm A -> dterm R -> dterm a -> dterm p -> dterm (accin i A R a p)
-| daccinv i A R a p b r : dterm A -> dterm R -> dterm a -> dterm p -> dterm r -> dterm b -> dterm (accinv i A R a p r b)
-| daccel i l A R P p a q : dterm A -> dterm R -> dterm P -> dterm p -> dterm a -> dterm p -> dterm q -> dterm (accel i l A R P p a q).
-
-
-Lemma well_typed_implies_dterm Γ l t A : 
-  Typing.typing Γ l t A -> dterm t.
-Proof.
-  intros. induction H; eauto using dterm.
-Qed.
-
 
 (* does not hold for all t, because we do not have constructors in sim for acc_el_comp *)
 Lemma sim_refl t :
-  dterm t ->
   t ~ t.
 Proof.
   intros.
-  induction H. 
+  induction t. 
   all: eauto using simdec.
 Qed.
 
@@ -372,6 +359,10 @@ Proof.
     induction h2; dependent destruction h1.
     1:econstructor; eauto.
     eapply sim_castR. eauto.
+  - assert (exists t, t = accelcomp i l A' R' P' p' a' q' /\ t ~ v) as (t & h1 & h2) by eauto.
+    induction h2; dependent destruction h1.
+    1:econstructor; eauto.
+    eapply sim_castR. eauto.
   - dependent induction h; eauto using simdec.
   - dependent induction h; eauto using simdec.
   - assert (exists t, t = J i A' a' P' p' b' e'  /\ t ~ v) as (t & h1 & h2) by eauto.
@@ -391,11 +382,10 @@ Proof.
 Qed.
 
 Lemma dec_refl u : 
-  dterm u ->
   u ⊏ u.
 Proof.
   intros.
-  induction H. 
+  induction u. 
   all: eauto using decoration.
 Qed.
 
@@ -405,7 +395,7 @@ Lemma dec_trans u v w :
   u ⊏ w.
 Proof.
   intros. generalize w H0. clear w H0. induction H; intros w hw.
-  1,2,3,4,5,7,8,9,11,15,16:dependent induction hw; eauto using decoration.
+  1,2,3,4,5,7,8,9,11,16,17:dependent induction hw; eauto using decoration.
   - assert (exists s, s = app i j A' B' t' u' /\ s ⊏ w) as (s & h1 & h2) by eauto.
     induction h2; dependent destruction h1; econstructor; eauto.
   - assert (exists s, s = rec l P' pz' ps' t' /\ s ⊏ w) as (s & h1 & h2) by eauto.
@@ -415,6 +405,8 @@ Proof.
   - assert (exists s, s = accinv i A' R' a' p' b' r' /\ s ⊏ w) as (s & h1 & h2) by eauto.
     induction h2; dependent destruction h1; econstructor; eauto. 
   - assert (exists s, s = accel i l A' R' P' p' a' q' /\ s ⊏ w) as (s & h1 & h2) by eauto.
+    induction h2; dependent destruction h1; econstructor; eauto. 
+  - assert (exists s, s = accelcomp i l A' R' P' p' a' q' /\ s ⊏ w) as (s & h1 & h2) by eauto.
     induction h2; dependent destruction h1; econstructor; eauto. 
   - assert (exists s, s = J i A' a' P' p' b' e' /\ s ⊏ w) as (s & h1 & h2) by eauto.
     induction h2; dependent destruction h1; econstructor; eauto. 
@@ -427,14 +419,6 @@ Proof.
   - dependent induction hw; econstructor; eauto.
 Qed.
 
-Lemma decoration_is_dterm t u : 
-  dterm u ->
-  t ⊏ u -> 
-  dterm t.
-Proof.
-  intros. generalize H. clear H.  
-  dependent induction H0; intros X; dependent destruction X; eauto 10 using dterm.
-Qed.
 
 Lemma dec_to_sim u v :
   u ⊏ v →
@@ -451,31 +435,15 @@ Proof.
   all: solve [ cbn ; econstructor ; eauto ].
 Qed.
 
-Lemma dterm_ren ρ t :
-  dterm t ->
-  dterm (ρ ⋅ t).
-Proof.
-  intros. generalize ρ. clear ρ. induction H; intros; simpl; eauto using dterm.
-Qed.
-
-Lemma dterm_subst_upterm σ :
-  (forall x, dterm (σ x)) ->
-  forall x, dterm ((up_term_term σ) x).
-Proof.
-  intros. destruct x.
-  1:eauto using dterm.
-  simpl. unfold ">>". eapply dterm_ren. eauto.
-Qed.
 
 Lemma subst_dec σ u v :
-  (forall x, dterm (σ x)) ->
   u ⊏ v →
   u <[ σ ] ⊏ v <[ σ ].
 Proof.
-  intros. generalize σ H. clear σ H.
-  induction H0.
-  all: try solve [ cbn ; econstructor ; eauto using dterm_subst_upterm ].
-  intros. eapply dec_refl. eauto.
+  intros. generalize σ. clear σ.
+  induction H.
+  all: try solve [ cbn ; econstructor ; eauto ].
+  intros. eapply dec_refl.
 Qed.
 
 Definition dec_subst (σ θ : nat → term) :=
@@ -510,20 +478,18 @@ Proof.
 Qed.
 
 Lemma dec_subst_refl σ :
-  (forall x, dterm (σ x)) ->
   dec_subst σ σ.
 Proof.
-  intros. intro. apply dec_refl. eauto.
+  intros. intro. apply dec_refl. 
 Qed.
 
 Lemma substs_dec σ θ u :
-  dterm u ->
   dec_subst σ θ →
   u <[ σ ] ⊏ u <[ θ ].
 Proof.
-  intros. generalize σ θ H0. clear σ θ H0. induction H.
+  intros. generalize σ θ H. clear σ θ H. induction u.
   all: try solve [ cbn ; econstructor ; eauto using dec_subst_up ].
-  intros. eapply H0.
+  intros. eapply H.
 Qed.
 
 Lemma substs_decs σ θ u v :

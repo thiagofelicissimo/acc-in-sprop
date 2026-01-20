@@ -535,7 +535,7 @@ Lemma tr_subst_ren Γ Γ' Δ' ρ :
 Proof.
   intros hc hr.
   split. 2: apply dec_subst_refl.
-  2:{intros. unfold ">>". econstructor. }
+  (* 2:{intros. unfold ">>". econstructor. } *)
   apply WellSubst_ren.
   - assumption.
   - apply hc.
@@ -1858,6 +1858,82 @@ Proof.
     eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
     + econstructor. all: eauto.
     + eapply substs_decs_one. all: intuition assumption.
+  - intros ?? l * ? ihA ? ihR ? ihP. cbn zeta. intros ? ihp ? iha ? ihq ? hc.
+    specialize ihA with (1 := hc). eapply keep_sort in ihA.
+    destruct ihA as [A' ihA].
+    eapply tr_ctx_cons in hc as hca. 2: eassumption.
+    eapply tr_ctx_cons in hca as hcaa.
+    2:{ eapply tr_rename_sort. 1,2: eauto. eapply WellRen_S. }
+    specialize ihR with (1 := hcaa). eapply keep_sort in ihR.
+    destruct ihR as [R' ihR].
+    specialize ihP with (1 := hca). eapply keep_sort in ihP.
+    destruct ihP as [P' ihP].
+    specialize iha with (1 := hc).
+    eapply change_type in iha. 2: eassumption.
+    destruct iha as [a' iha].
+    lazymatch type of ihp with
+    | ∀ G', tr_ctx ?G G' → _ => eassert (hcap : tr_ctx G _)
+    end.
+    { eapply tr_ctx_cons. 1: eassumption.
+      eapply tr_Pi.
+      - eapply tr_rename_sort. 1,2: eassumption.
+        apply WellRen_S.
+      - eapply tr_meta.
+        { eapply tr_Pi.
+          - eapply tr_rename_sort. 1,2: eassumption.
+            apply well_rcons_alt. 1: apply well_rcons_alt.
+            + apply WellRen_weak. apply WellRen_S.
+            + eapply varty_meta.
+              { repeat constructor. }
+              rasimpl. reflexivity.
+            + eapply varty_meta.
+              { repeat constructor. }
+              rasimpl. reflexivity.
+          - eapply tr_rename_sort. 1: eassumption.
+            + eapply tr_ctx_cons. 1: eassumption.
+              eapply tr_rename_sort. 1,2: eassumption.
+              apply well_rcons_alt. 1: apply well_rcons_alt.
+              * apply WellRen_weak. apply WellRen_S.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+            + apply well_rcons_alt.
+              * do 2 apply WellRen_weak. apply WellRen_S.
+              * eapply varty_meta.
+                { repeat constructor. }
+                rasimpl. reflexivity.
+        }
+        all: destruct l ; reflexivity.
+    }
+    specialize ihp with (1 := hcap).
+    eapply change_type in ihp.
+    2:{
+      eapply tr_rename_sort. 1,2: eassumption.
+      apply well_rcons_alt.
+      - apply WellRen_weak. apply WellRen_S.
+      - eapply varty_meta.
+        { repeat constructor. }
+        rasimpl. reflexivity.
+    }
+    destruct ihp as [p' ihp].
+    specialize ihq with (1 := hc).
+    eapply change_type in ihq. 2:{ eapply tr_acc. all: eauto. }
+    destruct ihq as [q' ihq].
+    destruct ihA, ihR, ihP, iha, ihp, ihq.
+    eexists _,_. split. 2: split. 2: intuition (constructor ; eauto).
+    + econstructor. all: eauto.
+    + intuition eauto. econstructor; eauto using decoration, substs_decs_one.
+      eapply substs_decs_two; eauto.
+      econstructor; eauto.
+      all:econstructor; eauto. 3:econstructor;eauto.
+      8:econstructor; eauto.
+      all:try econstructor.
+      all:eauto using rename_dec.
+      all:eapply substs_decs; eauto.
+      all:unfold dec_subst; intro; destruct x; try destruct x; simpl; eauto using decoration, rename_dec.
   - intros * ? ihA ? iha ? ihb ? hc.
     specialize ihA with (1 := hc). eapply keep_sort in ihA.
     destruct ihA as [A' ihA].
