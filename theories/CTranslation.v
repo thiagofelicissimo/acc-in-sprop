@@ -2302,7 +2302,7 @@ Proof.
       rasimpl in H19; rasimpl; eauto. }
       all:eauto using typing, decoration.
       2,3:eapply subst_dec; eauto.
-      2,3:intro x'; destruct x'; eauto using dterm.
+      (* 2,3:intro x'; destruct x'; eauto using dterm. *)
       2,3:eapply subst_ty. 4:eapply H9. 7:eapply H10.
       all:eauto using ctx_typing, validity_ty_ctx.
       2,3:econstructor.
