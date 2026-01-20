@@ -2020,11 +2020,96 @@ Proof.
     eapply type_inv in B1'Wt as temp. dependent destruction temp.
     eapply type_inv in B2'Wt as temp. dependent destruction temp.
 
-    (* eassert (_ ⊢< _ > R_1' : _) by eauto using R0Wt.
-    eassert (_ ⊢< _ > R_2' : _) by eauto using R0Wt.
-    eassert (_ ⊢< _ > P_1' : _) by eauto using P0Wt.
-    eassert (_ ⊢< _ > P_2' : _) by eauto using P0Wt.
-    eassert (_ ⊢< _ > B2' : _) by eauto using BWt. *)
+    eassert (_ ⊢< _ > R_1' : _) as R_1'Wt by eauto using R0Wt.
+    eassert (_ ⊢< _ > R_2' : _) as R_2'Wt by eauto using R0Wt.
+    eassert ((_ ,, (_, R_1')) ⊢< _ > P_1' : _) as P_1'Wt by eauto using P0Wt.
+    eassert ((_ ,, (_, R_2')) ⊢< _ > P_2' : _) as P_2'Wt by eauto using P0Wt.
+    assert (⊢ (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
+      (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))) as ΓASA.
+    { assert (∀ x y, x = y -> ⊢ x -> ⊢ y) by (intros; subst; eauto).
+        eapply H25. 2:eapply ctx_extend2_Wt.
+        2,3:eapply type_ren. 4,8:eapply WellRen_S.
+        2:eapply H1. 4:eapply H2.
+        2:econstructor. 3:eapply H1.
+        4:econstructor. 5:eapply H2.
+        all:eauto.
+        rasimpl. reflexivity. }
+
+    assert (⊢ ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
+      (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
+      (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1') ) as ΓAAR1.
+    { eassert _ as h.
+      2:econstructor.
+      3:exact h.
+      2:eauto using validity_ty_ctx.
+      unfold R_1'. rasimpl. eapply type_ren; eauto.
+      1:rasimpl; rasimpl in ΓASA; eapply ΓASA.
+      econstructor. 1:econstructor. 1:ssimpl; eauto 7 using WellRen_S, WellRen_weak.
+      1,2:ssimpl;eapply varty_meta.
+      1,3:eauto 8 using varty.
+      all:rasimpl;reflexivity. }
+      
+    assert (⊢ ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
+      (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
+      (prop, (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2')) as ΓAAR2.
+    { eassert _ as h.
+      2:econstructor.
+      3:exact h.
+      2:eauto using validity_ty_ctx.
+      unfold R_2'. rasimpl. eapply type_ren; eauto.
+      1:rasimpl; rasimpl in ΓASA; eapply ΓASA.
+      econstructor. 1:econstructor. 1:ssimpl; eauto 7 using WellRen_S, WellRen_weak.
+      1,2:ssimpl;eapply varty_meta.
+      1,3:eauto 8 using varty.
+      all:rasimpl;reflexivity. }
+
+
+    assert (⊢ (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
+      (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
+      (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1')),, (prop, S ⋅ (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2')) as ΓAAR1R2.
+    { 
+      eassert _ as h.
+      2:econstructor.
+      3:exact h.
+      2:eauto using validity_ty_ctx.
+      rasimpl. eapply type_ren; eauto.
+      1:rasimpl in ΓAAR1; rasimpl; eassumption.
+      econstructor. 1:econstructor. all:ssimpl.
+      1:eauto 8 using WellRen_S, WellRen_weak.
+      1,2:eapply varty_meta.
+      1,3:eauto 6 using varty.
+      all:rasimpl; reflexivity. }
+
+    assert (⊢ (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+      (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
+      (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
+      (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1')),, (prop, S ⋅ (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2') ,,
+      (prop, heq prop ((S >> S) ⋅ (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1') 
+          ((S >> S) ⋅ (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2') (var 1) (var 0))) as ΓAAR.
+    {  
+      eassert _ as h.
+      2:econstructor.
+      3:exact h.
+      2:eauto using validity_ty_ctx.
+      eapply type_heq.
+      1,2:rasimpl;eapply type_ren; eauto.
+      1,3:rasimpl; rasimpl in ΓAAR1R2; eassumption.
+      1,2:econstructor. 3:econstructor.
+      1-5:ssimpl.
+      1,3:eauto 8 using WellRen_weak, WellRen_S.
+      1-3:eapply varty_meta.
+      1,3,5:eauto 7 using varty.
+      1-3:rasimpl;reflexivity.
+      1,2:econstructor.
+      1,3:rasimpl; rasimpl in ΓAAR1R2; eassumption.
+      1,2:eapply varty_meta.
+      1,3:eauto using varty.
+      all:rasimpl; reflexivity. }
+
 
     assert (exists e', Γ',, (ty n, A1'),, (ty n, S ⋅ A2'),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0)) 
       ⊢< prop > e' : heq (Ax (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) ((S >> S) ⋅ B1') (((up_ren S >> S) ⋅ B2')))
@@ -2040,26 +2125,78 @@ Proof.
         6:exact (3 .: (4  .: (5 .: (0 .: (1 .: (2 .: (S >> S >> S >> S >> S >> S))))))).
         4,5:shelve.
         3:rasimpl; rewrite heq_ren;unfold R_1', R_2'; rasimpl;reflexivity.
-        2:{ 
-          econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
-          all:ssimpl. 1:eauto 7 using WellRen_weak, WellRen_S.
-          all:eapply varty_meta.
-          1,3,5,7,9,11:eauto 7 using varty.
-          all:rasimpl;eauto.
-          all:rewrite heq_ren; rewrite heq_ren; rasimpl;f_equal. }
-        assert (∀ x y, x = y -> ⊢ x -> ⊢ y) by (intros; subst; eauto).
-        eapply H25. 2:eapply ctx_extend2_Wt.
-        2,3:eapply type_ren. 4,8:eapply WellRen_S.
-        2:eapply H1. 4:eapply H2.
-        2:econstructor. 3:eapply H1.
-        4:econstructor. 5:eapply H2.
-        all:eauto.
-        rasimpl. reflexivity. }
+        1:eassumption.
+
+        econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
+        all:ssimpl. 1:eauto 7 using WellRen_weak, WellRen_S.
+        all:eapply varty_meta.
+        1,3,5,7,9,11:eauto 7 using varty.
+        all:rasimpl;eauto.
+        all:rewrite heq_ren; rewrite heq_ren; rasimpl;f_equal. }
       10:{
         eapply type_ren. 1:eapply H24.
-        2:{eapply WellRen_weak, WellRen_weak, WellRen_weak. admit. }
-      all:admit. } all:admit. }
+        2:{eapply WellRen_weak, WellRen_weak, WellRen_weak.
+          1:eapply WellRen_up. 1:eapply WellRen_up. 1:eapply WellRen_up. 
+          1:eapply WellRen_weak, WellRen_weak, WellRen_weak. 1:eapply WellRen_id.
+          all:rasimpl;eauto.
+          rewrite heq_ren. f_equal; rasimpl; reflexivity. }
+        2:rewrite heq_ren; unfold P_1', P_2'; rasimpl; f_equal.
+      econstructor. 1:econstructor. 1:econstructor.
+      1:eassumption.
+      3:inversion ΓAAR; eassumption.
+      1:{ dependent destruction ΓAAR. dependent destruction ΓAAR. dependent destruction ΓAAR. eauto. }
+      1:{ dependent destruction ΓAAR. dependent destruction ΓAAR.  eauto. } }
+      6:{ dependent destruction ΓAAR. dependent destruction ΓAAR.  dependent destruction ΓAAR.  eauto. }
+      5:{ eapply type_ren.
+        1:eapply H3. 2:eauto using WellRen_weak, WellRen_S.
+        1:eauto using validity_ty_ctx.
+        rewrite heq_ren; rasimpl; reflexivity. }
+      1,2:rasimpl;eapply type_ren; eauto using validity_ty_ctx, WellRen_S, WellRen_weak.
 
+      4:{ unfold P_1',P_2';rasimpl;eapply type_ren. 1:eassumption.
+          1:rasimpl in ΓAAR1; eassumption.
+          2:eauto.
+          econstructor; ssimpl.
+          1:eauto 8 using WellRen_S, WellRen_weak. 
+          eapply varty_meta.
+          1:eauto using varty.
+          rasimpl. reflexivity. }
+      4:{ unfold P_1',P_2';rasimpl;eapply type_ren. 1:eassumption.
+          1:rasimpl in ΓAAR2; eassumption.
+          2:eauto.
+          econstructor; ssimpl.
+          1:eauto 8 using WellRen_S, WellRen_weak. 
+          eapply varty_meta.
+          1:eauto using varty.
+          rasimpl. reflexivity. }
+      3:dependent destruction ΓAAR2; eassumption.
+      1:{ eapply meta_tm_conv.
+          1:eapply type_ren. 
+          1:eapply meta_lvl. 
+          1:eapply type_pi.
+          1:eapply R_1'Wt. 1:eapply P_1'Wt.
+          1,4:eauto.
+          2:eauto using WellRen_S, WellRen_weak, WellRen_up.
+          2:rasimpl;reflexivity.
+          eassert _.
+          2:econstructor.
+          3:eassumption.
+          2:eauto using validity_ty_ctx.
+          rasimpl. eapply type_ren; eauto using validity_ty_ctx, WellRen_S, WellRen_weak. }
+      1:{ eapply meta_tm_conv.
+          1:eapply type_ren. 
+          1:eapply meta_lvl. 
+          1:eapply type_pi.
+          1:eapply R_2'Wt. 1:eapply P_2'Wt.
+          1,4:eauto.
+          2:eauto using WellRen_S, WellRen_weak, WellRen_up.
+          2:rasimpl;reflexivity.
+          eassert _.
+          2:econstructor.
+          3:eassumption.
+          2:eauto using validity_ty_ctx.
+          rasimpl. eapply type_ren; eauto using validity_ty_ctx, WellRen_S, WellRen_weak. } 
+    }
 
 
     assert (exists e, (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
@@ -2529,7 +2666,7 @@ Proof.
     eapply tr_eq_conclude.
     7:eapply H10.
     all:eauto.
-Admitted.
+Qed.
 
 Lemma conservativity_trans l t u A :
   t ⊏ u ->
