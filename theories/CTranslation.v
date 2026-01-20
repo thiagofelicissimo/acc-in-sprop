@@ -1063,57 +1063,98 @@ Lemma decombine_subst2 Γ i j A2 A1 B2 B1 eA eB :
     ( eA' .: ((var 1) .:  (cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1)  .: (S >> S >> var))))))) :  
     (((((Γ,, (i, A1)),, (i, S ⋅ A2)),, (prop, Aeq)),, (j, (S >> S) ⋅ B1)),, (j, ((up_ren S >> S) >> S) ⋅ B2)),, (prop, Beq).
 Proof.
-Admitted.
-  (* intros. eapply type_obseq_sym in H1 as H1'. eapply type_obseq_sym in H2 as H2'.
+  intros. eapply type_obseq_sym in H1 as H1'. eapply type_obseq_sym in H2 as H2'.
   eapply validity_ty_ctx in H as H'. dependent destruction H'. clear H'.
   eapply validity_ty_ctx in H0 as H0'. dependent destruction H0'. clear H0'.
 
-  eapply cast_subst2_aux in H1' as temp; eauto. 2:admit.
-  destruct temp.
-  eexists. eexists.
+  eapply decombine_subst_aux in H1 as h1; eauto.
+  eassert ((Γ,, (i, A2)),, (j, B2) ⊢< j > cast j (S ⋅ B2) (S ⋅ B1 <[ cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0) .: S >> var]) (S ⋅ eB) (var 0) : _).
+  { econstructor.
+    1-3:eapply type_ren; eauto using WellRen_S, ctx_typing, validity_ty_ctx.
+    1:eapply subst_ty; eauto using validity_ty_ctx.
+    2:reflexivity.
+    1:eapply cast_subst; eauto.
+    econstructor. 2:econstructor. eauto using ctx_typing, validity_ty_ctx. }
+  
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢< i > cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1) : A1 <[ λ x : nat, var (S (S x))]).
+  { eapply meta_conv.
+    1:eapply meta_tm_conv.
+    1:eapply type_ren.
+    1:eapply h1. 2:eapply WellRen_S.
+    all:eauto using validity_ty_ctx, ctx_typing.
+    all:rasimpl. 1:reflexivity.
+    1:substify. ssimpl. unfold ">>". reflexivity. }
+
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢< i > var 1 : A2 <[ λ x : nat, var (S (S x))]).
+  { econstructor; eauto using ctx_typing, validity_ty_ctx.
+    eapply varty_meta.
+    1:eauto using varty.
+    substify. ssimpl. unfold ">>". reflexivity. }
+
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢< j > 
+    cast j (S ⋅ B2) (B1 <[ cast i ((S ⋅ A2) <[ S >> var]) ((S ⋅ A1) <[ S >> var]) ((S ⋅ eA) <[ S >> var]) ((S >> var) 0) .: (S >> S) >> var]) (S ⋅ eB) (var 0)
+    : B1 <[ cast i ((λ x : nat, S (S x)) ⋅ A2) ((λ x : nat, S (S x)) ⋅ A1) ((λ x : nat, S (S x)) ⋅ eA) (var 1) .: λ x : nat, var (S (S x))]).
+  { 
+    eapply meta_conv.
+    1:econstructor.
+    1,3:eapply type_ren; eauto using validity_ty_ctx, ctx_typing, WellRen_weak, WellRen_S.
+    1:rasimpl; reflexivity.
+    2:econstructor; eauto using varty, ctx_typing, validity_ty_ctx.
+    2:rasimpl; f_equal; f_equal; f_equal;  substify; ssimpl; unfold ">>"; reflexivity.
+    eapply subst_ty; eauto using validity_ty_ctx, ctx_typing.
+    econstructor; ssimpl.
+    1:change (S >> (S >> var)) with (var >> ren_term (S >> S)).
+    1:eapply WellSubst_weak_two; eauto using validity_ty_ctx, ctx_typing, subst_id.
+    eapply meta_conv. 1:eapply meta_tm_conv. 1:eapply H6.
+    1:f_equal; f_equal; f_equal. all:  substify; ssimpl; unfold ">>"; reflexivity. }
+
+
+
+  eexists _,_.
+
   econstructor.  1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 
   2-7:unfold ">>"; simpl; rasimpl.
-
-
-
-  (* exists ((S>>S) ⋅ (obseq_sym (ty (ax i)) (Sort i) A2 A1 eA)). exists (S ⋅ (obseq_sym (ty (ax j)) (Sort j) B2 (B1 <[ cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0) .: S >> var]) eB)). *)
-  (* econstructor.  1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor. all:ssimpl. *)
-  (* 1:change (S >> (S >> var)) with (var >> ren_term (S >> S)).
-  1:eapply WellSubst_weak_two; eauto using validity_ty_ctx, ctx_typing, subst_id. *)
   1:shelve.
-  3:{ 
-    unfold Aeq. rewrite heq_subst. rasimpl.
-    eapply type_heq_sym.
-
+  1,2:eassumption.
+  * unfold Aeq. rewrite heq_subst.
+    rasimpl. eapply type_heq_sym; eauto.
     eapply meta_conv.
     1:eapply type_heq_cast.
-    1,2,3:eapply type_ren. 1:eapply H3.
-    4:eapply H4. 7:eapply H1'. 
-    all:eauto using WellRen_weak, WellRen_S, validity_ty_ctx, ctx_typing.
+    1,2:eapply type_ren.
+    1:eapply H3. 4:eapply H4.
+    all:eauto using ctx_typing, validity_ty_ctx, WellRen_weak, WellRen_S.
     2:eapply type_var.
     3:eapply varty_meta. 3:eapply vartyS, vartyO.
-    3:rasimpl;reflexivity.
-    2:eauto using ctx_typing, validity_ty_ctx.
-    
-    2:f_equal; .
-    4:eapply type_var. 
-    
-  2,5:econstructor; eauto using validity_ty_ctx, ctx_typing.
-  2,3:eapply varty_meta. 2,4:eauto using varty. 2,3:substify; ssimpl. 2:reflexivity.
-  2:eapply subst_term_morphism; eauto. 2:unfold pointwise_relation; intro a; destruct a; reflexivity.
-  1:eapply meta_conv. 1:econstructor.
-  1,2,3:eapply type_ren; eauto using WellRen_S, WellRen_weak, ctx_typing, validity_ty_ctx.
-  2:rasimpl;reflexivity.
-  1:econstructor. 2:eapply varty_meta. 2:eauto using varty. 2:rasimpl;reflexivity.
-  1:eauto using ctx_typing, validity_ty_ctx.
-  1:eapply type_ren.
-  1:eapply type_obseq_sym; eauto.
-  1,2:eauto using WellRen_S, WellRen_weak, ctx_typing, validity_ty_ctx.
-  1:unfold Aeq; rasimpl; f_equal.
-
-
-  2:setoid_rewrite subst_id_reduce2. ; rasimpl; try setoid_rewrite subst_id_reduce2.
-  eexists. eexists. *)
+    2:eauto using validity_ty_ctx, ctx_typing.
+    2:rasimpl;reflexivity.
+    2:f_equal; substify; ssimpl; unfold ">>"; reflexivity.
+    eapply type_ren; eauto using validity_ty_ctx, ctx_typing, WellRen_weak, WellRen_S. 
+  * rasimpl. eassumption.
+  * rasimpl. econstructor; eauto using validity_ty_ctx, ctx_typing.
+    eapply varty_meta. 1:econstructor.
+    substify; ssimpl; unfold ">>". eapply subst_term_morphism; eauto.
+    unfold pointwise_relation; intro x; destruct x; reflexivity.
+  * unfold Beq. rewrite heq_subst. rasimpl. 
+    eapply type_heq_sym. 2:rasimpl; eassumption.
+    1:{econstructor; eauto using ctx_typing, validity_ty_ctx; eapply varty_meta. 1:econstructor.
+      substify; ssimpl; unfold ">>"; eapply subst_term_morphism; eauto.
+      unfold pointwise_relation; intro x; destruct x; reflexivity. }
+    eapply meta_conv.
+    1:eapply type_heq_cast.
+    3:eapply type_ren.
+    3:eapply H2. 4:eapply WellRen_S.
+    4:simpl; reflexivity.
+    4:eapply type_var;eauto using varty, ctx_typing, validity_ty_ctx.
+    3:eauto using ctx_typing, validity_ty_ctx.
+    3:rasimpl; f_equal; f_equal; f_equal; substify; ssimpl; unfold ">>".
+    4:reflexivity. 3:eapply subst_term_morphism; eauto.
+    3:unfold pointwise_relation; intro x; destruct x; reflexivity.
+    all:eapply type_inv in H5; dependent destruction H5; eauto. 
+  Unshelve. 
+  ssimpl.
+  change (S >> (S >> var)) with (var >> ren_term (S >> S)).
+  eapply WellSubst_weak_two; eauto using validity_ty_ctx, ctx_typing, subst_id. 
+Qed.
 
 Lemma renproj1 Γ A1 A2 Aeq i : 
   Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq) ⊢r (S >> S) : Γ ,, (i, A1).
@@ -3072,3 +3113,5 @@ Proof.
   1: eapply type_nat; econstructor.
   eapply type_mk_Nat.
 Qed.
+
+Print Assumptions conservativity.
