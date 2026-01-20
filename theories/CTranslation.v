@@ -1746,7 +1746,9 @@ Proof.
     all:eauto using typing, decoration.
 
   (* case rec *)
-  - intros. 
+  - intros.  destruct l. 2:econstructor.
+    rename P into P1. rename P' into P2. rename p_succ into p_succ1. rename p_succ' into p_succ2.
+    rename p_zero into p_zero1. rename p_zero' into p_zero2. rename t into t1. rename t' into t2.
     assert (⊢ Γ') by (destruct H4; eauto).
 
     eapply tr_ctx_cons with (i := ty 0) in H4 as hcn.
@@ -1758,14 +1760,128 @@ Proof.
         
 
     eapply H0 in hcn as h0.
-    eapply tr_eq_ty_cons_geth_sort in h0.
-    6:eapply H6.
-    all:eauto using typing, decoration.
-    destruct h0 as (P_ & P'_ & k). intuition eauto.
+
+    eapply tr_eq_ty_cons_geth in h0. 9:eapply H6.
+    8:{ eapply meta_conv. 1:eapply type_heq_refl.
+        1,2:eapply type_sort.
+        Unshelve. 7,8:exact (Sort (ty n)).
+        4-7:shelve.
+        3:rasimpl; reflexivity.
+        all:eapply ctx_extend_Wt; eauto using typing.
+    } 
+    all:eauto using typing, decoration, ctx_typing.
+
+    destruct h0 as (P1' & P2' & ?). intuition eauto. destruct H12.
+
+    assert (exists e, Γ' ⊢< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) (P1'<[zero..]) (P2'<[zero..])).
+    { eexists. eapply subst_ty. 3:eapply H11. 1:eauto.
+      Unshelve. 3:exact ((heq_refl (ty 0) Nat zero) .:(zero .: (zero .: var))).
+      1:econstructor. 1:econstructor. 1:econstructor.
+      1:ssimpl; eapply subst_id; eauto.
+      1-3:ssimpl; eauto using typing.
+      1:rewrite heq_subst; rasimpl.
+      1:eapply type_heq_refl; eauto using typing.
+      rewrite heq_subst; f_equal; rasimpl; reflexivity. }
     destruct H12.
 
-    admit.
+    eapply tr_eq_ty_geth in H1. 6:eapply H12.
+    all:eauto using typing, substs_decs_one, decoration.
+    2,3:eapply subst_ty; eauto using subst_one, typing.
 
+    inversion H1. rename t' into p_zero1'. rename u' into p_zero2'.
+
+    assert (tr_ctx ((Γ,, (ty 0, Nat)),, (ty n, P1)) (Γ',, (ty 0, Nat) ,, (ty n, P1')))
+      by (eapply tr_ctx_cons'; eauto).
+
+    eapply H2 in H18.
+
+    eapply ctx_extend2_Wt in H10 as h. 2:eapply H9.
+
+    eapply tr_eq_ty_cons2_geth in H18.
+    11:eapply H11.
+    11:{  
+      Unshelve. 9:exact (P1'<[succ (var 1) .: S >> (S >> var)]). 9:exact (P2'<[succ (var 1) .: S >> (S >> var)]).
+      2-8:shelve.
+      eapply subst_ty.
+      3:eapply H11. Unshelve. 
+      10:eapply (_ .: ((succ (var 4)) .: ((succ (var 5)) .: (S >> S >> S >> S >> S >> S >> var)))). 4-9:shelve.
+
+      2:econstructor. 2:econstructor. 2:econstructor.
+      2-5:asimpl_unsafe.
+      3,4:econstructor.
+      3,4:econstructor.
+      4,6:eapply varty_meta. 
+      6:econstructor;econstructor; econstructor; econstructor; econstructor.
+      4:econstructor;econstructor; econstructor; econstructor; econstructor; econstructor.
+      4,5:eauto.
+      5:rewrite heq_subst; rasimpl; eapply type_heq_succ.
+      7:{ Unshelve. 8:exact (var 3). 2-7:shelve.
+          econstructor. 
+          2:eapply varty_meta.
+          2:econstructor;econstructor;econstructor;econstructor.
+          2:rasimpl; rewrite heq_ren; f_equal; rasimpl; reflexivity. 
+          rasimpl in h. rasimpl. eapply h. }
+        5,6:econstructor.
+        6,8:eapply varty_meta.
+      8:econstructor;econstructor; econstructor; econstructor; econstructor.
+      6:econstructor;econstructor; econstructor; econstructor; econstructor; econstructor.
+      6,7:eauto.
+      7:rewrite heq_subst; rasimpl; f_equal; rasimpl; reflexivity.
+      all:try (rasimpl in h; rasimpl; eapply h).
+      dependent destruction h.
+      dependent destruction h.
+      dependent destruction h.
+      dependent destruction h.
+      dependent destruction h.
+      eapply WellSubst_morphism.
+      Unshelve. 13:exact ((((((var >> ren_term S) >> ren_term S) >> ren_term S) >> ren_term S) >> ren_term S) >> ren_term S).
+      5-12:shelve.
+      4:eapply WellSubst_weak.
+      4:eapply WellSubst_weak.
+      4:eapply WellSubst_weak.
+      4:eapply WellSubst_weak.
+      4:eapply WellSubst_weak.
+      4:eapply WellSubst_weak. 1:reflexivity.
+      3:eapply subst_id; eauto.
+      2:rasimpl; reflexivity.
+      all:eauto using typing.
+      1:rasimpl in H20; rasimpl; eapply H20.
+      rasimpl in H19; rasimpl; eauto. }
+      all:eauto using typing, decoration.
+      2,3:eapply subst_dec; eauto.
+      2,3:intro x'; destruct x'; eauto using dterm.
+      2,3:eapply subst_ty. 4:eapply H9. 7:eapply H10.
+      all:eauto using ctx_typing, validity_ty_ctx.
+      2,3:econstructor.
+      2-5:ssimpl.
+      3,5:eapply type_succ.
+      3,4:econstructor. 4,6:eapply varty_meta.
+      4,6:econstructor;econstructor.
+      all:eauto using ctx_typing, validity_ty_ctx.
+      2,3:ssimpl.
+      2,3:eapply WellSubst_morphism.
+      Unshelve. 15,12:exact ((var >> ren_term (S >> S))). 10-13:shelve.
+      5,9:eapply WellSubst_weak_two. 2,9,3,10:reflexivity. 
+      all:eauto using subst_id, ctx_typing, validity_ty_ctx.
+      2,3:unfold pointwise_relation; intro x'; destruct x; reflexivity.
+
+      destruct H18 as (p_succ1' & p_succ2' & ?). intuition eauto. destruct H23.
+
+      eapply H3 in H4 as h3.
+      eapply tr_eq_ty_sgeth in h3; eauto using decoration, typing.
+      inversion h3. rename t' into t1'. rename u' into t2'.
+
+      eapply type_heq_rec in H27.
+      11:eapply H17.
+      10:eapply H11.
+      10: eapply meta_conv. 10:eapply H22.
+      10:{ f_equal; rasimpl. all:eapply subst_term_morphism;eauto.
+          all:unfold pointwise_relation;intros.
+          1,2:destruct a; unfold ">>"; simpl; reflexivity. }
+      all:eauto.
+      
+      eapply tr_eq_conclude. 7:eapply H27.
+      all:eauto using typing, decoration, substs_decs_one.
 
   - intros. rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
     rename R into R1. rename R' into R2.
