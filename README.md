@@ -1,22 +1,36 @@
-# Formalization for the paper "Bla"
+# Formalization for the paper "TODOCHANGE"
 
-This repository contains the formalization of most proofs given in the paper "Bla".
+This repository contains the formalization of most proofs given in the paper "TODOCHANGE".
 
-## How to install
+## Building
 
-autosubst, blabla
+You need the Rocq prover 9.0 and Autosubst 2 OCaml (needs ocaml<5, recommended 4.14.2). You can install
+them using
+```sh
+opam repo add rocq-released https://rocq-prover.org/opam/released
+opam install --deps-only .
+```
 
-@Theo: maybe we can copy this part from one of your previous artifacts?
+Then to verify the proof, just use `make`:
+```sh
+make autosubst
+make
+```
+
 
 ## Overview
 
-### Preliminary files
+### Syntax 
 
-autosubst files?
+We specify the common syntax for the theories $\mathcal{T}_=$ and $\mathcal{T}_\equiv$ in [AST.sig](theories/autosubst/AST.sig),
+which is used by Autosubst to automatically generate the syntax and notions of renaming and substitutions, along with their respective laws. The [autosubst](theories/autosubst/) directory also contains some custom non-automatically generated files, like [RAsimpl.v](theories/autosubst/RAsimpl.v) which defines a faster substitution simplification tactic, and [SubstNotations.v](theories/autosubst/SubstNotations.v) which specifies some notations.
+
+
+### Preliminary files
 
 - [BasicAST.v](theories/BasicAST.v): Definition of universe levels and of its basic operations
 
-- [Util.v](theories/Util.v): @Theo, I copied this file from one of your projects, what does it contain?
+- [Util.v](theories/Util.v): General tactics, lemmas and notations.
 
 - [Typing.v](theories/Typing.v): Typing rules of $\mathcal{T}_=$ and $\mathcal{T}_\equiv$. We use a single mutual inductive family parametrized by a mode `M`, which can be either `mdef` for the definitional theory ($\mathcal{T}_\equiv$), or `mprop` for the propositional theory ($\mathcal{T}_=$). The rule for `accelcomp` then requires a proof that `M = mdef`. We also assume a `Parameter assm_sig : list term` for representing the signature of axioms $\Sigma$, and suppose that the type of an axiom is well typed in $\mathcal{T}_=$ if it is well-typed in $\mathcal{T}_\equiv$. This assumption is of course validated by the common axioms one uses in practice, such as propositional extensionality, functional extensionality, excluded middle and various forms of choice.
 
