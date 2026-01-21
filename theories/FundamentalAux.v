@@ -3,7 +3,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
 From AccInSProp
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl
-    Util BasicAST Contexts Typing BasicMetaTheory Reduction LRDef LRBasicProps. 
+    Util BasicAST Typing BasicMetaTheory Reduction LRDef LRBasicProps. 
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 
 Require Import Equations.Prop.DepElim.

@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From AccInSProp Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing BasicMetaTheory Fundamental CHeqProps.
+Util BasicAST Typing BasicMetaTheory Fundamental CHeqProps.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
