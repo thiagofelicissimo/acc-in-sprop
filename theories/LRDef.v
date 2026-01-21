@@ -210,9 +210,6 @@ Module LogRelImpl : LogRelM.
         - exact s.
     Defined.
 
-    Print LR'.
-
-
     Lemma LRTy_respects_iff_aux n A B R rec rec' :
         (forall l p A B R, rec l p A B R <-> rec' l p A B R) ->
         LRTy n rec A B R -> LRTy n rec' A B R.

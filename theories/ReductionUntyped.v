@@ -366,7 +366,8 @@ Proof.
         exact H0''.
         eapply conv_succ.
         eapply IHeval. 2:reflexivity.
-        eapply redd_to_conv, validity_conv_right, type_inv_succ in H0.
+        eapply redd_to_conv, validity_conv_right, type_inv in H0. 
+        dependent destruction H0.
         eauto.
 Qed.
 

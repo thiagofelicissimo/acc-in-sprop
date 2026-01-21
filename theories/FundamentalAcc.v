@@ -248,7 +248,8 @@ Proof.
 
     assert (∙ ⊢d< ty k> accel (ty n) (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp.
     { eauto using conv_accel', validity_conv_right. }
-    eapply type_inv_accel' in temp as (_ & _ & R2Wt & _ & p2Wt & _).
+    eapply type_inv in temp; dependent destruction temp. subst.
+    rename R_Wt into R2Wt. rename p_Wt into p2Wt.
     assert (pointwise_relation _ eq ((1 .: S >> S) >> var) (var 1 .: (S >> S) >> var)).
     { unfold pointwise_relation.  intros. destruct a. reflexivity. reflexivity. }
     eapply LR_irred_tm; eauto. 3:eapply H7; eauto. all:clear H7.
@@ -587,7 +588,7 @@ Proof.
       eapply validity_conv_left. eauto.
     - eapply LR_escape_tm in ϵaccel; eauto. eapply validity_conv_right in ϵaccel.
       simpl in ϵaccel.
-      eapply type_inv_accel' in ϵaccel as (_ & AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv).
+      eapply type_inv in ϵaccel. dependent destruction ϵaccel.
       eapply redd_conv; eauto using conv_sym.
       eapply red_to_redd. simpl. eapply red_accel'; eauto.
       rasimpl. f_equal. unfold t10, t9, t8, t7, t6, t5, pwk, Pwk, Rwk, Awk, P''.

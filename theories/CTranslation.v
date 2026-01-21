@@ -304,18 +304,6 @@ Proof.
     + apply rename_dec. assumption.
 Qed.
 
-(* TODO MOVE *)
-Lemma varty_unique Γ l x A B :
-  Γ ∋< l > x : A →
-  Γ ∋< l > x : B →
-  A = B.
-Proof.
-  intros hA hB.
-  induction hA in B, hB |- *.
-  - inversion hB. reflexivity.
-  - inversion hB. subst. firstorder congruence.
-Qed.
-
 Lemma tr_var_known Γ Γ' x A A' l :
   Γ ∋< l > x : A →
   Γ' ∋< l > x : A' →

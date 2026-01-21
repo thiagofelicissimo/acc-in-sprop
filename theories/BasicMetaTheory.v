@@ -12,9 +12,16 @@ Import CombineNotations.
 
 Open Scope subst_scope.
 
+
 Derive Signature for varty.
 Derive Signature for ctx_typing.
 Derive Signature for typing.
+Derive Signature for ConvCtx.
+Derive Signature for WellSubst.
+Derive Signature for WellRen.
+Derive Signature for ConvSubst.
+Derive NoConfusion for term.
+Derive NoConfusion for level.
 
 
 Lemma p_in_d :
@@ -29,7 +36,16 @@ Proof.
   eapply type_conv_ctx_mut; eauto 6 using typing, conversion, ctx_typing.
 Qed.
 
-
+Lemma varty_unique Γ l x A B :
+  Γ ∋< l > x : A →
+  Γ ∋< l > x : B →
+  A = B.
+Proof.
+  intros hA hB.
+  induction hA in B, hB |- *.
+  - inversion hB. reflexivity.
+  - inversion hB. subst. firstorder congruence.
+Qed.
 
 Lemma Ax_inj l l' : Ax l = Ax l' → l = l'.
 Proof.
@@ -3669,572 +3685,7 @@ Proof.
 Qed.
 
 
-
-(* composite lemmas, for helping automation *)
-
-Lemma conv_ty_in_ctx_conv  M Γ l A A' l' t u B :
-  Γ ,, (l , A) ▹ M ⊢< l' > t ≡ u : B ->
-  Γ ▹ M ⊢< Ax l > A ≡ A' : Sort l ->
-  Γ ,, (l , A') ▹ M ⊢< l' > t ≡ u : B.
-Proof.
-  intros t_eq_u A_eq_A'.
-  eapply conv_in_ctx_conv; eauto.
-  apply conv_ccons; eauto using ctx_conv_refl, validity_ty_ctx, validity_conv_left.
-Qed.
-
-
-Lemma conv_ty_in_ctx_ty  M Γ l A A' l' t B :
-  Γ ,, (l , A) ▹ M ⊢< l' > t : B ->
-  Γ ▹ M ⊢< Ax l > A ≡ A' : Sort l ->
-  Γ ,, (l , A') ▹ M ⊢< l' > t : B.
-Proof.
-  intros t_eq_u A_eq_A'.
-  eapply conv_in_ctx_ty; eauto.
-  apply conv_ccons; eauto using ctx_conv_refl, validity_ty_ctx, validity_conv_left.
-Qed.
-
-(* the following lemma helps  M automation to type some substitutions that appear often in the proof *)
-Lemma subst_id_var1  M Γ l P :
-  Γ ,, (ty 0, Nat) ▹ M ⊢< Ax l > P : Sort l ->
-  (Γ,, (ty 0, Nat)),, (l, P) ▹ M ⊢s (succ (var 1) .: ↑ >> (↑ >> var)) : Γ ,, (ty 0, Nat).
-Proof.
-  intro H.
-  apply well_scons.
-  - ssimpl.
-    change (↑ >> (↑ >> var)) with ((var >> ren_term ↑) >> ren_term ↑).
-    eapply WellSubst_weak; eauto.
-    eapply validity_ty_ctx in H. dependent destruction H.
-    eapply WellSubst_weak; eauto using subst_id.
-  - ssimpl. apply type_succ. apply (type_var _ _ 1 _ Nat); eauto.
-    all:eauto using validity_ty_ctx, ctx_cons.
-    eapply (vartyS _ _ _ Nat _ 0). eapply vartyO.
-Qed.
-
-Derive NoConfusion for term.
-Derive NoConfusion for level.
-
-(* basic inversion lemmas  M *)
-
-
-(* Lemma type_inv_var  M Γ l x T :
-  Γ ▹ M ⊢< l > var x : T →
-  exists A, nth_error Γ x = Some (l , A).
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed. *)
-
-Lemma type_inv_pi  M Γ l' i j A B T:
-  Γ ▹ M ⊢< l' > Pi i j A B : T →
-  Γ ▹ M ⊢< Ax i > A : Sort i ∧ Γ ,, (i, A) ▹ M ⊢< Ax j > B : Sort j.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-Lemma type_inv_lam  M Γ i j A B t T l :
-      Γ ▹ M ⊢< l > lam i j A B t : T →
-      Γ ▹ M ⊢< Ax i > A : Sort i ∧
-      Γ ,, (i , A) ▹ M ⊢< Ax j > B : Sort j ∧
-      Γ ,, (i , A) ▹ M ⊢< j > t : B.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-Lemma type_inv_app  M Γ i j A B t u l T :
-      Γ ▹ M ⊢< l > app i j A B  t u : T →
-      Γ ▹ M ⊢< Ax i > A : Sort i ∧
-      Γ ,, (i , A) ▹ M ⊢< Ax j > B : Sort j ∧
-      Γ ▹ M ⊢< Ru i j > t : Pi i j A B ∧
-      Γ ▹ M ⊢< i > u : A.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-Lemma type_inv_succ  M Γ t T l :
-      Γ ▹ M ⊢< l > succ t : T →
-      Γ ▹ M ⊢< ty 0 > t : Nat.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-Lemma type_inv_rec  M Γ l' l P p_zero p_succ t T :
-  Γ ▹ M ⊢< l' > rec l P p_zero p_succ t : T →
-  Γ ,, (ty 0 , Nat) ▹ M ⊢< Ax l > P : Sort l ∧
-  Γ ▹ M ⊢< l > p_zero : P <[ zero .. ] ∧
-  Γ ,, (ty 0 , Nat) ,, (l , P) ▹ M ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ∧
-  Γ ▹ M ⊢< ty 0 > t : Nat.
-Proof.
-  intro H.
-  dependent induction H; eauto.
-Qed.
-
-(* newer versions of inversion lemmas. M 
-   TODO: replace in Confluence.v the occurrences of older inversion lemmas  M by the newer ones *)
-
-Lemma type_inv_var' M  Γ l x T :
-  Γ ▹ M ⊢< l > var x : T →
-  Γ ▹ M ⊢< l > var x : T ∧ exists A, Γ ∋< l > x : A ∧ Γ ▹ M ⊢< Ax l > T ≡ A : Sort l.
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H.
-  - eexists. split; eauto using conv_refl.
-  - edestruct IHtyping as (C & eq & A_eq_C); eauto using validity_conv_left. eexists. split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_sort' M  Γ l' i T:
-  Γ ▹ M ⊢< l' > Sort i : T →
-  Γ ▹ M ⊢< l' > Sort i : T ∧
-  l' = Ax (Ax i) ∧
-  Γ ▹ M ⊢< Ax (Ax (Ax i)) > T ≡ Sort (Ax i) : Sort (Ax (Ax i)).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_pi' M  Γ l' i j A B T:
-  Γ ▹ M ⊢< l' > Pi i j A B : T →
-  Γ ▹ M ⊢< l' > Pi i j A B : T ∧
-  Γ ▹ M ⊢< Ax i > A : Sort i ∧
-  Γ ,, (i, A) ▹ M ⊢< Ax j > B : Sort j ∧
-  l' = Ax (Ru i j) ∧
-  Γ ▹ M ⊢< Ax (Ax (Ru i j)) > T ≡ Sort (Ru i j) : Sort (Ax (Ru i j)).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (AWt & BWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_lam' M  Γ i j A B t T l :
-      Γ ▹ M ⊢< l > lam i j A B t : T →
-      Γ ▹ M ⊢< l > lam i j A B t : T ∧
-      Γ ▹ M ⊢< Ax i > A : Sort i ∧
-      Γ ,, (i , A) ▹ M ⊢< Ax j > B : Sort j ∧
-      Γ ,, (i , A) ▹ M ⊢< j > t : B ∧
-      l = Ru i j ∧
-      Γ ▹ M ⊢< Ax (Ru i j) > T ≡ Pi i j A B : Sort (Ru i j).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (AWt & BWt & tWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_app' M  Γ i j A B t u l T :
-      Γ ▹ M ⊢< l > app i j A B t u : T →
-      Γ ▹ M ⊢< l > app i j A B t u : T ∧
-      Γ ▹ M ⊢< Ax i > A : Sort i ∧
-      Γ ,, (i , A) ▹ M ⊢< Ax j > B : Sort j ∧
-      Γ ▹ M ⊢< Ru i j > t : Pi i j A B ∧
-      Γ ▹ M ⊢< i > u : A ∧
-      l = j ∧
-      Γ ▹ M ⊢< Ax j > T ≡ B <[ u.. ] : Sort j.
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (AWt & BWt & tWt & uWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_nat' M  Γ l' T:
-  Γ ▹ M ⊢< l' > Nat : T →
-  Γ ▹ M ⊢< l' > Nat : T ∧
-  l' = ty 1 ∧
-  Γ ▹ M ⊢< ty 2 > T ≡ Sort (ty 0) : Sort (ty 1).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-
-Lemma type_inv_zero' M  Γ l' T:
-  Γ ▹ M ⊢< l' > zero : T →
-  Γ ▹ M ⊢< l' > zero : T ∧
-  l' = ty 0 ∧
-  Γ ▹ M ⊢< ty 1 > T ≡ Nat : Sort (ty 0).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-
-Lemma type_inv_succ' M  Γ t T l :
-      Γ ▹ M ⊢< l > succ t : T →
-      Γ ▹ M ⊢< l > succ t : T ∧
-      Γ ▹ M ⊢< ty 0 > t : Nat ∧
-      l = ty 0 ∧
-      Γ ▹ M ⊢< ty 1 > T ≡ Nat : Sort (ty 0).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (tWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_rec' M  Γ l' l P p_zero p_succ t T :
-  Γ ▹ M ⊢< l' > rec l P p_zero p_succ t : T →
-  Γ ▹ M ⊢< l' > rec l P p_zero p_succ t : T ∧
-  Γ ,, (ty 0 , Nat) ▹ M ⊢< Ax l > P : Sort l ∧
-  Γ ▹ M ⊢< l > p_zero : P <[ zero .. ] ∧
-  Γ ,, (ty 0 , Nat) ,, (l , P) ▹ M ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ∧
-  Γ ▹ M ⊢< ty 0 > t : Nat ∧
-  l' = l ∧
-  Γ ▹ M ⊢< Ax l > T ≡ P <[ t.. ] : Sort l.
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (PWt & p_zeroWt & p_succWt & tWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_acc' M  Γ i A R a T l :
-      Γ ▹ M ⊢< l > acc i A R a : T →
-      Γ ▹ M ⊢< l > acc i A R a : T ∧
-      Γ ▹ M ⊢< Ax i > A : Sort i ∧
-      Γ ,, (i, A) ,, (i, S ⋅ A) ▹ M ⊢< Ax prop > R : Sort prop ∧
-      Γ ▹ M ⊢< i > a : A ∧
-      l = Ax prop ∧
-      Γ ▹ M ⊢< Ax (Ax prop) > T ≡ Sort prop : Sort (Ax prop).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (AWt & RWt & aWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_accel' M  Γ i l A R a q P p T l' :
-    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
-    let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi i l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ▹ M ⊢< l' > accel i l A R P p a q : T →
-    Γ ▹ M ⊢< l' > accel i l A R P p a q : T ∧
-    Γ ▹ M ⊢< Ax i > A : Sort i ∧
-    Γ ,, (i, A) ,, (i, S ⋅ A) ▹ M ⊢< Ax prop > R : Sort prop ∧
-    Γ ,, (i, A) ▹ M ⊢< Ax l > P : Sort l ∧
-    Γ ,, (i, A) ,, (Ru i l, B) ▹ M ⊢< l > p : P'' ∧
-    Γ ▹ M ⊢< i > a : A ∧
-    Γ ▹ M ⊢< prop > q : acc i A R a ∧
-    l' = l ∧
-    Γ ▹ M ⊢< Ax l > T ≡ P <[a ..] : Sort l.
-Proof.
-  intros.
-  apply validity_ty_ty in H as T_Wt.
-  split. 1: auto.
-  assert (exists t, Γ ▹ M ⊢< l' > t : T /\ t = accel i l A R P p a q ).
-  1:eexists; split; eauto.
-  clear H. destruct H0 as (t & tWt & t_eq).
-  induction tWt; dependent destruction t_eq.
-  - intuition eauto using conv_refl.
-  - edestruct IHtWt as (AWt & RWt & PWt & pWt & aWt & qWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. intuition eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_inv_obseq  M Γ l T A i a b :
-  Γ ▹ M ⊢< l > obseq i A a b : T →
-  Γ ▹ M ⊢< Ax i > A : Sort i ∧
-  Γ ▹ M ⊢< i > a : A ∧
-  Γ ▹ M ⊢< i > b : A ∧
-  l = Ax prop ∧
-  Γ ▹ M ⊢< Ax (Ax prop) > T ≡ Sort prop : Sort (Ax prop).
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  dependent induction H.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (H1 & H2 & H3 & H4 & H5); eauto using validity_conv_left.
-    subst. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
-Lemma type_accinv' M  Γ n A R a p b r l T :
-    Γ ▹ M ⊢< prop > p : acc (ty n) A R a →
-    Γ ▹ M ⊢< ty n > b : A →
-    Γ ▹ M ⊢< prop > r : R <[a.:b..] →
-    T = acc (ty n) A R b →
-    l = prop →
-    Γ ▹ M ⊢< l > accinv (ty n) A R a p b r : T.
-Proof.
-  intros. subst. eapply validity_ty_ty in H as temp.
-  eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
-  eapply type_accinv; eauto.
-Qed.
-
-Lemma type_app' M  Γ i j A B t u T :
-      Γ ▹ M ⊢< Ru i j > t : Pi i j A B →
-      Γ ▹ M ⊢< i > u : A →
-      (Γ ▹ M ⊢< Ax j > B <[ u .. ] : Sort j → Γ ▹ M ⊢< Ax j > T ≡ B <[ u .. ] : Sort j) →
-      Γ ▹ M ⊢< j > app i j A B  t u : T.
-Proof.
-  intros.
-  eapply validity_ty_ty in H as temp.
-  eapply type_inv_pi' in temp as (_ & AWt & BWt & _).
-  assert (Γ ▹ M ⊢< j > app i j A B t u : B<[u..]) as H2 by eauto using type_app.
-  eapply type_conv.
-  1: eauto.
-  eapply conv_sym. eapply validity_ty_ty in H2. eauto.
-Qed.
-
-Lemma conv_app' M  Γ i j A B_ B t u A' B' t' u' :
-  Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
-  Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B': Sort j →
-  Γ ▹ M ⊢< Ru i j > t ≡ t' : Pi i j A B →
-  Γ ▹ M ⊢< i > u ≡ u' : A →
-  B_ = B <[ u .. ] →
-  Γ ▹ M ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B_.
-Proof.
-  intros. subst. eapply conv_app. all: eauto using validity_conv_left, validity_conv_right, type_conv.
-Qed.
-
-Lemma conv_pi' M  Γ i j l A B A' B' :
-  Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
-  Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B' : Sort j →
-  l = Ru i j →
-  Γ ▹ M ⊢< Ax l > Pi i j A B ≡ Pi i j A' B' : Sort l.
-Proof.
-  intros. subst. eapply conv_pi. all: eauto.
-  eapply validity_conv_left. all: eassumption.
-Qed.
-
-Lemma conv_var' M  Γ x l A T :
-      Γ ∋< l > x : A →
-      ▹ M ⊢ Γ →
-      T = A →
-      Γ ▹ M ⊢< l > (var x) ≡ (var x) : T.
-Proof.
-  intros. subst. eauto using conv_var.
-Qed.
-
-
-Lemma conv_lam' M  Γ i j A B t A' B' t' l T:
-      Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B': Sort j →
-      Γ ,, (i , A) ▹ M ⊢< j > t ≡ t' : B →
-      l = Ru i j →
-      T = Pi i j A B →
-      Γ ▹ M ⊢< l > lam i j A B t ≡ lam i j A' B' t' : T.
-Proof.
-  intros. subst. eapply conv_lam. all: eauto.
-  eapply validity_conv_left. all: eassumption.
-Qed.
-
-Lemma conv_sort' M  l l' Γ T :
-      ▹ M ⊢ Γ →
-      T = Sort (Ax l) →
-      l' = Ax (Ax l) →
-      Γ ▹ M ⊢< l' > Sort l ≡ Sort l : T.
-Proof.
-  intros. subst. eauto using conv_sort.
-Qed.
-
-
-
-
-Lemma lift_subst  M σ1 σ2 i A A' Γ:
-    ▹ M ⊢ Γ ,, (i, A) →
-    ∙ ▹ M ⊢s σ1 ≡ σ2 : Γ →
-    A' = A <[ σ1] →
-    ∙ ,, (i, A') ▹ M ⊢s ((var 0) .: (σ1 >> ren_term S)) ≡ ((var 0) .: (σ2 >> ren_term S)) : (Γ ,, (i, A)).
-Proof.
-    intros. subst. dependent destruction H. eapply conv_scons.
-    1:ssimpl. 1:eapply ConvSubst_weak; eauto.
-    1:eapply subst_ty; eauto using validity_subst_conv_left, ctx_typing.
-    rasimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). 1:simpl. 1:ssimpl. 1:eauto.
-    rewrite H2.
-    eapply conv_var. 1:eauto. 1:inversion H.
-    1:eapply validity_subst_conv_left in H0.
-    1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
-    eapply subst_ty; eauto using validity_subst_conv_left. econstructor.
-Qed.
-
-
-Lemma lift_subst2  M σ1 σ2 i j B A _A _B Γ:
-    ▹ M ⊢ Γ ,, (i, A) ,,(j, B) →
-    ∙ ▹ M ⊢s σ1 ≡ σ2 : Γ →
-    _A = A <[ σ1] →
-    _B = B<[var 0 .: σ1 >> ren_term S] →
-    ∙ ,, (i, _A) ,, (j, _B) ▹ M ⊢s ((var 0) .: (var 1 .: (σ1 >> ren_term (S >> S)))) ≡ ((var 0) .: (var 1 .: (σ2 >> ren_term (S >> S)))) : (Γ ,, (i, A)) ,,(j, B).
-Proof.
-    intros. subst.
-    dependent destruction H. dependent destruction H.
-    eapply subst_ty in H2 as H2'. 3,4:eauto using validity_subst_conv_left. 2:econstructor.
-    eapply subst_ty in H1 as H1'.
-    3:eapply lift_subst in H0; eauto using validity_subst_conv_left, validity_ty_ctx.
-    2,3:econstructor; eauto using ctx_typing.
-    assert (forall σ, pointwise_relation _ eq (var 0 .: (var 1 .: σ >> ren_term (S >> S))) (up_term (up_term σ))).
-    { intros. unfold pointwise_relation; intros; destruct a.
-      1:reflexivity. 1:destruct a.  1:reflexivity. 1:ssimpl; reflexivity. }
-    setoid_rewrite H3. eapply conv_substs_up_two; eauto.
-    econstructor; eauto. econstructor; eauto using ctx_typing.
-Qed.
-
-Definition obseq_sym l A a b e : term :=
-  J l A a (obseq l (S ⋅ A) (var 0) (S ⋅ a)) (obsrefl l A a) b e.
-
-Lemma type_obseq_sym  M : forall Γ n A a b e,
-    Γ ▹ M ⊢< prop > e : obseq (ty n) A a b →
-    Γ ▹ M ⊢< prop > obseq_sym (ty n) A a b e : obseq (ty n) A b a.
-Proof.
-  intros. eapply validity_ty_ty in H as H'.
-  eapply type_inv_obseq in H' as (H1 & H2 & H3 & _).
-  unfold obseq_sym.
-  eapply meta_conv.
-  1:eapply type_J; eauto. all: rasimpl. 3:reflexivity.
-  2:eapply type_obsrefl; eauto.
-  eapply type_obseq.
-  2:eapply meta_conv. 2: eapply type_var.
-  2:eauto using validity_ty_ctx, ctx_cons.
-  3:reflexivity.
-  2:econstructor.
-  all:eapply type_ren; eauto using ctx_typing, WellRen_S, validity_ty_ctx.
-Qed.
-
-Lemma conv_cast' M   :
-  ∀ Γ i A A' B B' e e' a a',
-    Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ▹ M ⊢< Ax i > B ≡ B' : Sort i ->
-    Γ ▹ M ⊢< prop > e ≡ e' : obseq (Ax i) (Sort i) A B ->
-    Γ ▹ M ⊢< i > a ≡ a' : A ->
-    Γ ▹ M ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B.
-Proof.
-  intros. eapply conv_cast; eauto using validity_conv_left.
-  eapply type_conv. 1:eauto using validity_conv_right. 
-  econstructor;eauto using conversion, validity_ty_ctx, validity_conv_left.
-Qed.
-
-Lemma conv_cast_refl' M   Γ i A B e a :
-  Γ ▹ M ⊢< Ax i > A ≡ B : Sort i ->
-  Γ ▹ M ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-  Γ ▹ M ⊢< i > a : A ->
-  Γ ▹ M ⊢< i > cast i A B e a ≡ a : B.
-Proof.
-  intros hAB he ha.
-  eapply conv_trans.
-  - econstructor.
-    + eapply conv_refl_conv. eassumption.
-    + apply conv_sym. eassumption.
-    + eassumption.
-    + eapply type_conv; eauto 7 using conversion, validity_ty_ctx, conv_refl.
-    + apply conv_refl. assumption.
-    + apply conv_refl. assumption.
-  - econstructor. 2: eassumption.
-    econstructor; eauto using validity_conv_left.
-    econstructor. 1: eassumption.
-    constructor.
-    + constructor. eapply validity_ty_ctx. eassumption.
-    + eapply conv_refl_conv. eassumption.
-    + apply conv_sym. assumption.
-Qed.
-
-
-Lemma conv_accel' M   :
-    ∀ Γ n l A A' R R' a a' q q' P P' p p' P0,
-    Γ ▹ M ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
-    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ▹ M ⊢< Ax prop > R ≡ R' : Sort prop ->
-    Γ ,, (ty n, A) ▹ M ⊢< Ax l > P ≡ P' : Sort l ->
-    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
-    let P_ := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R_ P_) in
-    let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ▹ M ⊢< l > p ≡ p' : P'' ->
-    Γ ▹ M ⊢< ty n > a ≡ a': A ->
-    Γ ▹ M ⊢< prop > q ≡ q' : acc (ty n) A R a ->
-    P0 = P <[a ..] ->
-    Γ ▹ M ⊢< l > accel (ty n) l A R P p a q ≡ accel (ty n) l A' R' P' p' a' q' : P0.
-Proof.
-  intros. subst.
-  eapply conv_accel; eauto 8 using validity_conv_left, typing, conversion.
-Qed.
-
-Lemma conv_accel_accin' M   :
-    ∀ Γ n l A R a q P p,
-    M = mdef ->
-    Γ ▹ M ⊢< Ax (ty n) > A : Sort (ty n) ->
-    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ▹ M ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (ty n, A) ▹ M ⊢< Ax l > P : Sort l ->
-    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
-    let P' := (1 .: (S >> S >> S)) ⋅ P in
-    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
-    let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ▹ M ⊢< l > p : P'' ->
-    Γ ▹ M ⊢< ty n > a : A ->
-    Γ ▹ M ⊢< prop > q : acc (ty n) A R a ->
-    let Awk := (S >> S) ⋅ A in
-    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
-    let Pwk := (up_ren (S >> S)) ⋅ P in
-    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
-    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
-    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
-    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
-    let t3 := lam prop l t2 P'' t1 in
-    let t4 := Pi prop l t2 P'' in
-    let t5 := lam (ty n) l A t4 t3 in
-    Γ ▹ M ⊢< l > accel (ty n) l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..].
-Proof.
-  intros. destruct l.
-  - eapply conv_accel_accin; eauto.
-  - eapply conv_irrel. 
-    + eapply type_accel; eauto.
-    + eapply subst_ty; eauto using validity_ty_ctx. 2:unfold P'';rasimpl;reflexivity.
-      econstructor. 1:econstructor. all:ssimpl; eauto.
-      1:eapply subst_id; eauto using validity_ty_ctx.
-      eapply meta_conv. 1:eapply t5Wt; eauto.
-      unfold B, R', P'. rasimpl. f_equal. f_equal. substify. ssimpl. reflexivity.
-Qed.
-    
-
-
-
-Theorem var_unicity Γ l x A l' A' :
-  Γ ∋< l > x : A ->
-  Γ ∋< l' > x : A' ->
-  l = l' /\ A = A'.
-Proof.
-  generalize Γ l l' A A'. clear Γ l l' A A'.
-  induction x; intros.
-  - dependent destruction H. dependent destruction H0. split; eauto.
-  - dependent destruction H. dependent destruction H0.
-    eapply IHx in H as (HA & HB); eauto. subst. split; eauto.
-Qed.
-
+(* type inversion *)
 Inductive type_inv_data M : ctx -> level -> term -> term -> Prop :=
   | inv_data_var Γ l x A T
     (var_in_ctx : Γ ∋< l > x : A)
@@ -4449,3 +3900,282 @@ Proof.
   eapply IHtyping in AWt as IH.
   depelim IH; econstructor; subst; eauto using conv_sym, conv_trans.
 Qed.
+
+
+(* composite lemmas, for helping automation *)
+
+Lemma conv_ty_in_ctx_conv  M Γ l A A' l' t u B :
+  Γ ,, (l , A) ▹ M ⊢< l' > t ≡ u : B ->
+  Γ ▹ M ⊢< Ax l > A ≡ A' : Sort l ->
+  Γ ,, (l , A') ▹ M ⊢< l' > t ≡ u : B.
+Proof.
+  intros t_eq_u A_eq_A'.
+  eapply conv_in_ctx_conv; eauto.
+  apply conv_ccons; eauto using ctx_conv_refl, validity_ty_ctx, validity_conv_left.
+Qed.
+
+
+Lemma conv_ty_in_ctx_ty  M Γ l A A' l' t B :
+  Γ ,, (l , A) ▹ M ⊢< l' > t : B ->
+  Γ ▹ M ⊢< Ax l > A ≡ A' : Sort l ->
+  Γ ,, (l , A') ▹ M ⊢< l' > t : B.
+Proof.
+  intros t_eq_u A_eq_A'.
+  eapply conv_in_ctx_ty; eauto.
+  apply conv_ccons; eauto using ctx_conv_refl, validity_ty_ctx, validity_conv_left.
+Qed.
+
+(* the following lemma helps  automation to type some substitutions that appear often in the proof *)
+Lemma subst_id_var1  M Γ l P :
+  Γ ,, (ty 0, Nat) ▹ M ⊢< Ax l > P : Sort l ->
+  (Γ,, (ty 0, Nat)),, (l, P) ▹ M ⊢s (succ (var 1) .: ↑ >> (↑ >> var)) : Γ ,, (ty 0, Nat).
+Proof.
+  intro H.
+  apply well_scons.
+  - ssimpl.
+    change (↑ >> (↑ >> var)) with ((var >> ren_term ↑) >> ren_term ↑).
+    eapply WellSubst_weak; eauto.
+    eapply validity_ty_ctx in H. dependent destruction H.
+    eapply WellSubst_weak; eauto using subst_id.
+  - ssimpl. apply type_succ. apply (type_var _ _ 1 _ Nat); eauto.
+    all:eauto using validity_ty_ctx, ctx_cons.
+    eapply (vartyS _ _ _ Nat _ 0). eapply vartyO.
+Qed.
+
+
+Lemma type_app' M  Γ i j A B t u T :
+      Γ ▹ M ⊢< Ru i j > t : Pi i j A B →
+      Γ ▹ M ⊢< i > u : A →
+      (Γ ▹ M ⊢< Ax j > B <[ u .. ] : Sort j → Γ ▹ M ⊢< Ax j > T ≡ B <[ u .. ] : Sort j) →
+      Γ ▹ M ⊢< j > app i j A B  t u : T.
+Proof.
+  intros.
+  eapply validity_ty_ty in H as temp.
+  eapply type_inv in temp. dependent destruction temp.
+  assert (Γ ▹ M ⊢< j > app i j A B t u : B<[u..]) as H2 by eauto using type_app.
+  eapply type_conv.
+  1: eauto.
+  eapply conv_sym. eapply validity_ty_ty in H2. eauto.
+Qed.
+
+Lemma conv_app' M  Γ i j A B_ B t u A' B' t' u' :
+  Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
+  Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B': Sort j →
+  Γ ▹ M ⊢< Ru i j > t ≡ t' : Pi i j A B →
+  Γ ▹ M ⊢< i > u ≡ u' : A →
+  B_ = B <[ u .. ] →
+  Γ ▹ M ⊢< j > app i j A B t u ≡ app i j A' B' t' u' : B_.
+Proof.
+  intros. subst. eapply conv_app. all: eauto using validity_conv_left, validity_conv_right, type_conv.
+Qed.
+
+Lemma conv_pi' M  Γ i j l A B A' B' :
+  Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
+  Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B' : Sort j →
+  l = Ru i j →
+  Γ ▹ M ⊢< Ax l > Pi i j A B ≡ Pi i j A' B' : Sort l.
+Proof.
+  intros. subst. eapply conv_pi. all: eauto.
+  eapply validity_conv_left. all: eassumption.
+Qed.
+
+Lemma conv_var' M  Γ x l A T :
+      Γ ∋< l > x : A →
+      ▹ M ⊢ Γ →
+      T = A →
+      Γ ▹ M ⊢< l > (var x) ≡ (var x) : T.
+Proof.
+  intros. subst. eauto using conv_var.
+Qed.
+
+
+Lemma conv_lam' M  Γ i j A B t A' B' t' l T:
+      Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ▹ M ⊢< Ax j > B ≡ B': Sort j →
+      Γ ,, (i , A) ▹ M ⊢< j > t ≡ t' : B →
+      l = Ru i j →
+      T = Pi i j A B →
+      Γ ▹ M ⊢< l > lam i j A B t ≡ lam i j A' B' t' : T.
+Proof.
+  intros. subst. eapply conv_lam. all: eauto.
+  eapply validity_conv_left. all: eassumption.
+Qed.
+
+Lemma conv_sort' M  l l' Γ T :
+      ▹ M ⊢ Γ →
+      T = Sort (Ax l) →
+      l' = Ax (Ax l) →
+      Γ ▹ M ⊢< l' > Sort l ≡ Sort l : T.
+Proof.
+  intros. subst. eauto using conv_sort.
+Qed.
+
+
+
+
+Lemma lift_subst  M σ1 σ2 i A A' Γ:
+    ▹ M ⊢ Γ ,, (i, A) →
+    ∙ ▹ M ⊢s σ1 ≡ σ2 : Γ →
+    A' = A <[ σ1] →
+    ∙ ,, (i, A') ▹ M ⊢s ((var 0) .: (σ1 >> ren_term S)) ≡ ((var 0) .: (σ2 >> ren_term S)) : (Γ ,, (i, A)).
+Proof.
+    intros. subst. dependent destruction H. eapply conv_scons.
+    1:ssimpl. 1:eapply ConvSubst_weak; eauto.
+    1:eapply subst_ty; eauto using validity_subst_conv_left, ctx_typing.
+    rasimpl. assert (A <[ σ1 >> ren_term S] = (plus (S 0)) ⋅ (A <[ σ1])). 1:simpl. 1:ssimpl. 1:eauto.
+    rewrite H2.
+    eapply conv_var. 1:eauto. 1:inversion H.
+    1:eapply validity_subst_conv_left in H0.
+    1:econstructor. 1:econstructor. 1:econstructor. 1:econstructor.
+    eapply subst_ty; eauto using validity_subst_conv_left. econstructor.
+Qed.
+
+
+Lemma lift_subst2  M σ1 σ2 i j B A _A _B Γ:
+    ▹ M ⊢ Γ ,, (i, A) ,,(j, B) →
+    ∙ ▹ M ⊢s σ1 ≡ σ2 : Γ →
+    _A = A <[ σ1] →
+    _B = B<[var 0 .: σ1 >> ren_term S] →
+    ∙ ,, (i, _A) ,, (j, _B) ▹ M ⊢s ((var 0) .: (var 1 .: (σ1 >> ren_term (S >> S)))) ≡ ((var 0) .: (var 1 .: (σ2 >> ren_term (S >> S)))) : (Γ ,, (i, A)) ,,(j, B).
+Proof.
+    intros. subst.
+    dependent destruction H. dependent destruction H.
+    eapply subst_ty in H2 as H2'. 3,4:eauto using validity_subst_conv_left. 2:econstructor.
+    eapply subst_ty in H1 as H1'.
+    3:eapply lift_subst in H0; eauto using validity_subst_conv_left, validity_ty_ctx.
+    2,3:econstructor; eauto using ctx_typing.
+    assert (forall σ, pointwise_relation _ eq (var 0 .: (var 1 .: σ >> ren_term (S >> S))) (up_term (up_term σ))).
+    { intros. unfold pointwise_relation; intros; destruct a.
+      1:reflexivity. 1:destruct a.  1:reflexivity. 1:ssimpl; reflexivity. }
+    setoid_rewrite H3. eapply conv_substs_up_two; eauto.
+    econstructor; eauto. econstructor; eauto using ctx_typing.
+Qed.
+
+Definition obseq_sym l A a b e : term :=
+  J l A a (obseq l (S ⋅ A) (var 0) (S ⋅ a)) (obsrefl l A a) b e.
+
+Lemma type_obseq_sym  M : forall Γ n A a b e,
+    Γ ▹ M ⊢< prop > e : obseq (ty n) A a b →
+    Γ ▹ M ⊢< prop > obseq_sym (ty n) A a b e : obseq (ty n) A b a.
+Proof.
+  intros. eapply validity_ty_ty in H as H'.
+  eapply type_inv in H'. dependent destruction H'.
+  unfold obseq_sym.
+  eapply meta_conv.
+  1:eapply type_J; eauto. all: rasimpl. 3:reflexivity.
+  2:eapply type_obsrefl; eauto.
+  eapply type_obseq.
+  2:eapply meta_conv. 2: eapply type_var.
+  2:eauto using validity_ty_ctx, ctx_cons.
+  3:reflexivity.
+  2:econstructor.
+  all:eapply type_ren; eauto using ctx_typing, WellRen_S, validity_ty_ctx.
+Qed.
+
+Lemma conv_cast' M   :
+  ∀ Γ i A A' B B' e e' a a',
+    Γ ▹ M ⊢< Ax i > A ≡ A' : Sort i ->
+    Γ ▹ M ⊢< Ax i > B ≡ B' : Sort i ->
+    Γ ▹ M ⊢< prop > e ≡ e' : obseq (Ax i) (Sort i) A B ->
+    Γ ▹ M ⊢< i > a ≡ a' : A ->
+    Γ ▹ M ⊢< i > cast i A B e a ≡ cast i A' B' e' a' : B.
+Proof.
+  intros. eapply conv_cast; eauto using validity_conv_left.
+  eapply type_conv. 1:eauto using validity_conv_right. 
+  econstructor;eauto using conversion, validity_ty_ctx, validity_conv_left.
+Qed.
+
+Lemma conv_cast_refl' M   Γ i A B e a :
+  Γ ▹ M ⊢< Ax i > A ≡ B : Sort i ->
+  Γ ▹ M ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
+  Γ ▹ M ⊢< i > a : A ->
+  Γ ▹ M ⊢< i > cast i A B e a ≡ a : B.
+Proof.
+  intros hAB he ha.
+  eapply conv_trans.
+  - econstructor.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. eassumption.
+    + eassumption.
+    + eapply type_conv; eauto 7 using conversion, validity_ty_ctx, conv_refl.
+    + apply conv_refl. assumption.
+    + apply conv_refl. assumption.
+  - econstructor. 2: eassumption.
+    econstructor; eauto using validity_conv_left.
+    econstructor. 1: eassumption.
+    constructor.
+    + constructor. eapply validity_ty_ctx. eassumption.
+    + eapply conv_refl_conv. eassumption.
+    + apply conv_sym. assumption.
+Qed.
+
+Lemma type_accinv' M  Γ n A R a p b r l T :
+    Γ ▹ M ⊢< prop > p : acc (ty n) A R a →
+    Γ ▹ M ⊢< ty n > b : A →
+    Γ ▹ M ⊢< prop > r : R <[a.:b..] →
+    T = acc (ty n) A R b →
+    l = prop →
+    Γ ▹ M ⊢< l > accinv (ty n) A R a p b r : T.
+Proof.
+  intros. subst. eapply validity_ty_ty in H as temp.
+  eapply type_inv in temp. dependent destruction temp.
+  eapply type_accinv; eauto.
+Qed.
+
+
+Lemma conv_accel' M   :
+    ∀ Γ n l A A' R R' a a' q q' P P' p p' P0,
+    Γ ▹ M ⊢< Ax (ty n) > A ≡ A' : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ▹ M ⊢< Ax prop > R ≡ R' : Sort prop ->
+    Γ ,, (ty n, A) ▹ M ⊢< Ax l > P ≡ P' : Sort l ->
+    let R_ := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P_ := (1 .: (S >> S >> S)) ⋅ P in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R_ P_) in
+    let P'' := (1.: (S >> S)) ⋅ P in
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ▹ M ⊢< l > p ≡ p' : P'' ->
+    Γ ▹ M ⊢< ty n > a ≡ a': A ->
+    Γ ▹ M ⊢< prop > q ≡ q' : acc (ty n) A R a ->
+    P0 = P <[a ..] ->
+    Γ ▹ M ⊢< l > accel (ty n) l A R P p a q ≡ accel (ty n) l A' R' P' p' a' q' : P0.
+Proof.
+  intros. subst.
+  eapply conv_accel; eauto 8 using validity_conv_left, typing, conversion.
+Qed.
+
+Lemma conv_accel_accin' M   :
+    ∀ Γ n l A R a q P p,
+    M = mdef ->
+    Γ ▹ M ⊢< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ▹ M ⊢< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ▹ M ⊢< Ax l > P : Sort l ->
+    let R' := (1 .: (0 .: (S >> S))) ⋅ R in
+    let P' := (1 .: (S >> S >> S)) ⋅ P in
+    let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
+    let P'' := (1.: (S >> S)) ⋅ P in
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ▹ M ⊢< l > p : P'' ->
+    Γ ▹ M ⊢< ty n > a : A ->
+    Γ ▹ M ⊢< prop > q : acc (ty n) A R a ->
+    let Awk := (S >> S) ⋅ A in
+    let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
+    let Pwk := (up_ren (S >> S)) ⋅ P in
+    let pwk := (up_ren (up_ren (S >> S))) ⋅ p in
+    let t0 := accinv (ty n) Awk Rwk ((S >> S) ⋅ a) ((S >> S) ⋅ q) (var 1) (var 0) in
+    let t1 := accel (ty n) l Awk Rwk Pwk pwk (var 1) t0 in
+    let t2 := R<[S ⋅ a .: (var 0 .: S >> var)] in
+    let t3 := lam prop l t2 P'' t1 in
+    let t4 := Pi prop l t2 P'' in
+    let t5 := lam (ty n) l A t4 t3 in
+    Γ ▹ M ⊢< l > accel (ty n) l A R P p a q ≡ p <[ t5 .: a ..] : P <[a ..].
+Proof.
+  intros. destruct l.
+  - eapply conv_accel_accin; eauto.
+  - eapply conv_irrel. 
+    + eapply type_accel; eauto.
+    + eapply subst_ty; eauto using validity_ty_ctx. 2:unfold P'';rasimpl;reflexivity.
+      econstructor. 1:econstructor. all:ssimpl; eauto.
+      1:eapply subst_id; eauto using validity_ty_ctx.
+      eapply meta_conv. 1:eapply t5Wt; eauto.
+      unfold B, R', P'. rasimpl. f_equal. f_equal. substify. ssimpl. reflexivity.
+Qed.
+    
+

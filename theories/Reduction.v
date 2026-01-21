@@ -161,7 +161,7 @@ Lemma red_accel' Γ n l A R a q P p X Y :
 Proof.
     intros. subst.
     eapply validity_ty_ty in H1 as temp.
-    eapply type_inv_acc' in temp as (_ & AWt & RWt & aWt & _).
+    eapply type_inv in temp. dependent destruction temp.
     eauto using red_accel.
 Qed.
 
@@ -190,7 +190,7 @@ Lemma red_app' Γ t t' u i j A B X Y :
 Proof.
     intros. subst.
     eapply red_to_conv in H as temp.  eapply validity_conv_left in temp. eapply validity_ty_ty in temp.
-    eapply type_inv_pi' in temp as (_ & Awt & BWt & _).
+    eapply type_inv in temp. dependent destruction temp.
     eapply red_app; eauto.
 Qed.
 
@@ -260,7 +260,7 @@ Lemma redd_app Γ i j A B t t' u :
 Proof.
     intros. eapply redd_to_conv in H as H'.
     eapply validity_conv_left in H'. eapply validity_ty_ty in H'.
-    eapply type_inv_pi in H' as (AWt & BWt).
+    eapply type_inv in H'. dependent destruction H'.
     dependent induction H.
     - eapply redd_refl. eauto using type_app.
     - eapply redd_step; eauto using red_app.
@@ -327,7 +327,7 @@ Proof.
     intros.
     eapply validity_ctx in H0 as ?.
     dependent induction H2.
-    - eapply red_to_redd. eapply type_inv_succ' in H as (_ & nWt & _). eapply red_rec_succ; eauto.
+    - eapply red_to_redd. eapply type_inv in H. dependent destruction H. eapply red_rec_succ; eauto.
     - eapply redd_step. eapply red_conv. eapply red_rec; eauto.
       + eauto 7 using subst_conv, conv_refl, redd_to_conv, red_to_conv, conv_trans, substs_one, conv_sym.
       + eapply IHredd; eauto.

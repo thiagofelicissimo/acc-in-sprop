@@ -178,9 +178,9 @@ Proof.
     eauto using LR_escape_tm, validity_conv_left, redd_refl.
     eapply LR_escape_tm in ϵbeta; eauto.
     eapply validity_conv_right in ϵbeta.
-    eapply type_inv_app' in ϵbeta as (_ & A_Wt & B_Wt & lam_Wt & u_Wt & _ & typeconv). fold subst_term in *.
-    eapply type_inv_lam' in lam_Wt as (_ & _ & _ & t_Wt & _).
-    eapply red_to_redd. rasimpl. rasimpl in typeconv. eapply red_conv.
+    eapply type_inv in ϵbeta. dependent destruction ϵbeta.
+    eapply type_inv in t_Wt. dependent destruction t_Wt.
+    eapply red_to_redd. rasimpl. rasimpl in conv_ty. eapply red_conv.
     2:eapply conv_sym;eauto.
     eapply red_beta'; eauto using conv_refl; rasimpl; reflexivity.
 Qed.

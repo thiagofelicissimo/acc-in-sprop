@@ -191,7 +191,7 @@ Proof.
     eapply LR_redd_tm; eauto.
     eauto using LR_escape_tm, validity_conv_left, redd_refl.
     eapply LR_escape_tm in ϵpzero; eauto. eapply validity_conv_right in ϵpzero.
-    asimpl in ϵpzero. eapply type_inv_rec' in ϵpzero as (_ & PWt & pzeroWt & psuccWt & _ & _ & typeconv).
+    asimpl in ϵpzero. eapply type_inv in ϵpzero. dependent destruction ϵpzero.
     eapply red_to_redd.
     eapply red_conv. 2:eapply conv_sym; eauto.
     eapply red_rec_zero; eauto using conv_refl.
@@ -219,9 +219,9 @@ Proof.
     eauto using LR_escape_tm, validity_conv_left, redd_refl.
     eapply LR_escape_tm in ϵst;eauto.
     eapply validity_conv_right in ϵst. asimpl in ϵst.
-    eapply type_inv_rec' in ϵst as (_ & PWt & pzeroWt & psuccWt & tWt & _ & typeconv).
+    eapply type_inv in ϵst. dependent destruction ϵst.
     eapply red_to_redd. eapply red_conv. 2:eapply conv_sym;eauto.
-    eapply type_inv_succ in tWt.
+    eapply type_inv in t_Wt. dependent destruction t_Wt.
     eapply red_meta_conv.
     eapply red_rec_succ; eauto using conv_refl.
     all:rasimpl; reflexivity.

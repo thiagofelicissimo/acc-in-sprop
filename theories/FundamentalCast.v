@@ -42,11 +42,11 @@ Lemma nat_neq_sort_red l l' A B e :
 Proof.
     intros A_red_nat B_red_sort A_eq_B.
     eapply redd_whnf_to_conv in B_red_sort as temp.
-    eapply validity_conv_right, type_inv_sort' in temp as (_ & eq & _).
-    eapply Ax_inj in eq. subst.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    eapply Ax_inj in lvl_eq. subst.
     eapply redd_whnf_to_conv in A_red_nat as temp.
-    eapply validity_conv_right, type_inv_nat' in temp as (_ & eq & _).
-    destruct l. inversion eq. clear eq.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    destruct l. inversion lvl_eq. clear lvl_eq.
     eapply nat_neq_sort. eapply type_conv. eapply A_eq_B.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
 Qed.
@@ -60,8 +60,8 @@ Lemma nat_neq_pi_red l' A B i j S T e :
 Proof.
     intros A_red_nat B_red_pi A_eq_B.
     eapply redd_whnf_to_conv in A_red_nat as temp.
-    eapply validity_conv_right, type_inv_nat' in temp as (_ & eq' & _).
-    destruct l'. 2:inversion eq'. dependent destruction eq'.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    destruct l'. 2:inversion lvl_eq. dependent destruction lvl_eq.
     eapply nat_neq_pi. eapply type_conv. eapply A_eq_B.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
 Qed.
@@ -75,8 +75,8 @@ Lemma sort_neq_pi_red l l' A B i j S T e :
 Proof.
     intros A_red_sort B_red_pi A_eq_B.
     eapply redd_whnf_to_conv in A_red_sort as temp.
-    eapply validity_conv_right, type_inv_sort' in temp as (_ & eq & _).
-    eapply Ax_inj in eq. subst.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    eapply Ax_inj in lvl_eq. subst.
     eapply sort_neq_pi.
     eapply type_conv; eauto.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
@@ -91,11 +91,11 @@ Lemma pi_sort_inj_red l i n i' n' A A' B B' T T' e :
 Proof.
     intros T_red T'_red eWt.
     eapply redd_whnf_to_conv in T_red as temp.
-    eapply validity_conv_right, type_inv_pi' in temp as (_ & _ & _ & eq & _).
-    eapply Ax_inj in eq. subst.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    eapply Ax_inj in lvl_eq. subst.
     eapply redd_whnf_to_conv in T'_red as temp.
-    eapply validity_conv_right, type_inv_pi' in temp as (_ & _ & _ & eq & _).
-    eapply Ax_inj in eq.
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
+    eapply Ax_inj in lvl_eq.
     eapply pi_sort_inj; eauto.
     eapply type_conv; eauto.
     eapply conv_obseq; eauto using redd_whnf_to_conv, ctx_typing, conv_sort'.
@@ -191,11 +191,11 @@ Lemma redd_cast_pi_pi Γ i k A B S T S' T' e s' a :
 Proof.
     intros A_red B_red eWt s'Wt aWt s app' res'.
     eapply redd_to_conv in A_red as temp.
-    eapply validity_conv_right, type_inv_pi in temp as (SWt & TWt).
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
     eapply redd_to_conv in B_red as temp.
-    eapply validity_conv_right, type_inv_pi in temp as (S'Wt & T'Wt).
+    eapply validity_conv_right, type_inv in temp. dependent destruction temp.
 
-    eassert (Γ ⊢d< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> _ : T' <[ s'..]).
+    eassert (Γ ⊢d< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> _ : T' <[ s'..]) as H'.
     {
       eapply redd_app; eauto.
       eapply redd_conv.
@@ -213,8 +213,8 @@ Proof.
 
     eapply redd_trans. eauto.
     eapply red_to_redd.
-    eapply redd_to_conv, validity_conv_right, type_inv_app' in H as (_ & _ & _ & H & _).
-    eapply type_inv_lam' in H as (_ & _ & _ & H & _).
+    eapply redd_to_conv, validity_conv_right, type_inv in H'. dependent destruction H'.
+    eapply type_inv in t_Wt. dependent destruction t_Wt.
     eapply red_beta'; eauto using conv_refl.
 
     unfold res', app', s.
@@ -320,7 +320,6 @@ Proof.
            destruct temp as (eq1 & eq2). dependent elimination eq2. subst.
            unfold ϵPi. intros. split.
            eapply conv_conv; eauto using conv_cast', LR_escape_ty, redd_whnf_to_conv.
-           (* clear LR_A12' LR_B12'. *)
            intros s1 s2 ϵs.
            eapply H0 in LR_S12' as temp; eauto. clear H0.
            destruct temp as (_ & K2).
@@ -532,26 +531,6 @@ Proof.
     intros. subst. eauto using red_cast_pi.
 Qed.
 
-
-Lemma type_inv_cast' Γ i A B e a l T :
-    Γ ⊢d< l > cast i A B e a : T ->
-    Γ ⊢d< l > cast i A B e a : T /\
-    Γ ⊢d< Ax i > A : Sort i /\
-    Γ ⊢d< Ax i > B : Sort i /\
-    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B /\
-    Γ ⊢d< i > a : A /\
-    l = i /\
-    Γ ⊢d< Ax i > T ≡ B : Sort l.
-Proof.
-  intro H.
-  apply validity_ty_ty in H as T_Wt.
-  split. auto.
-  dependent induction H; eauto.
-  - repeat split; eauto using conv_refl.
-  - edestruct IHtyping as (AWt & BWt & eWt & aWt & l_eq & conv); eauto using validity_conv_left.
-    rewrite l_eq in *. repeat split; eauto using conv_trans, conv_sym.
-Qed.
-
 Lemma fundamental_cast_pi Γ i n A1 A2 B1 B2 e f :
     Γ ⊢d< Ax i > A1 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A1 : Sort i ->
@@ -587,10 +566,9 @@ Proof.
     eapply LR_redd; eauto.
     eauto using redd_refl, validity_conv_left, LR_escape_tm.
     eapply red_to_redd.
-    simpl in ϵcast. eapply LR_escape_tm, validity_conv_right, type_inv_cast' in ϵcast as temp; eauto.
-    destruct temp as (_ & pi1 & pi2 & e'Wt & f'Wt & _).
-    eapply type_inv_pi' in pi1 as (_ & A1'Wt & B1'Wt & _).
-    eapply type_inv_pi' in pi2 as (_ & A2'Wt & B2'Wt & _).
+    simpl in ϵcast. eapply LR_escape_tm, validity_conv_right, type_inv in ϵcast as temp;eauto. 
+    dependent destruction temp.
+    eapply type_inv in A_Wt, B_Wt. dependent destruction A_Wt. dependent destruction B_Wt.
     eapply red_conv.
     simpl.
     eapply red_cast_pi'; eauto.

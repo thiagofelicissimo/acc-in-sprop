@@ -708,5 +708,3 @@ Fixpoint scoped n t :=
   end.
 
 Notation closed t := (scoped 0 t).
-
-

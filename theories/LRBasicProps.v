@@ -254,8 +254,7 @@ Proof.
     eapply LR_escape_tm in H0 as H0'; eauto.
     eapply validity_conv_left in H0' as appWt.
     eapply validity_conv_right in H0' as vWt.
-    eapply type_inv_app' in appWt
-        as (_ & _ & _ & tWt & uWt & eq & conv).
+    eapply type_inv in appWt. dependent destruction appWt.
     subst.
     eapply LR_ann; eauto using aconv_refl.
     eapply aconv_app; eauto using aconv_refl.
@@ -272,8 +271,7 @@ Proof.
     eapply LR_escape_tm in H0 as H0'; eauto.
     eapply validity_conv_right in H0' as appWt.
     eapply validity_conv_left in H0' as vWt.
-    eapply type_inv_app' in appWt
-        as (_ & _ & _ & tWt & uWt & eq & conv).
+    eapply type_inv in appWt. dependent destruction appWt.
     subst.
     eapply LR_ann; eauto using aconv_refl.
     eapply aconv_app; eauto using aconv_refl.
