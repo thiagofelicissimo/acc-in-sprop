@@ -1,22 +1,12 @@
-(** * Typing *)
+
 
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
-From TypedConfluence
-Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl.
-From TypedConfluence Require Import Util BasicAST Contexts Typing BasicMetaTheory. (*  Env Inst. *)
+From AccInSProp Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl Util BasicAST Contexts Typing BasicMetaTheory. 
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
 Import CombineNotations.
-
-
-(* I first tried to defined ⊢d t -->>! u by |t| -->>! |u| and ⊢d t ≡ u.
-   The problem is that if ⊢d A -->>! Pi S T and ⊢d A -->>! A', then we know that
-   A' = Pi S' T' with |S| = |S'| and |T| = |T'| and ⊢d Pi S T ≡ Pi S' T',
-   but we cannot conclude that S ≡ S' and T ≡ T'. This poses problems
-   when showing irrelevance of the logical relation, because we can only
-   exchange types which are convertible and equal wrt |-| *)
 
 
 Reserved Notation "Γ ⊢d< l > t --> u : T" (at level 50, l, t, u, T at next level).

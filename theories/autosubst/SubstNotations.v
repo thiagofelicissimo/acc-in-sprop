@@ -5,7 +5,7 @@
 *)
 
 From Stdlib Require Import Utf8 List.
-From TypedConfluence Require Import core unscoped RAsimpl AST.
+From AccInSProp Require Import core unscoped RAsimpl AST.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 
 #[global] Disable Notation "s [ sigma_term ]" : subst_scope.

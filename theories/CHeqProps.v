@@ -1,5 +1,5 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
-From TypedConfluence Require Import
+From AccInSProp Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
 Util BasicAST Contexts Typing BasicMetaTheory Fundamental.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
