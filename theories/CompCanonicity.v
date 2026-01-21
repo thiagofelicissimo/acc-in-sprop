@@ -3,7 +3,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia Wellfounded.Inverse_Image Wellfounded.Inclusion.
 From AccInSProp
 Require Import core unscoped AST SubstNotations RAsimpl AST_rasimpl
-    Util BasicAST Contexts Typing BasicMetaTheory Reduction Fundamental.
+    Util BasicAST Contexts Typing BasicMetaTheory Reduction Fundamental LRDef.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 
 Require Import Equations.Prop.DepElim.
@@ -13,7 +13,8 @@ Import CombineNotations.
 Reserved Notation "t ---> u" (at level 50, u at next level).
 
 
-(* to represent erased subterms *)
+(* Instead of introducing a new inductive type to represent the non-annotated syntax,
+  we reuse the fully-annotated syntax by replacing annotations by some junk term *)
 Definition Box := Nat.
 Definition boxlvl := prop.
 
@@ -336,8 +337,8 @@ Proof.
 Qed.
 
 
-Derive Signature for LRDef.ϵNat.
-Derive Signature for ReductionUntyped.eval.
+Derive Signature for ϵNat.
+Derive Signature for eval.
 
 Lemma eval_red_untyped_correct k n :
     ∙ ⊢d< ty 0 > n : Nat ->
