@@ -195,7 +195,7 @@ Proof.
 Qed.
 
 Lemma red_erasure Γ i t u A :
-    Γ ⊢< ty i > t --> u : A ->
+    Γ ⊢d< ty i > t --> u : A ->
     (erasure t) ---> (erasure u).
 Proof.
     intros. dependent induction H; unfold Ru in *;
@@ -236,7 +236,7 @@ Inductive reddu : term -> term -> Prop :=
 where "t -->> t'" := (reddu t t').
 
 Lemma redd_erasure Γ i t u A :
-    Γ ⊢< ty i > t -->> u : A ->
+    Γ ⊢d< ty i > t -->> u : A ->
     (erasure t) -->> (erasure u).
 Proof.
     intros. dependent induction H; eauto using reddu, red_erasure.
@@ -321,7 +321,7 @@ Inductive eval : term -> nat -> Prop :=
     eval t (S n).
 
 Lemma eval_red_untyped n :
-    ∙ ⊢< ty 0 > n : Nat ->
+    ∙ ⊢d< ty 0 > n : Nat ->
     exists k, eval (erasure n) k.
 Proof.
     intros.
@@ -340,9 +340,9 @@ Derive Signature for LRDef.ϵNat.
 Derive Signature for ReductionUntyped.eval.
 
 Lemma eval_red_untyped_correct k n :
-    ∙ ⊢< ty 0 > n : Nat ->
+    ∙ ⊢d< ty 0 > n : Nat ->
     eval (erasure n) k ->
-    ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat.
+    ∙ ⊢d< ty 0 > n ≡ mk_Nat k : Nat.
 Proof.
     intros nWt eval.
     dependent induction eval;
@@ -387,9 +387,9 @@ Qed.
 
 
 Theorem computational_canonicity n : 
-    ∙ ⊢< ty 0 > n : Nat ->
+    ∙ ⊢d< ty 0 > n : Nat ->
     exists k, eval (erasure n) k /\ 
-    ∙ ⊢< ty 0 > n ≡ mk_Nat k : Nat /\
+    ∙ ⊢d< ty 0 > n ≡ mk_Nat k : Nat /\
     (forall k', eval (erasure n) k' -> k = k').
 Proof.
   intros. eapply eval_red_untyped in H as H'. destruct H'.

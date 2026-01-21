@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP Fundamental CHeqProps.
+Util BasicAST Contexts Typing BasicMetaTheory Fundamental CHeqProps.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -143,14 +143,6 @@ Inductive decoration : term → term → Prop :=
     a2 ⊏ a2' →
     injpi2 i j A1 A2 B1 B2 e a2 ⊏ injpi2 i j A1' A2' B1' B2' e' a2'
 
-(* | dec_refl u :
-    u ⊏ u
-
-| dec_trans u v w :
-    u ⊏ v →
-    v ⊏ w →
-    u ⊏ w *)
-
 | add_cast i A B e a b :
     a ⊏ b →
     a ⊏ cast i A B e b
@@ -266,14 +258,6 @@ Inductive simdec : term → term → Prop :=
     e ~ e' →
     J i A a P p b e ~ J i A' a' P' p' b' e'
 
-(* admissible *)
-(* | sim_cast i A A' B B' e e' a a' :
-    A ~ A' →
-    B ~ B' →
-    e ~ e' →
-    a ~ a' →
-    cast i A B e a ~ cast i A' B' e' a' *)
-
 | sim_injpi1 i j A1 A1' A2 A2' B1 B1' B2 B2' e e' :
     A1 ~ A1' →
     A2 ~ A2' →
@@ -309,7 +293,6 @@ Proof.
 Qed.
 
 
-(* does not hold for all t, because we do not have constructors in sim for acc_el_comp *)
 Lemma sim_refl t :
   t ~ t.
 Proof.
@@ -523,16 +506,8 @@ Proof.
   apply substs_decs. 2: auto.
   eauto using dec_subst_scons, dec_subst_one.
 Qed.
-(* Fundamental lemma
 
-  We're going to prove a more general statement with cast substitutions, but
-  for now, we'll admit this version.
-  I already have a plan in mind so it might not be necessary to have a look at
-  it yet.
-  In ETT to ITT/WTT, we used the more general version too in the final
-  translation so we'll have to check whether it's needed.
-
-*)
+(* Fundamental lemma *)
 
 Definition renX m := 3 * m.
 Definition renR m := 1 + (3 * m).
@@ -593,15 +568,15 @@ Qed.
 
 Lemma pack_Wt Γ1 Γ2 :
   ctx_compat Γ1 Γ2 ->
-  ⊢ Γ1 -> 
-  ⊢ Γ2 -> 
-  ⊢ pack Γ1 Γ2.
+  ⊢p Γ1 -> 
+  ⊢p Γ2 -> 
+  ⊢p pack Γ1 Γ2.
 Proof.
   intro h. induction h.
   1:econstructor. subst.
   intros. dependent destruction H. dependent destruction H0.
-  assert (pack Γ1 Γ2 ⊢< Ax l2 > renL ⋅ A1 : Sort l2) by eauto using type_ren, WellRen_renL.
-  assert (pack Γ1 Γ2,, (l2, renL ⋅ A1) ⊢< Ax l2 > S ⋅ renR ⋅ A2 : Sort l2) 
+  assert (pack Γ1 Γ2 ⊢p< Ax l2 > renL ⋅ A1 : Sort l2) by eauto using type_ren, WellRen_renL.
+  assert (pack Γ1 Γ2,, (l2, renL ⋅ A1) ⊢p< Ax l2 > S ⋅ renR ⋅ A2 : Sort l2) 
     by (rasimpl; eapply type_ren; eauto using ctx_typing, WellRen_weak, WellRen_renR). 
   simpl. econstructor. 1:econstructor. 1:econstructor.
   1:eauto.
@@ -617,11 +592,11 @@ Qed.
 
 
 Lemma sim_var_heq l x A1 A2 Γ1 Γ2 :
-  ⊢ Γ1 -> ⊢ Γ2 ->
+  ⊢p Γ1 -> ⊢p Γ2 ->
   ctx_compat Γ1 Γ2 ->
   Γ1 ∋< l > x : A1 ->
   Γ2 ∋< l > x : A2 ->
-  ∃ e, pack Γ1 Γ2 ⊢< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ (var x)) (renR ⋅ (var x)).
+  ∃ e, pack Γ1 Γ2 ⊢p< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ (var x)) (renR ⋅ (var x)).
 Proof.
   intros. generalize l x A1 A2 H H0 H2 H3. clear l x A1 A2 H H0 H2 H3. induction H1; intros.
   1:dependent destruction H2.
@@ -648,14 +623,14 @@ Qed.
 Lemma sim_heq_ih_aux {u u'}: 
 (forall (i : nat) (Γ1 Γ2 : ctx) (A1 A2 : term),
     ctx_compat Γ1 Γ2 → 
-    Γ1 ⊢< ty i > u : A1 → 
-    Γ2 ⊢< ty i > u' : A2 → 
-    ∃ e : term, pack Γ1 Γ2 ⊢< prop > e : heq (ty i) (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ u) (renR ⋅ u')) ->
+    Γ1 ⊢p< ty i > u : A1 → 
+    Γ2 ⊢p< ty i > u' : A2 → 
+    ∃ e : term, pack Γ1 Γ2 ⊢p< prop > e : heq (ty i) (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ u) (renR ⋅ u')) ->
 (forall (l : level) (Γ1 Γ2 : ctx) (A1 A2 : term),
     ctx_compat Γ1 Γ2 → 
-    Γ1 ⊢< l > u : A1 → 
-    Γ2 ⊢< l > u' : A2 → 
-    ∃ e : term, pack Γ1 Γ2 ⊢< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ u) (renR ⋅ u')).
+    Γ1 ⊢p< l > u : A1 → 
+    Γ2 ⊢p< l > u' : A2 → 
+    ∃ e : term, pack Γ1 Γ2 ⊢p< prop > e : heq l (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ u) (renR ⋅ u')).
 Proof.
   intros. destruct l; eauto. eexists. eapply type_ren in H1, H2.
   3,6:eauto using WellRen_renL, WellRen_renR.
@@ -666,9 +641,9 @@ Qed.
     
 
 Lemma meta_ctx Γ l A Δ t :
-  Γ ⊢< l > t : A ->
+  Γ ⊢p< l > t : A ->
   Γ = Δ ->
-  Δ ⊢< l > t : A.
+  Δ ⊢p< l > t : A.
 Proof.
   intros. subst. assumption.
 Qed.
@@ -676,15 +651,15 @@ Qed.
 Lemma sim_heq i Γ1 Γ2 t1 t2 A1 A2 :
   ctx_compat Γ1 Γ2 ->
   t1 ~ t2 →
-  Γ1 ⊢< ty i > t1 : A1 →
-  Γ2 ⊢< ty i > t2 : A2 →
-  ∃ e, pack Γ1 Γ2 ⊢< prop > e : heq (ty i) (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ t1) (renR ⋅ t2).
+  Γ1 ⊢p< ty i > t1 : A1 →
+  Γ2 ⊢p< ty i > t2 : A2 →
+  ∃ e, pack Γ1 Γ2 ⊢p< prop > e : heq (ty i) (renL ⋅ A1) (renR ⋅ A2) (renL ⋅ t1) (renR ⋅ t2).
 Proof.
   intros hctx hsim h1 h2.
   induction hsim in i, Γ1, Γ2, hctx, A1, A2, h1, h2 |- *.
   all:try solve 
    [ eapply type_inv in h1; dependent destruction h1 ; dependent destruction lvl_eq ].
-  all : assert (⊢ pack Γ1 Γ2) by eauto using pack_Wt, validity_ty_ctx.
+  all : assert (⊢p pack Γ1 Γ2) by eauto using pack_Wt, validity_ty_ctx.
   - pose proof h1 as h1'. pose proof h2 as h2'.
     eapply type_inv in h1. dependent destruction h1.
     eapply type_inv in h2. dependent destruction h2.
@@ -917,8 +892,6 @@ Proof.
 
     eexists. eapply type_conv.
     1:eapply type_heq_accel.
-    (* 3,6:eapply type_ren. 3:eapply q_Wt. 6:eapply q_Wt0.
-    3-8:eauto using WellRen_renL, WellRen_renR. 3,4:rasimpl; reflexivity. *)
     1,4:eapply type_ren. 1:eapply P_Wt. 4:eapply P_Wt0. 2,5:eapply WellRen_up.
     1-8:eauto using WellRen_renL, WellRen_renR.
     1,2:eauto using ctx_typing, WellRen_renL, WellRen_renR, type_ren.
@@ -1041,10 +1014,6 @@ Definition get_tail Γ : ctx :=
   | cons _ Γ => Γ
   | nil => nil (* junk *)
   end.
-
-(* Fixpoint pack_refl Γ n :=
-  let X := get_entry (n / 3) Γ in
-  (heq_refl (fst X) (snd X) (var 0)) .: (var n) .: (var n) .: (pack_refl (get_tail Γ) (n + 1)). *)
 
 Definition pack_refl Γ n :=
   let X := get_entry (n / 3) Γ in
@@ -1171,7 +1140,7 @@ Proof.
 Qed.
 
 Lemma pack_refl_Wt Γ : 
-  ⊢ Γ -> Γ ⊢s pack_refl Γ : pack Γ Γ.
+  ⊢p Γ -> Γ ⊢ps pack_refl Γ : pack Γ Γ.
 Proof.
   intros. induction H.
   1:econstructor.
@@ -1244,9 +1213,9 @@ Qed.
 
 Corollary sim_heq_same_ctx i Γ t1 t2 A1 A2 :
   t1 ~ t2 →
-  Γ ⊢< ty i > t1 : A1 →
-  Γ ⊢< ty i > t2 : A2 →
-  ∃ e, Γ ⊢< prop > e : heq (ty i) A1 A2 t1 t2.
+  Γ ⊢p< ty i > t1 : A1 →
+  Γ ⊢p< ty i > t2 : A2 →
+  ∃ e, Γ ⊢p< prop > e : heq (ty i) A1 A2 t1 t2.
 Proof.
   intros. edestruct sim_heq; eauto using compat_refl.
   eapply subst_ty in H2. 3:eapply pack_refl_Wt.
@@ -1266,11 +1235,11 @@ Proof.
 Qed.
 
 Lemma ctx_extend_Wt Γ l A1 A2 :
-  Γ ⊢< Ax l > A1 : Sort l ->
-  Γ ⊢< Ax l > A2 : Sort l ->
-  ⊢ Γ -> 
+  Γ ⊢p< Ax l > A1 : Sort l ->
+  Γ ⊢p< Ax l > A2 : Sort l ->
+  ⊢p Γ -> 
   let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  ⊢ Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq).
+  ⊢p Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq).
 Proof.
   intros. econstructor.
   1:econstructor.
@@ -1286,11 +1255,11 @@ Proof.
 Qed.
 
 Lemma pack_refl_cons_Wt l A1 A2 Γ : 
-  Γ ⊢< Ax l > A1 : Sort l ->
-  Γ ⊢< Ax l > A2 : Sort l ->
-  ⊢ Γ -> 
+  Γ ⊢p< Ax l > A1 : Sort l ->
+  Γ ⊢p< Ax l > A2 : Sort l ->
+  ⊢p Γ -> 
   let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢s (var 0 .: ((var 1) .: ((var 2) .: (pack_refl Γ >> ren_term (S >> S >> S))))) : pack (Γ ,, (l, A1)) (Γ ,, (l, A2)).
+  Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢ps (var 0 .: ((var 1) .: ((var 2) .: (pack_refl Γ >> ren_term (S >> S >> S))))) : pack (Γ ,, (l, A1)) (Γ ,, (l, A2)).
 Proof.
   intros.
   simpl. econstructor. 1:econstructor. 1:econstructor. 
@@ -1318,16 +1287,15 @@ Proof.
 Qed.
 
 Lemma ctx_extend2_Wt Γ i j A1 A2 B1 B2 :
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
+  Γ ,, (i, A1) ⊢p< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢p< Ax j > B2 : Sort j ->
   let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
   let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
-  ⊢ Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq).
+  ⊢p Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq).
 Proof.
   intros.
-  assert (⊢ ((Γ,, (i, A1)),, (i, S ⋅ A2)),, (prop, Aeq))  by 
+  assert (⊢p ((Γ,, (i, A1)),, (i, S ⋅ A2)),, (prop, Aeq))  by 
     (eapply validity_ty_ctx in H,H0; inversion H; inversion H0; eapply ctx_extend_Wt; eauto).
-  (* assert  *)
   econstructor.
   1:econstructor.
   1:econstructor.
@@ -1342,14 +1310,6 @@ Proof.
   all:rasimpl;reflexivity.
 Qed.
 
-(* Lemma pack_refl_cons2_Wt Γ i j A1 A2 B1 B2 :
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-  let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
-  Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) 
-      ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq)
-      ⊢s (var 0 .: ((var 1) .: ((var 2) .: (pack_refl Γ >> ren_term (S >> S >> S))))) : pack (Γ ,, (i, A1) ,, (j, B1)) (Γ ,, (i, A2) ,, (j, B2)). *)
 
 Lemma renL_jump (a b c : term) σ :
   pointwise_relation nat eq (renL >> (a .: (b .: (c .: σ)))) (c .: (renL >> σ)).
@@ -1376,10 +1336,10 @@ Qed.
 
 Corollary sim_heq_same_ctx_cons i l Γ t1 t2 B1 B2 A1 A2 :
   t1 ~ t2 →
-  Γ ,, (l, A1) ⊢< ty i > t1 : B1 →
-  Γ ,, (l, A2) ⊢< ty i > t2 : B2 →
+  Γ ,, (l, A1) ⊢p< ty i > t1 : B1 →
+  Γ ,, (l, A2) ⊢p< ty i > t2 : B2 →
   let Aeq := heq l ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  ∃ e, Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢< prop > 
+  ∃ e, Γ ,, (l, A1) ,, (l, S ⋅ A2) ,, (prop, Aeq) ⊢p< prop > 
     e : heq (ty i) ((S >> S) ⋅ B1) ((up_ren S >> S) ⋅ B2) ((S >> S) ⋅ t1) ((up_ren S >> S) ⋅ t2).
 Proof.
   intros. edestruct sim_heq.
@@ -1408,15 +1368,15 @@ Qed.
 
 Corollary sim_heq_same_ctx_cons2 i j n Γ t1 t2 C1 C2 B1 B2 A1 A2 :
   t1 ~ t2 →
-  Γ ,, (i, A1) ,, (j, B1) ⊢< ty n > t1 : C1 →
-  Γ ,, (i, A2) ,, (j, B2) ⊢< ty n > t2 : C2 →
+  Γ ,, (i, A1) ,, (j, B1) ⊢p< ty n > t1 : C1 →
+  Γ ,, (i, A2) ,, (j, B2) ⊢p< ty n > t2 : C2 →
 
   let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
   let Beq := heq j ((S >> S >> S >> S) ⋅ B1) ((up_ren S >> S >> S >> S) ⋅ B2) (var 1) (var 0) in
   exists e,
     Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) 
       ,, (j, (S >> S) ⋅ B1) ,, (j,  (up_ren S >> S >> S) ⋅ B2) ,, (prop, Beq)
-      ⊢< prop > e : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2) 
+      ⊢p< prop > e : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2) 
         ((up_ren (S >> S) >> S >> S) ⋅ t1) ((up_ren (up_ren S >> S >> S) >> S) ⋅ t2).
 Proof.
   intros. 
@@ -1461,7 +1421,7 @@ Proof.
     replace (B1 <[ (var 2) .: (S >> (S >> S)) >> var]) with ((S >> S) ⋅ B1). 1:eassumption.
     substify; ssimpl. eapply subst_term_morphism; eauto. unfold pointwise_relation; intros x'; destruct x'; eauto. }
   1:{ 
-    assert (forall x y, x =y -> ⊢ x -> ⊢ y) by (intros; subst; eassumption).
+    assert (forall x y, x =y -> ⊢p x -> ⊢p y) by (intros; subst; eassumption).
     eapply H6. 2:eapply ctx_ext2.
     f_equal. 1:f_equal. 1:f_equal. 3:f_equal. 3:f_equal. 
     all:substify; ssimpl;eapply subst_term_morphism; eauto. all:unfold pointwise_relation; intros x'; destruct x'; eauto. }

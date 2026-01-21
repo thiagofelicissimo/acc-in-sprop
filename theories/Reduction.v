@@ -11,15 +11,15 @@ From Equations Require Import Equations.
 Import CombineNotations.
 
 
-(* I first tried to defined ⊢ t -->>! u by |t| -->>! |u| and ⊢ t ≡ u.
-   The problem is that if ⊢ A -->>! Pi S T and ⊢ A -->>! A', then we know that
-   A' = Pi S' T' with |S| = |S'| and |T| = |T'| and ⊢ Pi S T ≡ Pi S' T',
+(* I first tried to defined ⊢d t -->>! u by |t| -->>! |u| and ⊢d t ≡ u.
+   The problem is that if ⊢d A -->>! Pi S T and ⊢d A -->>! A', then we know that
+   A' = Pi S' T' with |S| = |S'| and |T| = |T'| and ⊢d Pi S T ≡ Pi S' T',
    but we cannot conclude that S ≡ S' and T ≡ T'. This poses problems
    when showing irrelevance of the logical relation, because we can only
    exchange types which are convertible and equal wrt |-| *)
 
 
-Reserved Notation "Γ ⊢< l > t --> u : T" (at level 50, l, t, u, T at next level).
+Reserved Notation "Γ ⊢d< l > t --> u : T" (at level 50, l, t, u, T at next level).
 
 Definition val t :=
     match t with
@@ -32,50 +32,50 @@ Definition val t :=
 
 Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
 | red_app Γ t t' u i j A B :
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ,, (i, A) ⊢< Ax j > B : Sort j ->
-    Γ ⊢< Ru i j > t --> t' : Pi i j A B ->
-    Γ ⊢< i > u : A ->
-    Γ ⊢< j > app i j A B t u --> app i j A B t' u : B <[ u..]
+    Γ ⊢d< Ax i > A : Sort i ->
+    Γ ,, (i, A) ⊢d< Ax j > B : Sort j ->
+    Γ ⊢d< Ru i j > t --> t' : Pi i j A B ->
+    Γ ⊢d< i > u : A ->
+    Γ ⊢d< j > app i j A B t u --> app i j A B t' u : B <[ u..]
 
 | red_beta Γ t u i j A B A' B' :
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ⊢< Ax j > B ≡ B' : Sort j ->
-      Γ ,, (i , A) ⊢< j > t : B →
-      Γ ⊢< i > u : A →
-    Γ ⊢< j > app i j A B (lam i j A' B' t) u --> t <[ u.. ] : B <[ u..]
+    Γ ⊢d< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ⊢d< Ax j > B ≡ B' : Sort j ->
+      Γ ,, (i , A) ⊢d< j > t : B →
+      Γ ⊢d< i > u : A →
+    Γ ⊢d< j > app i j A B (lam i j A' B' t) u --> t <[ u.. ] : B <[ u..]
 
 | red_rec Γ l P p_zero p_succ n n' :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< ty 0 > n --> n' : Nat ->
-    Γ ⊢< l > rec l P p_zero p_succ n --> rec l P p_zero p_succ n' : P <[ n.. ]
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< ty 0 > n --> n' : Nat ->
+    Γ ⊢d< l > rec l P p_zero p_succ n --> rec l P p_zero p_succ n' : P <[ n.. ]
 
 | red_rec_zero Γ l P p_zero p_succ :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< l > rec l P p_zero p_succ zero --> p_zero : P <[ zero .. ]
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< l > rec l P p_zero p_succ zero --> p_zero : P <[ zero .. ]
 
 | red_rec_succ Γ l P p_zero p_succ n :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< ty 0 > n : Nat ->
-    Γ ⊢< l > rec l P p_zero p_succ (succ n) --> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ]
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< ty 0 > n : Nat ->
+    Γ ⊢d< l > rec l P p_zero p_succ (succ n) --> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ]
 
 | red_accel Γ n l A R a q P p :
-    Γ ⊢< Ax (ty n) > A : Sort (ty n) ->
-    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢< Ax prop > R : Sort prop ->
-    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
+    Γ ⊢d< Ax (ty n) > A : Sort (ty n) ->
+    Γ ,, (ty n, A) ,, (ty n, S ⋅ A) ⊢d< Ax prop > R : Sort prop ->
+    Γ ,, (ty n, A) ⊢d< Ax l > P : Sort l ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
-    Γ ⊢< ty n > a : A ->
-    Γ ⊢< prop > q : acc (ty n) A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢d< l > p : P'' ->
+    Γ ⊢d< ty n > a : A ->
+    Γ ⊢d< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
@@ -86,45 +86,45 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     let t3 := lam prop l t2 P'' t1 in
     let t4 := Pi prop l t2 P'' in
     let t5 := lam (ty n) l A t4 t3 in
-    Γ ⊢< l > accel (ty n) l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
+    Γ ⊢d< l > accel (ty n) l A R P p a q --> p <[ t5 .: a ..] : P <[a ..]
 
 | red_conv Γ l t u A B :
-    Γ ⊢< l > t --> u : A ->
-    Γ ⊢< Ax l > A ≡ B : Sort l ->
-    Γ ⊢< l > t --> u : B
+    Γ ⊢d< l > t --> u : A ->
+    Γ ⊢d< Ax l > A ≡ B : Sort l ->
+    Γ ⊢d< l > t --> u : B
 
 | red_cast1 Γ i A A' B e a :
-    Γ ⊢< Ax i > A --> A' : Sort i ->
-    Γ ⊢< Ax i > B : Sort i ->
-    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > cast i A B e a --> cast i A' B e a : B
+    Γ ⊢d< Ax i > A --> A' : Sort i ->
+    Γ ⊢d< Ax i > B : Sort i ->
+    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢d< i > a : A ->
+    Γ ⊢d< i > cast i A B e a --> cast i A' B e a : B
 
 | red_cast2 Γ i A B B' e a :
-    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊢d< Ax i > A : Sort i ->
     val A ->
-    Γ ⊢< Ax i > B --> B' : Sort i ->
-    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > cast i A B e a --> cast i A B' e a : B
+    Γ ⊢d< Ax i > B --> B' : Sort i ->
+    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢d< i > a : A ->
+    Γ ⊢d< i > cast i A B e a --> cast i A B' e a : B
 
 | red_cast_nat Γ e t :
-    Γ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat ->
-    Γ ⊢< ty 0 > t : Nat ->
-    Γ ⊢< ty 0 > cast (ty 0) Nat Nat e t --> t : Nat
+    Γ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat ->
+    Γ ⊢d< ty 0 > t : Nat ->
+    Γ ⊢d< ty 0 > cast (ty 0) Nat Nat e t --> t : Nat
 
 | red_cast_sort Γ i A e :
-    Γ ⊢< Ax i > A : Sort i ->
-    Γ ⊢< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) ->
-    Γ ⊢< Ax i > cast (Ax i) (Sort i) (Sort i) e A --> A : Sort i
+    Γ ⊢d< Ax i > A : Sort i ->
+    Γ ⊢d< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) ->
+    Γ ⊢d< Ax i > cast (Ax i) (Sort i) (Sort i) e A --> A : Sort i
 
 | red_cast_pi Γ i n A1 A2 B1 B2 e f :
-    Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
-    Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
-    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
+    Γ ⊢d< Ax i > A1 : Sort i ->
+    Γ ,, (i, A1) ⊢d< Ax (ty n) > B1 : Sort (ty n) ->
+    Γ ⊢d< Ax i > A2 : Sort i ->
+    Γ ,, (i, A2) ⊢d< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢d< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢d< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
@@ -133,28 +133,28 @@ Inductive red  : ctx -> level -> term -> term -> term -> Prop :=
     let t2 := app i (ty n) A1' B1' (S ⋅ f) t1 in
     let t3 := cast (ty n) (B1 <[t1.: S >> var]) B2 (injpi2 i (ty n) A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
     let t4 := lam i (ty n) A2 B2 t3 in
-    Γ ⊢< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> t4 : Pi i (ty n) A2 B2
+    Γ ⊢d< Ru i (ty n) > cast (Ru i (ty n)) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> t4 : Pi i (ty n) A2 B2
 
-where "Γ ⊢< l > t --> u : T" := (red Γ l t u T).
+where "Γ ⊢d< l > t --> u : T" := (red Γ l t u T).
 
 Lemma red_meta_conv Γ u v l A B w :
-  Γ ⊢< l > u --> v : A →
+  Γ ⊢d< l > u --> v : A →
   A = B →
   v = w →
-  Γ ⊢< l > u --> w : B.
+  Γ ⊢d< l > u --> w : B.
 Proof.
   intros. subst. assumption.
 Qed.
 
 
 Lemma red_accel' Γ n l A R a q P p X Y :
-    Γ ,, (ty n, A) ⊢< Ax l > P : Sort l ->
+    Γ ,, (ty n, A) ⊢d< Ax l > P : Sort l ->
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
     let B := Pi (ty n) l (S ⋅ A) (Pi prop l R' P') in
     let P'' := (1.: (S >> S)) ⋅ P in
-    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢< l > p : P'' ->
-    Γ ⊢< prop > q : acc (ty n) A R a ->
+    Γ ,, (ty n, A) ,, (Ru (ty n) l, B) ⊢d< l > p : P'' ->
+    Γ ⊢d< prop > q : acc (ty n) A R a ->
     let Awk := (S >> S) ⋅ A in
     let Rwk := (up_ren (up_ren (S >> S))) ⋅ R in
     let Pwk := (up_ren (S >> S)) ⋅ P in
@@ -167,7 +167,7 @@ Lemma red_accel' Γ n l A R a q P p X Y :
     let t5 := lam (ty n) l A t4 t3 in
     X = p <[ t5 .: a ..] ->
     Y = P <[a ..] ->
-    Γ ⊢< l > accel (ty n) l A R P p a q --> X : Y.
+    Γ ⊢d< l > accel (ty n) l A R P p a q --> X : Y.
 Proof.
     intros. subst.
     eapply validity_ty_ty in H1 as temp.
@@ -179,7 +179,7 @@ Qed.
 
 
 Lemma red_to_conv Γ l t u A :
-    Γ ⊢< l > t --> u : A -> Γ ⊢< l > t ≡ u : A.
+    Γ ⊢d< l > t --> u : A -> Γ ⊢d< l > t ≡ u : A.
 Proof.
     intros. induction H; eauto using conversion, conv_refl, typing, validity_ty_ctx, conv_cast'.
     eapply conv_trans. eapply conv_app'.
@@ -192,11 +192,11 @@ Proof.
 Qed.
 
 Lemma red_app' Γ t t' u i j A B X Y :
-    Γ ⊢< Ru i j > t --> t' : Pi i j A B ->
-    Γ ⊢< i > u : A ->
+    Γ ⊢d< Ru i j > t --> t' : Pi i j A B ->
+    Γ ⊢d< i > u : A ->
     X = app i j A B t' u ->
     Y = B <[ u..] ->
-    Γ ⊢< j > app i j A B t u --> X : Y.
+    Γ ⊢d< j > app i j A B t u --> X : Y.
 Proof.
     intros. subst.
     eapply red_to_conv in H as temp.  eapply validity_conv_left in temp. eapply validity_ty_ty in temp.
@@ -205,57 +205,57 @@ Proof.
 Qed.
 
 Lemma red_beta' Γ t u i j A B A' B' X Y :
-    Γ ⊢< Ax i > A ≡ A' : Sort i ->
-    Γ ,, (i, A) ⊢< Ax j > B ≡ B' : Sort j ->
-    Γ ,, (i , A) ⊢< j > t : B →
-    Γ ⊢< i > u : A →
+    Γ ⊢d< Ax i > A ≡ A' : Sort i ->
+    Γ ,, (i, A) ⊢d< Ax j > B ≡ B' : Sort j ->
+    Γ ,, (i , A) ⊢d< j > t : B →
+    Γ ⊢d< i > u : A →
     X = t <[ u.. ] ->
     Y = B <[ u..] ->
-    Γ ⊢< j > app i j A B (lam i j A' B' t) u --> X : Y.
+    Γ ⊢d< j > app i j A B (lam i j A' B' t) u --> X : Y.
 Proof.
     intros. subst. eapply red_beta; eauto.
 Qed.
 
-Reserved Notation "Γ ⊢< l > t -->> u : T" (at level 50, l, t, u, T at next level).
+Reserved Notation "Γ ⊢d< l > t -->> u : T" (at level 50, l, t, u, T at next level).
 
 Inductive redd : ctx -> level -> term -> term -> term -> Prop :=
-  | redd_refl Γ l t A : Γ ⊢< l > t : A -> Γ ⊢< l > t -->> t : A
-  | redd_step Γ l t u v A : Γ ⊢< l > t --> v : A -> Γ ⊢< l > v -->> u : A -> Γ ⊢< l > t -->>u : A
-where "Γ ⊢< l > t -->> t' : A " := (redd Γ l t t' A).
+  | redd_refl Γ l t A : Γ ⊢d< l > t : A -> Γ ⊢d< l > t -->> t : A
+  | redd_step Γ l t u v A : Γ ⊢d< l > t --> v : A -> Γ ⊢d< l > v -->> u : A -> Γ ⊢d< l > t -->>u : A
+where "Γ ⊢d< l > t -->> t' : A " := (redd Γ l t t' A).
 
 
-Definition whnf Γ l t A := forall u, Γ ⊢< l > t --> u : A -> False.
+Definition whnf Γ l t A := forall u, Γ ⊢d< l > t --> u : A -> False.
 
 
 Definition redd_whnf Γ l t t' A := redd Γ l t t' A /\ whnf Γ l t' A.
 
-Notation "Γ ⊢< l > t -->>! u : T" := (redd_whnf Γ l t u T) (at level 50, l, t, u, T at next level).
+Notation "Γ ⊢d< l > t -->>! u : T" := (redd_whnf Γ l t u T) (at level 50, l, t, u, T at next level).
 
 Lemma redd_to_conv Γ l t u A :
-    Γ ⊢< l > t -->> u : A -> Γ ⊢< l > t ≡ u : A.
+    Γ ⊢d< l > t -->> u : A -> Γ ⊢d< l > t ≡ u : A.
 Proof.
     intros. induction H; eauto using conv_refl, conv_trans, red_to_conv.
 Qed.
 
 Lemma redd_whnf_to_conv Γ l t u A :
-    Γ ⊢< l > t -->>! u : A -> Γ ⊢< l > t ≡ u : A.
+    Γ ⊢d< l > t -->>! u : A -> Γ ⊢d< l > t ≡ u : A.
 Proof.
     intros. destruct H.  eauto using redd_to_conv.
 Qed.
 
 Lemma redd_trans Γ l t u v A :
-    Γ ⊢< l > t -->> v : A ->
-    Γ ⊢< l > v -->> u : A ->
-    Γ ⊢< l > t -->> u : A.
+    Γ ⊢d< l > t -->> v : A ->
+    Γ ⊢d< l > v -->> u : A ->
+    Γ ⊢d< l > t -->> u : A.
 Proof.
     intros. induction H; eauto.
     eapply redd_step; eauto.
 Qed.
 
 Lemma redd_comp_redd_whnf Γ l t u v A :
-    Γ ⊢< l > t -->> v : A ->
-    Γ ⊢< l > v -->>! u : A ->
-    Γ ⊢< l > t -->>! u : A.
+    Γ ⊢d< l > t -->> v : A ->
+    Γ ⊢d< l > v -->>! u : A ->
+    Γ ⊢d< l > t -->>! u : A.
 Proof.
     intros. destruct H0.
     split; eauto using redd_trans.
@@ -264,9 +264,9 @@ Qed.
 Derive Signature for redd.
 
 Lemma redd_app Γ i j A B t t' u :
-    Γ ⊢< Ru i j > t -->> t' : Pi i j A B ->
-    Γ ⊢< i > u : A ->
-    Γ ⊢< j > app i j A B t u -->> app i j A B t' u : B <[ u.. ].
+    Γ ⊢d< Ru i j > t -->> t' : Pi i j A B ->
+    Γ ⊢d< i > u : A ->
+    Γ ⊢d< j > app i j A B t u -->> app i j A B t' u : B <[ u.. ].
 Proof.
     intros. eapply redd_to_conv in H as H'.
     eapply validity_conv_left in H'. eapply validity_ty_ty in H'.
@@ -277,8 +277,8 @@ Proof.
 Qed.
 
 Lemma red_to_redd Γ l t u A :
-    Γ ⊢< l > t --> u : A ->
-    Γ ⊢< l > t -->> u : A.
+    Γ ⊢d< l > t --> u : A ->
+    Γ ⊢d< l > t -->> u : A.
 Proof.
     intros. eapply red_to_conv in H as temp.
     eapply validity_conv_right in temp.
@@ -287,9 +287,9 @@ Proof.
 Qed.
 
 Lemma redd_conv Γ l t u B A :
-    Γ ⊢< l > t -->> u : A ->
-    Γ ⊢< Ax l > A ≡ B : Sort l ->
-    Γ ⊢< l > t -->> u : B.
+    Γ ⊢d< l > t -->> u : A ->
+    Γ ⊢d< Ax l > A ≡ B : Sort l ->
+    Γ ⊢d< l > t -->> u : B.
 Proof.
     intros. induction H.
     - eapply redd_refl; eauto using type_conv.
@@ -297,11 +297,11 @@ Proof.
 Qed.
 
 Lemma redd_rec Γ l P p_zero p_succ n n' :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< ty 0 > n -->> n' : Nat ->
-    Γ ⊢< l > rec l P p_zero p_succ n -->> rec l P p_zero p_succ n' : P <[ n.. ].
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< ty 0 > n -->> n' : Nat ->
+    Γ ⊢d< l > rec l P p_zero p_succ n -->> rec l P p_zero p_succ n' : P <[ n.. ].
 Proof.
     intros. dependent induction H2.
     - eapply redd_refl. eauto using type_rec.
@@ -312,11 +312,11 @@ Qed.
 
 
 Lemma redd_rec_zero  Γ l P p_zero p_succ t :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< ty 0 > t -->> zero : Nat ->
-    Γ ⊢< l > rec l P p_zero p_succ t -->> p_zero : P <[ zero .. ].
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< ty 0 > t -->> zero : Nat ->
+    Γ ⊢d< l > rec l P p_zero p_succ t -->> p_zero : P <[ zero .. ].
 Proof.
     intros.
     eapply validity_ctx in H0 as ?.
@@ -328,11 +328,11 @@ Proof.
 Qed.
 
 Lemma redd_rec_succ  Γ l P p_zero p_succ t n :
-    Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l ->
-    Γ ⊢< l > p_zero : P <[ zero .. ] ->
-    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
-    Γ ⊢< ty 0 > t -->> succ n : Nat ->
-    Γ ⊢< l > rec l P p_zero p_succ t -->> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ].
+    Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l ->
+    Γ ⊢d< l > p_zero : P <[ zero .. ] ->
+    Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] ->
+    Γ ⊢d< ty 0 > t -->> succ n : Nat ->
+    Γ ⊢d< l > rec l P p_zero p_succ t -->> p_succ <[  (rec l P p_zero p_succ n) .: n ..] : P <[ (succ n) .. ].
 Proof.
     intros.
     eapply validity_ctx in H0 as ?.
@@ -350,35 +350,35 @@ Definition red_inv_type Γ t v :=
         i = i' /\
         j = j' /\
         v = t <[ u.. ] /\
-        Γ ⊢< Ax i > A ≡ A' : Sort i /\
-        Γ ,, (i , A) ⊢< Ax j > B ≡ B' : Sort j /\
-        Γ ,, (i , A) ⊢< j > t : B /\
-        Γ ⊢< i > u : A
+        Γ ⊢d< Ax i > A ≡ A' : Sort i /\
+        Γ ,, (i , A) ⊢d< Ax j > B ≡ B' : Sort j /\
+        Γ ,, (i , A) ⊢d< j > t : B /\
+        Γ ⊢d< i > u : A
     | app i j A B t u =>
         exists t',
             v = app i j A B t' u /\
-            Γ ⊢< Ax i > A : Sort i /\
-            Γ ,, (i, A) ⊢< Ax j > B : Sort j /\
-            Γ ⊢< Ru i j > t --> t' : Pi i j A B /\
-            Γ ⊢< i > u : A
+            Γ ⊢d< Ax i > A : Sort i /\
+            Γ ,, (i, A) ⊢d< Ax j > B : Sort j /\
+            Γ ⊢d< Ru i j > t --> t' : Pi i j A B /\
+            Γ ⊢d< i > u : A
     | rec l P p_zero p_succ zero =>
         v = p_zero /\
-        Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
-        Γ ⊢< l > p_zero : P <[ zero .. ] /\
-        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ]
+        Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l /\
+        Γ ⊢d< l > p_zero : P <[ zero .. ] /\
+        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ]
     | rec l P p_zero p_succ (succ n) =>
         v = p_succ <[  (rec l P p_zero p_succ n) .: n ..] /\
-        Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
-        Γ ⊢< l > p_zero : P <[ zero .. ] /\
-        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
-        Γ ⊢< ty 0 > n : Nat
+        Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l /\
+        Γ ⊢d< l > p_zero : P <[ zero .. ] /\
+        Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
+        Γ ⊢d< ty 0 > n : Nat
     | rec l P p_zero p_succ n =>
         exists n',
             v = rec l P p_zero p_succ n' /\
-            Γ ,, (ty 0 , Nat) ⊢< Ax l > P : Sort l /\
-            Γ ⊢< l > p_zero : P <[ zero .. ] /\
-            Γ ,, (ty 0 , Nat) ,, (l , P) ⊢< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
-            Γ ⊢< ty 0 > n --> n' : Nat
+            Γ ,, (ty 0 , Nat) ⊢d< Ax l > P : Sort l /\
+            Γ ⊢d< l > p_zero : P <[ zero .. ] /\
+            Γ ,, (ty 0 , Nat) ,, (l , P) ⊢d< l > p_succ : P <[ (succ (var 1)) .: (shift >> (shift >> var)) ] /\
+            Γ ⊢d< ty 0 > n --> n' : Nat
     | accel i l A R P p a q =>
     let R' := (1 .: (0 .: (S >> S))) ⋅ R in
     let P' := (1 .: (S >> S >> S)) ⋅ P in
@@ -395,21 +395,21 @@ Definition red_inv_type Γ t v :=
     let t4 := Pi prop l t2 P'' in
     let t5 := lam i l A t4 t3 in
         v = p <[ t5 .: a ..] /\
-        Γ ⊢< Ax i > A : Sort i /\
-        Γ ,, (i, A) ,, (i, S ⋅ A) ⊢< Ax prop > R : Sort prop /\
-        Γ ,, (i, A) ⊢< Ax l > P : Sort l /\
-        Γ ,, (i, A) ,, (Ru i l, B) ⊢< l > p : P'' /\
-        Γ ⊢< i > a : A /\
-        Γ ⊢< prop > q : acc i A R a /\
+        Γ ⊢d< Ax i > A : Sort i /\
+        Γ ,, (i, A) ,, (i, S ⋅ A) ⊢d< Ax prop > R : Sort prop /\
+        Γ ,, (i, A) ⊢d< Ax l > P : Sort l /\
+        Γ ,, (i, A) ,, (Ru i l, B) ⊢d< l > p : P'' /\
+        Γ ⊢d< i > a : A /\
+        Γ ⊢d< prop > q : acc i A R a /\
         exists n, i = ty n
     | cast _ Nat Nat e t =>
         v = t /\
-        Γ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat /\
-        Γ ⊢< ty 0 > t : Nat
+        Γ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat Nat /\
+        Γ ⊢d< ty 0 > t : Nat
     | cast l (Sort i) (Sort j) e A =>
         v = A /\
-        Γ ⊢< Ax i > A : Sort i /\
-        Γ ⊢< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) /\
+        Γ ⊢d< Ax i > A : Sort i /\
+        Γ ⊢d< prop > e : obseq (Ax (Ax i)) (Sort (Ax i)) (Sort i) (Sort i) /\
         i = j /\
         l = Ax i
     | cast l (Pi i j A1 B1) (Pi i' j' A2 B2) e f =>
@@ -422,12 +422,12 @@ Definition red_inv_type Γ t v :=
         let t3 := cast j (B1 <[t1.: S >> var]) B2 (injpi2 i j A1' A2' B1' B2' (S ⋅ e) (var 0)) t2 in
         let t4 := lam i j A2 B2 t3 in
         v = t4 /\
-        Γ ⊢< Ax i > A1 : Sort i /\
-        Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j /\
-        Γ ⊢< Ax i > A2 : Sort i /\
-        Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j /\
-        Γ ⊢< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) /\
-        Γ ⊢< Ru i j > f : Pi i j A1 B1 /\
+        Γ ⊢d< Ax i > A1 : Sort i /\
+        Γ ,, (i, A1) ⊢d< Ax j > B1 : Sort j /\
+        Γ ⊢d< Ax i > A2 : Sort i /\
+        Γ ,, (i, A2) ⊢d< Ax j > B2 : Sort j /\
+        Γ ⊢d< prop > e : obseq (Ax (Ru i j)) (Sort (Ru i j)) (Pi i j A1 B1) (Pi i j A2 B2) /\
+        Γ ⊢d< Ru i j > f : Pi i j A1 B1 /\
         l = Ru i j /\
         i' = i /\
         exists n,
@@ -437,17 +437,17 @@ Definition red_inv_type Γ t v :=
     | cast i A B e t =>
         (exists A',
             v = cast i A' B e t /\
-            Γ ⊢< Ax i > A --> A' : Sort i /\
-            Γ ⊢< Ax i > B : Sort i /\
-            Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\
-            Γ ⊢< i > t : A) \/
+            Γ ⊢d< Ax i > A --> A' : Sort i /\
+            Γ ⊢d< Ax i > B : Sort i /\
+            Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B /\
+            Γ ⊢d< i > t : A) \/
         (exists B',
             v = cast i A B' e t /\
             val A /\
-            Γ ⊢< Ax i > B --> B' : Sort i /\
-            Γ ⊢< Ax i > A : Sort i /\
-            Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\
-            Γ ⊢< i > t : A)
+            Γ ⊢d< Ax i > B --> B' : Sort i /\
+            Γ ⊢d< Ax i > A : Sort i /\
+            Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B /\
+            Γ ⊢d< i > t : A)
     | _ => False
     end.
 
@@ -470,10 +470,10 @@ Fixpoint size (t : term) : nat :=
 end.
 
 
-Lemma red_inv Γ l t u T : Γ ⊢< l > t --> u : T -> red_inv_type Γ t u.
+Lemma red_inv Γ l t u T : Γ ⊢d< l > t --> u : T -> red_inv_type Γ t u.
 Proof.
-    generalize t Γ l u T. clear t Γ l u T.
-    refine (@well_founded_ind _ (fun t u => size t < size u) _ _ _).
+    generalize t Γ l u T. clear t Γ l u T. 
+    refine (@well_founded_ind _ (fun t u => (size t) < (size u))  _ _ _).
     eapply wf_inverse_image, lt_wf.
     intros. induction H0.
     - destruct t.
@@ -512,8 +512,8 @@ Hint Unfold val : core.
 
 
 Lemma red_det Γ l t u v A :
-    Γ ⊢< l > t --> u : A ->
-    Γ ⊢< l > t --> v : A ->
+    Γ ⊢d< l > t --> u : A ->
+    Γ ⊢d< l > t --> v : A ->
     u = v.
 Proof.
     intros.
@@ -543,8 +543,8 @@ Proof.
 Qed.
 
 Lemma redd_whnf_det Γ l t u v A :
-    Γ ⊢< l > t -->>! u : A ->
-    Γ ⊢< l > t -->>! v : A ->
+    Γ ⊢d< l > t -->>! u : A ->
+    Γ ⊢d< l > t -->>! v : A ->
     u = v.
 Proof.
     intros. destruct H. generalize v H0. clear v H0. induction H; intros.
@@ -558,7 +558,7 @@ Proof.
 Qed.
 
 
-Lemma val_redd_to_whnf Γ l t A : Γ ⊢< l > t : A -> val t -> Γ ⊢< l > t -->>! t : A.
+Lemma val_redd_to_whnf Γ l t A : Γ ⊢d< l > t : A -> val t -> Γ ⊢d< l > t -->>! t : A.
 Proof.
     intros.
     split; eauto using redd_refl.
@@ -567,9 +567,9 @@ Qed.
 
 
 Lemma iredd_comp_redd_whnf Γ l t u v A :
-    Γ ⊢< l > v -->> t : A ->
-    Γ ⊢< l > v -->>! u : A ->
-    Γ ⊢< l > t -->>! u : A.
+    Γ ⊢d< l > v -->> t : A ->
+    Γ ⊢d< l > v -->>! u : A ->
+    Γ ⊢d< l > t -->>! u : A.
 Proof.
     intros. destruct H0.
     split; eauto.
@@ -582,37 +582,37 @@ Proof.
         eapply IHredd; eauto.
 Qed.
 
-Reserved Notation "Γ ⊢< l > t ~ u : T" (at level 50, l, t, u, T at next level).
+Reserved Notation "Γ ⊢d< l > t ~ u : T" (at level 50, l, t, u, T at next level).
 
 Inductive ann_conv : ctx -> level -> term -> term -> term -> Prop :=
 
 | aconv_refl :
     ∀ Γ l t A,
-      Γ ⊢< l > t : A ->
-      Γ ⊢< l > t ~ t : A
+      Γ ⊢d< l > t : A ->
+      Γ ⊢d< l > t ~ t : A
 
 | aconv_app :
     ∀ Γ i j A B t u A' B' t' T,
-      Γ ⊢< Ax i > A ≡ A' : Sort i →
-      Γ ,, (i , A) ⊢< Ax j > B ≡ B': Sort j →
-      Γ ⊢< Ru i j > t ~ t' : Pi i j A B →
-      Γ ⊢< i > u : A →
-      Γ ⊢< Ax j > T ≡ B <[ u.. ] : Sort j ->
-      Γ ⊢< j > app i j A B t u ~ app i j A' B' t' u : T
+      Γ ⊢d< Ax i > A ≡ A' : Sort i →
+      Γ ,, (i , A) ⊢d< Ax j > B ≡ B': Sort j →
+      Γ ⊢d< Ru i j > t ~ t' : Pi i j A B →
+      Γ ⊢d< i > u : A →
+      Γ ⊢d< Ax j > T ≡ B <[ u.. ] : Sort j ->
+      Γ ⊢d< j > app i j A B t u ~ app i j A' B' t' u : T
 
-where "Γ ⊢< l > t ~ u : A" := (ann_conv Γ l t u A).
+where "Γ ⊢d< l > t ~ u : A" := (ann_conv Γ l t u A).
 
 Lemma sim_to_conv Γ l t u A :
-    Γ ⊢< l > t ~ u : A ->
-    Γ ⊢< l > t ≡ u : A.
+    Γ ⊢d< l > t ~ u : A ->
+    Γ ⊢d< l > t ≡ u : A.
 Proof.
     intros. induction H; eauto using conversion, conv_refl, conv_app'.
 Qed.
 
 Lemma aconv_conv Γ l t u T T' :
-    Γ ⊢< l > t ~ u : T ->
-    Γ ⊢< Ax l > T ≡ T' : Sort l ->
-    Γ ⊢< l > t ~ u : T'.
+    Γ ⊢d< l > t ~ u : T ->
+    Γ ⊢d< Ax l > T ≡ T' : Sort l ->
+    Γ ⊢d< l > t ~ u : T'.
 Proof.
     intros.
     dependent induction H.
@@ -621,8 +621,8 @@ Proof.
 Qed.
 
 Lemma sim_sym Γ l t u A :
-    Γ ⊢< l > t ~ u : A ->
-    Γ ⊢< l > u ~ t : A.
+    Γ ⊢d< l > t ~ u : A ->
+    Γ ⊢d< l > u ~ t : A.
 Proof.
     intros. induction H; eauto using ann_conv.
     eapply aconv_app; eauto using conv_ty_in_ctx_conv, conv_sym, type_conv.
@@ -634,10 +634,10 @@ Derive Signature for red.
 Derive Signature for ann_conv.
 
 Lemma sim_left_red Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A ->
-    Γ ⊢< l > t --> t' : A ->
-    exists u', Γ ⊢< l > u --> u' : A
-    /\ Γ ⊢< l > t' ~ u' : A.
+    Γ ⊢d< l > t ~ u : A ->
+    Γ ⊢d< l > t --> t' : A ->
+    exists u', Γ ⊢d< l > u --> u' : A
+    /\ Γ ⊢d< l > t' ~ u' : A.
 Proof.
     intros H. generalize t'. clear t'.
     dependent induction H; intros.
@@ -660,10 +660,10 @@ Proof.
 Qed.
 
 Lemma sim_left_redd Γ l t t' u A :
-    Γ ⊢< l > t ~ u : A ->
-    Γ ⊢< l > t -->> t' : A ->
-    exists u', Γ ⊢< l > u -->> u' : A
-    /\ Γ ⊢< l > t' ~ u' : A.
+    Γ ⊢d< l > t ~ u : A ->
+    Γ ⊢d< l > t -->> t' : A ->
+    exists u', Γ ⊢d< l > u -->> u' : A
+    /\ Γ ⊢d< l > t' ~ u' : A.
 Proof.
     intros. generalize u H. clear u H. induction H0; intros.
     - exists u. split; eauto using redd, sim_to_conv, validity_conv_right.
@@ -673,10 +673,10 @@ Proof.
 Qed.
 
 Lemma sim_left_redd_whnf Γ l t u v A :
-    Γ ⊢< l > t ~ u : A ->
-    Γ ⊢< l > t -->>! v : A ->
+    Γ ⊢d< l > t ~ u : A ->
+    Γ ⊢d< l > t -->>! v : A ->
     val v ->
-    Γ ⊢< l > u -->>! v : A.
+    Γ ⊢d< l > u -->>! v : A.
 Proof.
     intros.
     destruct H0. split.

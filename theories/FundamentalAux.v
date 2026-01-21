@@ -120,17 +120,17 @@ Qed.
 
 
 Lemma substs_one_3 Γ l t u A :
-  Γ ⊢< l > t ≡ u : A ->
-  Γ ⊢s t .. ≡ u .. : (Γ ,, (l, A)).
+  Γ ⊢d< l > t ≡ u : A ->
+  Γ ⊢ds t .. ≡ u .. : (Γ ,, (l, A)).
 Proof.
   intros.
   econstructor; rasimpl; eauto using refl_subst, subst_id, validity_ty_ctx, validity_conv_left.
 Qed.
 
 Lemma substs_one_4 Γ l l' t t' u u' A B :
-  Γ ⊢< l > t ≡ u : A ->
-  Γ ⊢< l' > t' ≡ u' : B ->
-  Γ ⊢s (t' .: t ..) ≡ (u' .: u ..) : (Γ ,, (l, A) ,, (l', S ⋅ B)).
+  Γ ⊢d< l > t ≡ u : A ->
+  Γ ⊢d< l' > t' ≡ u' : B ->
+  Γ ⊢ds (t' .: t ..) ≡ (u' .: u ..) : (Γ ,, (l, A) ,, (l', S ⋅ B)).
 Proof.
   intros.
   econstructor; rasimpl; eauto.

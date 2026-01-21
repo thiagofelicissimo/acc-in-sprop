@@ -13,9 +13,9 @@ Import CombineNotations.
 
 
 Lemma prefundamental_pi i A1 A2 k ϵA ϵB B1 B2 :
-    ∙ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    ∙ ⊢d< Ax i > A1 ≡ A2 : Sort i ->
     ⊩< i > A1 ≡ A2 ↓ ϵA ->
-    ∙ ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    ∙ ,, (i, A1) ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     (forall a1 a2 (ϵa : ϵA a1 a2), ⊩< ty k > B1 <[ a1..] ≡ B2 <[ a2..] ↓ ϵB a1 a2) ->
     let ϵpi := ϵPi i (ty k) A1 A2 ϵA B1 B2 ϵB in
     ⊩< Ru i (ty k) > Pi i (ty k) A1 B1 ≡ Pi i (ty k) A2 B2 ↓ ϵpi.
@@ -26,9 +26,9 @@ Proof.
 Qed.
 
 Lemma fundamental_common_pi Γ σ1 σ2 i A1 A2 k B1 B2 :
-    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊢d< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     ⊩s σ1 ≡ σ2 : Γ ->
     exists ϵA ϵB,
@@ -59,9 +59,9 @@ Proof.
 Qed.
 
 Lemma fundamental_pi B1 B2 {Γ i k A1 A2} :
-    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊢d< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ ⊨< Ax (Ru i (ty k)) > Pi i (ty k) A1 B1 ≡ Pi i (ty k) A2 B2 : Sort (Ru i (ty k)).
 Proof.
@@ -73,11 +73,11 @@ Proof.
 Qed.
 
 Lemma fundamental_lam Γ i k A1 B1 t1 A2 B2 t2 :
-    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊢d< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    Γ,, (i, A1) ⊢< (ty k) > t1 ≡ t2 : B1 ->
+    Γ,, (i, A1) ⊢d< (ty k) > t1 ≡ t2 : B1 ->
     Γ,, (i, A1) ⊨< (ty k) > t1 ≡ t2 : B1 ->
     Γ ⊨< Ru i (ty k) > lam i (ty k) A1 B1 t1 ≡ lam i (ty k) A2 B2 t2 : Pi i (ty k) A1 B1.
 Proof.
@@ -118,13 +118,13 @@ Qed.
 
 
 Lemma fundamental_app Γ i k A1 B1 t1 u1 A2 B2 t2 u2 :
-    Γ ⊢< Ax i > A1 ≡ A2 : Sort i ->
+    Γ ⊢d< Ax i > A1 ≡ A2 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A2 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ,, (i, A1) ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ,, (i, A1) ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    Γ ⊢< Ru i (ty k) > t1 ≡ t2 : Pi i (ty k) A1 B1 ->
+    Γ ⊢d< Ru i (ty k) > t1 ≡ t2 : Pi i (ty k) A1 B1 ->
     Γ ⊨< Ru i (ty k) > t1 ≡ t2 : Pi i (ty k) A1 B1 ->
-    Γ ⊢< i > u1 ≡ u2 : A1 ->
+    Γ ⊢d< i > u1 ≡ u2 : A1 ->
     Γ ⊨< i > u1 ≡ u2 : A1 ->
     Γ ⊨< ty k > app i (ty k) A1 B1 t1 u1 ≡ app i (ty k) A2 B2 t2 u2 : B1 <[ u1..].
 Proof.
@@ -159,13 +159,13 @@ Proof.
 Qed.
 
 Lemma fundamental_beta Γ i k A B t u :
-    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊢d< Ax i > A : Sort i ->
     Γ ⊨< Ax i > A ≡ A : Sort i ->
-    Γ,, (i, A) ⊢< Ax (ty k) > B : Sort (ty k) ->
+    Γ,, (i, A) ⊢d< Ax (ty k) > B : Sort (ty k) ->
     Γ,, (i, A) ⊨< Ax (ty k) > B ≡ B : Sort (ty k) ->
-    Γ,, (i, A) ⊢< ty k > t : B ->
+    Γ,, (i, A) ⊢d< ty k > t : B ->
     Γ,, (i, A) ⊨< ty k > t ≡ t : B ->
-    Γ ⊢< i > u : A ->
+    Γ ⊢d< i > u : A ->
     Γ ⊨< i > u ≡ u : A ->
     Γ ⊨< ty k > app i (ty k) A B (lam i (ty k) A B t) u ≡ t <[ u..] : B <[ u..].
 Proof.
@@ -189,19 +189,19 @@ Qed.
 
 
 Lemma fundamental_eta Γ i n A B t u :
-    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊢d< Ax i > A : Sort i ->
     Γ ⊨< Ax i > A ≡ A : Sort i ->
-    Γ,, (i, A) ⊢< Ax (ty n) > B : Sort (ty n) ->
+    Γ,, (i, A) ⊢d< Ax (ty n) > B : Sort (ty n) ->
     Γ,, (i, A) ⊨< Ax (ty n) > B ≡ B : Sort (ty n) ->
-    Γ ⊢< Ru i (ty n) > t : Pi i (ty n) A B ->
+    Γ ⊢d< Ru i (ty n) > t : Pi i (ty n) A B ->
     Γ ⊨< Ru i (ty n) > t ≡ t : Pi i (ty n) A B ->
-    Γ ⊢< Ru i (ty n) > u : Pi i (ty n) A B ->
+    Γ ⊢d< Ru i (ty n) > u : Pi i (ty n) A B ->
     Γ ⊨< Ru i (ty n) > u ≡ u : Pi i (ty n) A B ->
     let t_app_x := app i (ty n) (S ⋅ A) (up_ren S ⋅ B) (S ⋅ t) (var 0) in
     let u_app_x := app i (ty n) (S ⋅ A) (up_ren S ⋅ B) (S ⋅ u) (var 0) in
-    Γ,, (i, A) ⊢< ty n > t_app_x ≡ u_app_x : B ->
+    Γ,, (i, A) ⊢d< ty n > t_app_x ≡ u_app_x : B ->
     Γ,, (i, A) ⊨< ty n > t_app_x ≡ u_app_x : B ->
-    Γ ⊢< Ru i (ty n) > t ≡ u : Pi i (ty n) A B ->
+    Γ ⊢d< Ru i (ty n) > t ≡ u : Pi i (ty n) A B ->
     Γ ⊨< Ru i (ty n) > t ≡ u : Pi i (ty n) A B.
 Proof.
     intros AWt LRv_A BWt LRv_B tWt LRv_t uWt LRv_u tx ux tx_conv_ux LRv_tx_ux t_conv_u.

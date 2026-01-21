@@ -12,7 +12,7 @@ From Equations Require Import Equations.
 Import CombineNotations.
 
 
-Lemma fundamental_sort Γ l : ⊢ Γ -> Γ ⊨< Ax (Ax l) > Sort l ≡ Sort l : Sort (Ax l).
+Lemma fundamental_sort Γ l : ⊢d Γ -> Γ ⊨< Ax (Ax l) > Sort l ≡ Sort l : Sort (Ax l).
 Proof.
     intros Γ_Wt. unfold LRv. intros σ1 σ2 ϵσ12.
     eexists. split; eauto using prefundamental_sort. simpl. eexists. eauto using prefundamental_sort.
@@ -20,7 +20,7 @@ Qed.
 
 Lemma fundamental_var Γ x k A :
     Γ ∋< ty k > x : A ->
-    ⊢ Γ ->
+    ⊢d Γ ->
     Γ ⊨< ty k > var x ≡ var x : A.
 Proof.
     generalize Γ k A. clear Γ k A. induction x; unfold LRv; intros.
@@ -33,23 +33,23 @@ Proof.
 Qed.
 
 Lemma fundamental_prop_ty Γ A B :
-    Γ ⊢< Ax prop > A ≡ B : Sort prop ->
+    Γ ⊢d< Ax prop > A ≡ B : Sort prop ->
     Γ ⊨< Ax prop > A ≡ B : Sort prop.
 Proof.
     intros. unfold LRv. intros.
     rewrite <- helper_LR.
-    eexists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]). eapply LR_prop.
+    eexists (fun t u => ∙ ⊢d< prop > t ≡ u : A <[ σ1]). eapply LR_prop.
     2: reflexivity.
     eapply LR_subst_escape in H0. eapply subst_conv in H; eauto.
     constructor.
 Qed.
 
 Lemma fundamental_prop Γ t u A :
-    Γ ⊢< prop > t ≡ u : A ->
+    Γ ⊢d< prop > t ≡ u : A ->
     Γ ⊨< prop > t ≡ u : A.
 Proof.
     intros. unfold LRv. intros σ1 σ2 ϵσ12.
-    exists (fun t u => ∙ ⊢< prop > t ≡ u : A <[ σ1]).
+    exists (fun t u => ∙ ⊢d< prop > t ≡ u : A <[ σ1]).
     split.
     2:eauto using subst_conv, LR_subst_escape.
     eapply LR_prop.
@@ -61,11 +61,11 @@ Qed.
 
 
 (* used to eliminate the condition
-        forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> ...
+        forall k, l = ty k -> Γ ⊢d< l > t ≡ u : A -> ...
     from the IHs in the proof of fundamental_ty *)
 Lemma helper_fund Γ l t u A :
-    Γ ⊢< l > t ≡ u : A ->
-    (forall k, l = ty k -> Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
+    Γ ⊢d< l > t ≡ u : A ->
+    (forall k, l = ty k -> Γ ⊢d< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A) <-> Γ ⊨< l > t ≡ u : A.
 Proof.
     intros. split. intros.
     destruct l; eauto using fundamental_prop.
@@ -74,8 +74,8 @@ Qed.
 
 
 Theorem fundamental_ty :
-    (forall Γ l t A, Γ ⊢< l > t : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\
-    (forall Γ l t u A, Γ ⊢< l > t ≡ u : A -> forall k (_temp : l = ty k), Γ ⊢< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
+    (forall Γ l t A, Γ ⊢d< l > t : A -> forall k (_temp : l = ty k), Γ ⊢d< l > t ≡ t : A -> Γ ⊨< l > t ≡ t : A) /\
+    (forall Γ l t u A, Γ ⊢d< l > t ≡ u : A -> forall k (_temp : l = ty k), Γ ⊢d< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A).
 Proof.
     apply typing_mutind; intros.
     all: dependent destruction _temp.
@@ -123,7 +123,7 @@ Proof.
       eapply LR_trans_tm in ϵuv; eauto.
 Qed.
 
-Theorem fundamental Γ l t A : Γ ⊢< l > t : A -> Γ ⊨< l > t ≡ t : A.
+Theorem fundamental Γ l t A : Γ ⊢d< l > t : A -> Γ ⊨< l > t ≡ t : A.
 Proof.
     intros. destruct l.
     eapply (proj1 fundamental_ty) in H; eauto using conv_refl.
@@ -136,7 +136,7 @@ Fixpoint mk_Nat k :=
     | S k => succ (mk_Nat k)
     end.
 
-Lemma mk_nat_typed k : ∙ ⊢< ty 0 > (mk_Nat k) : Nat.
+Lemma mk_nat_typed k : ∙ ⊢d< ty 0 > (mk_Nat k) : Nat.
 Proof.
     intros. induction k; eauto using typing, ctx_typing.
 Qed.
@@ -153,7 +153,7 @@ Qed.
 (* we use the predicate ϵNat t (mk_Nat k) to encode the fact that
     t reduces in mutiple iterations to mk_Nat k *)
 Corollary canonicity_red t :
-    ∙ ⊢< ty 0 > t : Nat -> exists k, ϵNat t (mk_Nat k).
+    ∙ ⊢d< ty 0 > t : Nat -> exists k, ϵNat t (mk_Nat k).
 Proof.
     intros. eapply fundamental in H; eauto. unfold LRv in H.
     destruct (H var var (LR_sempty _ _)) as (ϵnat' & LR_nat & ϵt).
@@ -164,7 +164,7 @@ Proof.
 Qed.
 
 Corollary canonicity_conv t :
-    ∙ ⊢< ty 0 > t : Nat -> exists k, ∙ ⊢< ty 0 > t ≡ (mk_Nat k) : Nat.
+    ∙ ⊢d< ty 0 > t : Nat -> exists k, ∙ ⊢d< ty 0 > t ≡ (mk_Nat k) : Nat.
 Proof.
     intros. eapply canonicity_red in H as (k & lr).
     eauto using ϵNat_escape.

@@ -17,16 +17,16 @@ Definition same_rel (R1 R2 : term -> term -> Prop) := forall t u, R1 t u <-> R2 
 
 Notation "R1 <~> R2" :=  (forall t u, R1 t u <-> R2 t u) (at level 50, R2 at next level).
 
-Definition LRΩ : LogRel := fun A B R => ∙ ⊢< Ax prop > A ≡ B : Sort prop /\ forall t u : term, R t u <-> ∙ ⊢< prop > t ≡ u : A.
+Definition LRΩ : LogRel := fun A B R => ∙ ⊢d< Ax prop > A ≡ B : Sort prop /\ forall t u : term, R t u <-> ∙ ⊢d< prop > t ≡ u : A.
 
 Inductive ϵNat : TmRel :=
 | ϵzero t1 t2 :
-    ∙ ⊢< ty 0 > t1 -->>! zero : Nat ->
-    ∙ ⊢< ty 0 > t2 -->>! zero : Nat ->
+    ∙ ⊢d< ty 0 > t1 -->>! zero : Nat ->
+    ∙ ⊢d< ty 0 > t2 -->>! zero : Nat ->
     ϵNat t1 t2
 | ϵsucc t1 t2 t1' t2' :
-    ∙ ⊢< ty 0 > t1 -->>! succ t1' : Nat ->
-    ∙ ⊢< ty 0 > t2 -->>! succ t2' : Nat ->
+    ∙ ⊢d< ty 0 > t1 -->>! succ t1' : Nat ->
+    ∙ ⊢d< ty 0 > t2 -->>! succ t2' : Nat ->
     ϵNat t1' t2' ->
     ϵNat t1 t2.
 
@@ -34,7 +34,7 @@ Inductive ϵNat : TmRel :=
 
 Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : TmRel
     := fun f1 f2 =>
-        ∙ ⊢< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
+        ∙ ⊢d< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
         forall s1 s2 (ϵs : ϵS s1 s2), ϵT s1 s2 (app i j S1 T1 f1 s1) (app i j S2 T2 f2 s2).
 
 
@@ -45,26 +45,26 @@ Module Type LogRelM.
     Notation "⊩< l > A ≡ B ↓ R" :=  (LR l A B R) (at level 50, l, A, B, R at next level).
 
     Axiom LR_prop : forall A1 A2 R,
-        ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
-        R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->
+        ∙ ⊢d< Ax prop > A1 ≡ A2 : Sort prop ->
+        R <~> (fun t u => ∙ ⊢d< prop > t ≡ u : A1) ->
         ⊩< prop > A1 ≡ A2 ↓ R.
 
     Axiom LR_nat : forall A1 A2 R,
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
-        ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         ⊩< ty 0 > A1 ≡ A2 ↓ R.
 
     Axiom LR_U : forall l A1 A2 R,
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
-        ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, ⊩< l > B1 ≡ B2 ↓ R) ->
         ⊩< Ax l > A1 ≡ A2 ↓ R.
 
     Axiom LR_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R,
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
-        ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
-        ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
+        ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         ⊩< i > S1 ≡ S2 ↓ ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< (ty k) > (T1 <[ s1 ..]) ≡ (T2 <[ s2 ..]) ↓ (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
@@ -74,20 +74,20 @@ Module Type LogRelM.
         (P : forall l A B R, Prop)
         (p_prop : forall A B R (p : LRΩ A B R), P prop A B R)
         (p_nat : forall A1 A2 R
-            (A1_red_nat : ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
-            (A2_red_nat : ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
+            (A1_red_nat : ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
+            (A2_red_nat : ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
             R <~> ϵNat ->
             P (ty 0) A1 A2 R)
         (p_U : forall l A1 A2 R
-            (A1_red_U : ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l))
-            (A2_red_U : ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l)),
+            (A1_red_U : ∙ ⊢d< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l))
+            (A2_red_U : ∙ ⊢d< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l)),
             (forall B1 B2 R, ⊩< l > B1 ≡ B2 ↓ R -> P l B1 B2 R) ->
             R <~> (fun B1 B2 => exists R, ⊩< l > B1 ≡ B2 ↓ R) ->
             P (Ax l) A1 A2 R)
         (p_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R
-            (A1_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)))
-            (A2_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
-            (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
+            (A1_red_pi : ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)))
+            (A2_red_pi : ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
+            (T1_eq_T2 : ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
             (LR_S : ⊩< i > S1 ≡ S2 ↓ ϵS)
             (LR_T : forall s1 s2 (ϵs : ϵS s1 s2),
                         ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2),
@@ -162,16 +162,16 @@ Module LogRelImpl : LogRelM.
 
     Inductive LRTy : forall (k : nat) (rec : forall j, j ◃ (ty k) -> LogRel), LogRel :=
     | LRTy_nat A1 A2 rec R :
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
-        ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         LRTy 0 rec A1 A2 R
     | LRTy_pi1 i k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty k -> LogRel)
         (q : i ◃ ty k) :
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
-        ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
-        ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
+        ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         rec i q S1 S2 ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2),
             LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
@@ -179,9 +179,9 @@ Module LogRelImpl : LogRelM.
         LRTy k rec A1 A2 R
     | LRTy_pi2 k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty k -> LogRel) :
-        ∙ ⊢< Ax (Ru (ty k) (ty k)) > A1 -->>! Pi (ty k) (ty k) S1 T1 : Sort (Ru (ty k) (ty k)) ->
-        ∙ ⊢< Ax (Ru (ty k) (ty k)) > A2 -->>! Pi (ty k) (ty k) S2 T2 : Sort (Ru (ty k) (ty k)) ->
-        ∙ ,, (ty k, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+        ∙ ⊢d< Ax (Ru (ty k) (ty k)) > A1 -->>! Pi (ty k) (ty k) S1 T1 : Sort (Ru (ty k) (ty k)) ->
+        ∙ ⊢d< Ax (Ru (ty k) (ty k)) > A2 -->>! Pi (ty k) (ty k) S2 T2 : Sort (Ru (ty k) (ty k)) ->
+        ∙ ,, (ty k, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         LRTy k rec S1 S2 ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2),
             LRTy k rec (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
@@ -190,17 +190,17 @@ Module LogRelImpl : LogRelM.
     | LRTy_pi3 n k A1 A2 S1 S2 ϵS T1 T2 ϵT R
         (rec : forall j, j ◃ ty n -> LogRel)
         (q : k < n) :
-        ∙ ⊢< Ax (Ru (ty n) (ty k)) > A1 -->>! Pi (ty n) (ty k) S1 T1 : Sort (Ru (ty n) (ty k)) ->
-        ∙ ⊢< Ax (Ru (ty n) (ty k)) > A2 -->>! Pi (ty n) (ty k) S2 T2 : Sort (Ru (ty n) (ty k)) ->
-        ∙ ,, (ty n, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+        ∙ ⊢d< Ax (Ru (ty n) (ty k)) > A1 -->>! Pi (ty n) (ty k) S1 T1 : Sort (Ru (ty n) (ty k)) ->
+        ∙ ⊢d< Ax (Ru (ty n) (ty k)) > A2 -->>! Pi (ty n) (ty k) S2 T2 : Sort (Ru (ty n) (ty k)) ->
+        ∙ ,, (ty n, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         LRTy n rec S1 S2 ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2),
             rec (ty k) (ltac :(simpl; lia)) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi (ty n) (ty k) S1 S2 ϵS T1 T2 ϵT) ->
         LRTy n rec A1 A2 R
     | LRTy_U l A1 A2 rec R :
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
-        ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, rec l lt_ty_ax B1 B2 R) ->
         LRTy (ax l) rec A1 A2 R.
 
@@ -286,8 +286,8 @@ Module LogRelImpl : LogRelM.
 
 
     Definition LR_prop A1 A2 R :
-        ∙ ⊢< Ax prop > A1 ≡ A2 : Sort prop ->
-        R <~> (fun t u => ∙ ⊢< prop > t ≡ u : A1) ->
+        ∙ ⊢d< Ax prop > A1 ≡ A2 : Sort prop ->
+        R <~> (fun t u => ∙ ⊢d< prop > t ≡ u : A1) ->
         LR prop A1 A2 R.
     Proof.
         intros.
@@ -295,8 +295,8 @@ Module LogRelImpl : LogRelM.
     Qed.
 
     Definition LR_nat A1 A2 R :
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
-        ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) ->
+        ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) ->
         R <~> ϵNat ->
         LR (ty 0) A1 A2 R.
     Proof.
@@ -305,8 +305,8 @@ Module LogRelImpl : LogRelM.
     Qed.
 
     Definition LR_U l A1 A2 R :
-        ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
-        ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l) ->
+        ∙ ⊢d< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l) ->
         R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
         LR (Ax l) A1 A2 R.
     Proof.
@@ -316,9 +316,9 @@ Module LogRelImpl : LogRelM.
 
 
     Definition LR_pi i k A1 A2 S1 S2 ϵS T1 T2 ϵT R :
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
-        ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
-        ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) ->
+        ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) ->
+        ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
         LR i S1 S2 ϵS ->
         (forall s1 s2 (ϵs : ϵS s1 s2), LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)) ->
         R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
@@ -348,20 +348,20 @@ Module LogRelImpl : LogRelM.
         (P : forall l A B R, Prop)
         (p_prop : forall A B R (p : LRΩ A B R), P prop A B R)
         (p_nat : forall A1 A2 R
-            (A1_red_nat : ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
-            (A2_red_nat : ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
+            (A1_red_nat : ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0))
+            (A2_red_nat : ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0)),
             R <~> ϵNat ->
             P (ty 0) A1 A2 R)
         (p_U : forall l A1 A2 R
-            (A1_red_U : ∙ ⊢< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l))
-            (A2_red_U : ∙ ⊢< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l)),
+            (A1_red_U : ∙ ⊢d< Ax (Ax l) > A1 -->>! Sort l : Sort (Ax l))
+            (A2_red_U : ∙ ⊢d< Ax (Ax l) > A2 -->>! Sort l : Sort (Ax l)),
             (forall B1 B2 R, LR l B1 B2 R -> P l B1 B2 R) ->
             R <~> (fun B1 B2 => exists R, LR l B1 B2 R) ->
             P (Ax l) A1 A2 R)
         (p_pi : forall i k A1 A2 S1 S2 ϵS T1 T2 ϵT R
-            (A1_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)))
-            (A2_red_pi : ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
-            (T1_eq_T2 : ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
+            (A1_red_pi : ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)))
+            (A2_red_pi : ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)))
+            (T1_eq_T2 : ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k))
             (LR_S : LR i S1 S2 ϵS)
             (LR_T : forall s1 s2 (ϵs : ϵS s1 s2),
                     LR (ty k) (T1 <[ s1 ..]) (T2 <[ s2 ..]) (ϵT s1 s2)),

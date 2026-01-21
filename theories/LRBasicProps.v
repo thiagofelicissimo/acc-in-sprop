@@ -10,14 +10,14 @@ From Equations Require Import Equations.
 Import CombineNotations.
 
 
-Lemma ϵNat_escape t1 t2 : ϵNat t1 t2 -> ∙ ⊢< ty 0 > t1 ≡ t2 : Nat.
+Lemma ϵNat_escape t1 t2 : ϵNat t1 t2 -> ∙ ⊢d< ty 0 > t1 ≡ t2 : Nat.
 Proof.
     intros. induction H; eauto 7 using redd_whnf_to_conv, conv_sym, conv_trans, conv_succ.
 Qed.
 
 (* escape lemma *)
 Lemma LR_escape l A B R :
-    ⊩< l > A ≡ B ↓ R -> ∙ ⊢< Ax l > A ≡ B : Sort l /\ forall t u, R t u -> ∙ ⊢< l > t ≡ u : A.
+    ⊩< l > A ≡ B ↓ R -> ∙ ⊢d< Ax l > A ≡ B : Sort l /\ forall t u, R t u -> ∙ ⊢d< l > t ≡ u : A.
 Proof.
     generalize l A B R. clear l A B R.
     refine (LR_ind _ _ _ _ _).
@@ -41,13 +41,13 @@ Qed.
 
 (* we split the result in two, so we can use eauto with it *)
 Corollary LR_escape_ty {l A B R} :
-    ⊩< l > A ≡ B ↓ R -> ∙ ⊢< Ax l > A ≡ B : Sort l.
+    ⊩< l > A ≡ B ↓ R -> ∙ ⊢d< Ax l > A ≡ B : Sort l.
 Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
 
 Corollary LR_escape_tm  {l A B R t u }:
-    ⊩< l > A ≡ B ↓ R -> R t u -> ∙ ⊢< l > t ≡ u : A.
+    ⊩< l > A ≡ B ↓ R -> R t u -> ∙ ⊢d< l > t ≡ u : A.
 Proof.
     intros. eapply LR_escape in H as (H1 & H2). eauto.
 Qed.
@@ -57,7 +57,7 @@ Hint Unfold val : core.
 Definition LR_pi' i k l S1 S2 ϵS T1 T2 ϵT R :
     let A1 := Pi i (ty k) S1 T1 in
     let A2 := Pi i (ty k) S2 T2 in
-    ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
+    ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) ->
     ⊩< i > S1 ≡ S2 ↓ ϵS ->
     (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2) ->
     R <~> (ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT) ->
@@ -72,13 +72,13 @@ Qed.
 Lemma LR_irred l A B R :
     ⊩< l > A ≡ B ↓ R ->
     (forall A' B',
-        ∙ ⊢< Ax l > A' -->> A : Sort l ->
-        ∙ ⊢< Ax l > B' -->> B : Sort l ->
+        ∙ ⊢d< Ax l > A' -->> A : Sort l ->
+        ∙ ⊢d< Ax l > B' -->> B : Sort l ->
         ⊩< l > A' ≡ B' ↓ R)
     /\
     (forall t u t' u',
-        ∙ ⊢< l > t' -->> t : A ->
-        ∙ ⊢< l > u' -->> u : A ->
+        ∙ ⊢d< l > t' -->> t : A ->
+        ∙ ⊢d< l > u' -->> u : A ->
         R t u ->
         R t' u').
 Proof.
@@ -105,8 +105,8 @@ Proof.
 Qed.
 
 Lemma LR_irred_ty l A B A' B' R :
-    ∙ ⊢< Ax l > A' -->> A : Sort l ->
-    ∙ ⊢< Ax l > B' -->> B : Sort l ->
+    ∙ ⊢d< Ax l > A' -->> A : Sort l ->
+    ∙ ⊢d< Ax l > B' -->> B : Sort l ->
     ⊩< l > A ≡ B ↓ R ->
     ⊩< l > A' ≡ B' ↓ R.
 Proof.
@@ -115,8 +115,8 @@ Qed.
 
 Lemma LR_irred_tm l A B t u t' u' R :
     ⊩< l > A ≡ B ↓ R ->
-    ∙ ⊢< l > t' -->> t : A ->
-    ∙ ⊢< l > u' -->> u : A ->
+    ∙ ⊢d< l > t' -->> t : A ->
+    ∙ ⊢d< l > u' -->> u : A ->
     R t u ->
     R t' u'.
 Proof.
@@ -129,13 +129,13 @@ Qed.
 Lemma LR_redd l A B R :
     ⊩< l > A ≡ B ↓ R ->
     (forall A' B',
-        ∙ ⊢< Ax l > A -->> A' : Sort l ->
-        ∙ ⊢< Ax l > B -->> B' : Sort l ->
+        ∙ ⊢d< Ax l > A -->> A' : Sort l ->
+        ∙ ⊢d< Ax l > B -->> B' : Sort l ->
         ⊩< l > A' ≡ B' ↓ R)
     /\
     (forall t u t' u',
-        ∙ ⊢< l > t -->> t' : A ->
-        ∙ ⊢< l > u -->> u' : A ->
+        ∙ ⊢d< l > t -->> t' : A ->
+        ∙ ⊢d< l > u -->> u' : A ->
         R t u ->
         R t' u').
 Proof.
@@ -162,8 +162,8 @@ Proof.
 Qed.
 
 Lemma LR_redd_ty l A B A' B' R :
-    ∙ ⊢< Ax l > A -->> A' : Sort l ->
-    ∙ ⊢< Ax l > B -->> B' : Sort l ->
+    ∙ ⊢d< Ax l > A -->> A' : Sort l ->
+    ∙ ⊢d< Ax l > B -->> B' : Sort l ->
     ⊩< l > A ≡ B ↓ R ->
     ⊩< l > A' ≡ B' ↓ R.
 Proof.
@@ -172,8 +172,8 @@ Qed.
 
 Lemma LR_redd_tm l A B t u t' u' R :
     ⊩< l > A ≡ B ↓ R ->
-    ∙ ⊢< l > t -->> t' : A ->
-    ∙ ⊢< l > u -->> u' : A ->
+    ∙ ⊢d< l > t -->> t' : A ->
+    ∙ ⊢d< l > u -->> u' : A ->
     R t u ->
     R t' u'.
 Proof.
@@ -183,8 +183,8 @@ Qed.
 
 
 Lemma ϵNat_erasure t1 t2 t1' t2' :
-    ∙ ⊢< ty 0 > t1 ~ t1' : Nat ->
-    ∙ ⊢< ty 0 > t2 ~ t2' : Nat ->
+    ∙ ⊢d< ty 0 > t1 ~ t1' : Nat ->
+    ∙ ⊢d< ty 0 > t2 ~ t2' : Nat ->
     ϵNat t1 t2 ->
     ϵNat t1' t2'.
 Proof.
@@ -202,13 +202,13 @@ Qed.
 Lemma LR_ann l A B R :
     ⊩< l > A ≡ B ↓ R ->
     (forall A' B',
-        ∙ ⊢< Ax l > A ~ A' : Sort l ->
-        ∙ ⊢< Ax l > B ~ B' : Sort l ->
+        ∙ ⊢d< Ax l > A ~ A' : Sort l ->
+        ∙ ⊢d< Ax l > B ~ B' : Sort l ->
         ⊩< l > A' ≡ B' ↓ R)
     /\
     (forall t u t' u',
-        ∙ ⊢< l > t ~ t' : A ->
-        ∙ ⊢< l > u ~ u' : A ->
+        ∙ ⊢d< l > t ~ t' : A ->
+        ∙ ⊢d< l > u ~ u' : A ->
         R t u ->
         R t' u').
 Proof.
@@ -248,8 +248,8 @@ Qed.
 Lemma LR_app_ann_left l i j A B S1 S2 T1 T2 ϵA t u v:
     ⊩< l > A ≡ B ↓ ϵA ->
     ϵA (app i j S1 T1 t u) v ->
-    ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
-    ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
+    ∙,, (i, S1) ⊢d< Ax j > T1 ≡ T2 : Sort j ->
+    ∙ ⊢d< Ax i > S1 ≡ S2 : Sort i ->
     ϵA (app i j S2 T2 t u) v.
 Proof.
     intros.
@@ -266,8 +266,8 @@ Qed.
 Lemma LR_app_ann_right l i j A B S1 S2 T1 T2 ϵA t u v:
     ⊩< l > A ≡ B ↓ ϵA ->
     ϵA v (app i j S1 T1 t u) ->
-    ∙,, (i, S1) ⊢< Ax j > T1 ≡ T2 : Sort j ->
-    ∙ ⊢< Ax i > S1 ≡ S2 : Sort i ->
+    ∙,, (i, S1) ⊢d< Ax j > T1 ≡ T2 : Sort j ->
+    ∙ ⊢d< Ax i > S1 ≡ S2 : Sort i ->
     ϵA v (app i j S2 T2 t u).
 Proof.
     intros.
@@ -283,23 +283,23 @@ Qed.
 
 
 
-Definition LR_inv_ty_statement l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -->>! A1' : Sort l) : Prop :=
+Definition LR_inv_ty_statement l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢d< Ax l > A1 -->>! A1' : Sort l) : Prop :=
     match A1' with
     | Nat =>
         l = ty 0 /\
-        ∙ ⊢< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) /\
-        ∙ ⊢< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) /\
+        ∙ ⊢d< Ax (ty 0) > A1 -->>! Nat : Sort (ty 0) /\
+        ∙ ⊢d< Ax (ty 0) > A2 -->>! Nat : Sort (ty 0) /\
         R <~> ϵNat
     | Sort l' =>
         l = Ax l' /\
-        ∙ ⊢< Ax (Ax l') > A1 -->>! Sort l' : Sort (Ax l') /\
-        ∙ ⊢< Ax (Ax l') > A2 -->>! Sort l' : Sort (Ax l') /\
+        ∙ ⊢d< Ax (Ax l') > A1 -->>! Sort l' : Sort (Ax l') /\
+        ∙ ⊢d< Ax (Ax l') > A2 -->>! Sort l' : Sort (Ax l') /\
         R <~> (fun B1 B2 => exists R', ⊩< l' > B1 ≡ B2 ↓ R')
     | Pi i (ty k) S1 T1 => exists S2 T2 ϵS ϵT,
         l = Ru i (ty k) /\
-        ∙ ⊢< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) /\
-        ∙ ⊢< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) /\
-        ∙ ,, (i, S1) ⊢< Ax (ty k) > T1 ≡ T2 : Sort (ty k) /\
+        ∙ ⊢d< Ax (Ru i (ty k)) > A1 -->>! Pi i (ty k) S1 T1 : Sort (Ru i (ty k)) /\
+        ∙ ⊢d< Ax (Ru i (ty k)) > A2 -->>! Pi i (ty k) S2 T2 : Sort (Ru i (ty k)) /\
+        ∙ ,, (i, S1) ⊢d< Ax (ty k) > T1 ≡ T2 : Sort (ty k) /\
         ⊩< i > S1 ≡ S2 ↓ ϵS /\
         (forall s1 s2 (ϵs : ϵS s1 s2), ⊩< ty k > T1 <[ s1 ..] ≡ T2 <[ s2 ..] ↓ ϵT s1 s2) /\
         R <~> ϵPi i (ty k) S1 S2 ϵS T1 T2 ϵT
@@ -307,7 +307,7 @@ Definition LR_inv_ty_statement l A1 A2 A1' R (A1_redd_A1' : ∙ ⊢< Ax l > A1 -
     end.
 
 (* LR inversion for types in ty *)
-Lemma LR_ty_inv {n A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢< Ax (ty n) > A1 -->>! A1' : Sort (ty n)) : ⊩< ty n > A1 ≡ A2 ↓ R -> LR_inv_ty_statement (ty n) A1 A2 A1' R A1_redd_A1'.
+Lemma LR_ty_inv {n A1 A2 A1' R} (A1_redd_A1' : ∙ ⊢d< Ax (ty n) > A1 -->>! A1' : Sort (ty n)) : ⊩< ty n > A1 ≡ A2 ↓ R -> LR_inv_ty_statement (ty n) A1 A2 A1' R A1_redd_A1'.
 Proof.
     intro lr. remember (ty n) as l.
     generalize l A1 A2 R lr A1' A1_redd_A1' Heql. clear l A1 A2 R lr A1' A1_redd_A1' Heql.
@@ -665,7 +665,7 @@ where "⊩s σ ≡ τ : Δ" := (LR_subst Δ σ τ).
 
 
 (* escape lemma for subst reducibility *)
-Lemma LR_subst_escape σ τ Δ : ⊩s σ ≡ τ : Δ -> ∙ ⊢s σ ≡ τ : Δ.
+Lemma LR_subst_escape σ τ Δ : ⊩s σ ≡ τ : Δ -> ∙ ⊢ds σ ≡ τ : Δ.
 Proof.
     intro. induction H. eauto using ConvSubst.
     eapply LR_escape_tm in H1; eauto. eauto using ConvSubst.

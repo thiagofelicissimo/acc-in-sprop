@@ -30,7 +30,7 @@ Proof.
 Qed.
 
 Lemma fundamental_nat Γ :
-    ⊢ Γ ->
+    ⊢d Γ ->
     Γ ⊨< Ax (ty 0) > Nat ≡ Nat : Sort (ty 0).
 Proof.
     unfold LRv. intros. simpl. rewrite <- helper_LR.
@@ -38,7 +38,7 @@ Proof.
 Qed.
 
 Lemma fundamental_zero Γ :
-    ⊢ Γ ->
+    ⊢d Γ ->
     Γ ⊨< ty 0 > zero ≡ zero : Nat.
 Proof.
     unfold LRv. intros. simpl.
@@ -47,7 +47,7 @@ Proof.
 Qed.
 
 Lemma fundamental_succ Γ t1 t2 :
-    Γ ⊢< ty 0 > t1 ≡ t2 : Nat ->
+    Γ ⊢d< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty 0 > succ t1 ≡ succ t2 : Nat.
 Proof.
@@ -57,9 +57,9 @@ Proof.
 Qed.
 
 Lemma fundamental_conv Γ l A B t1 t2 :
-    Γ ⊢< l > t1 ≡ t2 : A ->
+    Γ ⊢d< l > t1 ≡ t2 : A ->
     Γ ⊨< l > t1 ≡ t2 : A ->
-    Γ ⊢< Ax l > A ≡ B : Sort l ->
+    Γ ⊢d< Ax l > A ≡ B : Sort l ->
     Γ ⊨< Ax l > A ≡ B : Sort l ->
     Γ ⊨< l > t1 ≡ t2 : B.
 Proof.
@@ -87,9 +87,9 @@ Qed.
 
 
 Lemma prefundamental_rec k P1 p_zero1 p_succ1 P2 p_zero2 p_succ2 ϵP:
-    ∙ ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
-    ∙  ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
-    (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    ∙ ,, (ty 0, Nat) ⊢d< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    ∙  ⊢d< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
+    (∙ ,, (ty 0, Nat)),, (ty k, P1) ⊢d< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (forall n1 n2 (ϵn : ϵNat n1 n2),
         ⊩< ty k > P1 <[ n1..] ≡ P2 <[ n2..] ↓ ϵP n1 n2) ->
     ϵP zero zero p_zero1 p_zero2 ->
@@ -132,13 +132,13 @@ Qed.
 
 
 Lemma fundamental_rec Γ k P1 p_zero1 p_succ1 t1 P2 p_zero2 p_succ2 t2 :
-    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊢d< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
     Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P1 ≡ P2 : Sort (ty k) ->
-    Γ ⊢< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
+    Γ ⊢d< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
     Γ ⊨< ty k > p_zero1 ≡ p_zero2 : P1 <[ zero..] ->
-    (Γ,, (ty 0, Nat)),, (ty k, P1) ⊢< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P1) ⊢d< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (Γ,, (ty 0, Nat)),, (ty k, P1) ⊨< ty k > p_succ1 ≡ p_succ2 : P1 <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
-    Γ ⊢< ty 0 > t1 ≡ t2 : Nat ->
+    Γ ⊢d< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty 0 > t1 ≡ t2 : Nat ->
     Γ ⊨< ty k > rec (ty k) P1 p_zero1 p_succ1 t1 ≡ rec (ty k) P2 p_zero2 p_succ2 t2 : P1 <[ t1..].
 Proof.
@@ -176,11 +176,11 @@ Qed.
 
 
 Lemma fundamental_rec_zero Γ k P p_zero p_succ :
-    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊢d< Ax (ty k) > P : Sort (ty k) ->
     Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P ≡ P : Sort (ty k) ->
-    Γ ⊢< ty k > p_zero : P <[ zero..] ->
+    Γ ⊢d< ty k > p_zero : P <[ zero..] ->
     Γ ⊨< ty k > p_zero ≡ p_zero : P <[ zero..] ->
-    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢d< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (Γ,, (ty 0, Nat)),, (ty k, P) ⊨< ty k > p_succ ≡ p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     Γ ⊨< ty k > rec (ty k) P p_zero p_succ zero ≡ p_zero : P <[ zero..].
 Proof.
@@ -198,13 +198,13 @@ Proof.
 Qed.
 
 Lemma fundamental_rec_succ Γ k P p_zero p_succ t :
-    Γ,, (ty 0, Nat) ⊢< Ax (ty k) > P : Sort (ty k) ->
+    Γ,, (ty 0, Nat) ⊢d< Ax (ty k) > P : Sort (ty k) ->
     Γ,, (ty 0, Nat) ⊨< Ax (ty k) > P ≡ P : Sort (ty k) ->
-    Γ ⊢< ty k > p_zero : P <[ zero..] ->
+    Γ ⊢d< ty k > p_zero : P <[ zero..] ->
     Γ ⊨< ty k > p_zero ≡ p_zero : P <[ zero..] ->
-    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
+    (Γ,, (ty 0, Nat)),, (ty k, P) ⊢d< ty k > p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
     (Γ,, (ty 0, Nat)),, (ty k, P) ⊨< ty k > p_succ ≡ p_succ : P <[ succ (var 1) .: ↑ >> (↑ >> var)] ->
-    Γ ⊢< ty 0 > t : Nat ->
+    Γ ⊢d< ty 0 > t : Nat ->
     Γ ⊨< ty 0 > t ≡ t : Nat ->
     Γ ⊨< ty k > rec (ty k) P p_zero p_succ (succ t) ≡ p_succ <[ rec (ty k) P p_zero p_succ t .: t..] : P <[ (succ t)..].
 Proof.

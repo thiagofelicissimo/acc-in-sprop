@@ -12,7 +12,7 @@ From Equations Require Import Equations.
 Import CombineNotations.
 
 
-Lemma LR_to_red k A B R : ⊩< ty k > A ≡ B ↓ R -> exists A', ∙ ⊢< Ax (ty k) > A -->>! A' : Sort (ty k).
+Lemma LR_to_red k A B R : ⊩< ty k > A ≡ B ↓ R -> exists A', ∙ ⊢d< Ax (ty k) > A -->>! A' : Sort (ty k).
 Proof.
     intro. assert (exists l, l = ty k /\ ⊩< l > A ≡ B ↓ R) by eauto.
     clear H. destruct H0 as (l & eq & lr).
@@ -25,19 +25,19 @@ Qed.
   and pi_neq_sort because these are derivable from these axioms, using symmetry of obs_eq, which
   can be derived from J and obsrefl. Actually, we only added J and obsrefl to this formalization
   so that symmetry could be derivable. *)
-Axiom nat_neq_sort : forall e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
-Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
-Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
+Axiom nat_neq_sort : forall e, ∙ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
+Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
+Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢d< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
 Axiom pi_sort_inj : forall i n i' n' A A' B B' e,
     Ru i (ty n) = Ru i' (ty n') ->
-    ∙ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A B) (Pi i' (ty n') A' B') ->
+    ∙ ⊢d< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A B) (Pi i' (ty n') A' B') ->
     i = i' /\ n = n'.
 
 
 Lemma nat_neq_sort_red l l' A B e :
-    ∙ ⊢< Ax l' > A -->>! Nat : Sort l' ->
-    ∙ ⊢< Ax l' > B -->>! Sort l : Sort l' ->
-    ∙ ⊢< prop > e : obseq (Ax l') (Sort l') A B ->
+    ∙ ⊢d< Ax l' > A -->>! Nat : Sort l' ->
+    ∙ ⊢d< Ax l' > B -->>! Sort l : Sort l' ->
+    ∙ ⊢d< prop > e : obseq (Ax l') (Sort l') A B ->
     False.
 Proof.
     intros A_red_nat B_red_sort A_eq_B.
@@ -53,9 +53,9 @@ Qed.
 
 
 Lemma nat_neq_pi_red l' A B i j S T e :
-    ∙ ⊢< Ax l' > A -->>! Nat : Sort l' ->
-    ∙ ⊢< Ax l' > B -->>! Pi i j S T : Sort l' ->
-    ∙ ⊢< prop > e : obseq (Ax l') (Sort l') A B ->
+    ∙ ⊢d< Ax l' > A -->>! Nat : Sort l' ->
+    ∙ ⊢d< Ax l' > B -->>! Pi i j S T : Sort l' ->
+    ∙ ⊢d< prop > e : obseq (Ax l') (Sort l') A B ->
     False.
 Proof.
     intros A_red_nat B_red_pi A_eq_B.
@@ -68,9 +68,9 @@ Qed.
 
 
 Lemma sort_neq_pi_red l l' A B i j S T e :
-    ∙ ⊢< Ax l' > A -->>! Sort l : Sort l' ->
-    ∙ ⊢< Ax l' > B -->>! Pi i j S T : Sort l' ->
-    ∙ ⊢< prop > e : obseq (Ax l') (Sort l') A B ->
+    ∙ ⊢d< Ax l' > A -->>! Sort l : Sort l' ->
+    ∙ ⊢d< Ax l' > B -->>! Pi i j S T : Sort l' ->
+    ∙ ⊢d< prop > e : obseq (Ax l') (Sort l') A B ->
     False.
 Proof.
     intros A_red_sort B_red_pi A_eq_B.
@@ -84,9 +84,9 @@ Qed.
 
 
 Lemma pi_sort_inj_red l i n i' n' A A' B B' T T' e :
-    ∙ ⊢< Ax l > T -->>! Pi i (ty n) A B : Sort l ->
-    ∙ ⊢< Ax l > T' -->>! Pi i' (ty n') A' B' : Sort l ->
-    ∙ ⊢< prop > e : obseq (Ax l) (Sort l) T T' ->
+    ∙ ⊢d< Ax l > T -->>! Pi i (ty n) A B : Sort l ->
+    ∙ ⊢d< Ax l > T' -->>! Pi i' (ty n') A' B' : Sort l ->
+    ∙ ⊢d< prop > e : obseq (Ax l) (Sort l) T T' ->
     i = i' /\ n = n'.
 Proof.
     intros T_red T'_red eWt.
@@ -103,11 +103,11 @@ Qed.
 
 
 Lemma redd_cast1 Γ i A A' B e a :
-    Γ ⊢< Ax i > A -->> A' : Sort i ->
-    Γ ⊢< Ax i > B : Sort i ->
-    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > cast i A B e a -->> cast i A' B e a : B.
+    Γ ⊢d< Ax i > A -->> A' : Sort i ->
+    Γ ⊢d< Ax i > B : Sort i ->
+    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢d< i > a : A ->
+    Γ ⊢d< i > cast i A B e a -->> cast i A' B e a : B.
 Proof.
     intros A_redd_A' BWt eWt aWt.
     dependent induction A_redd_A'.
@@ -119,12 +119,12 @@ Proof.
 Qed.
 
 Lemma redd_cast2 Γ i A B B' e a :
-    Γ ⊢< Ax i > A : Sort i ->
+    Γ ⊢d< Ax i > A : Sort i ->
     val A ->
-    Γ ⊢< Ax i > B -->> B' : Sort i ->
-    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B ->
-    Γ ⊢< i > a : A ->
-    Γ ⊢< i > cast i A B e a -->> cast i A B' e a : B.
+    Γ ⊢d< Ax i > B -->> B' : Sort i ->
+    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B ->
+    Γ ⊢d< i > a : A ->
+    Γ ⊢d< i > cast i A B e a -->> cast i A B' e a : B.
 Proof.
     intros AWt val_A B_redd_B' eWt aWt.
     dependent induction B_redd_B'.
@@ -137,11 +137,11 @@ Proof.
 Qed.
 
 Lemma redd_cast_nat_nat Γ A B e a:
-    Γ ⊢< Ax (ty 0) > A -->> Nat : Sort (ty 0) ->
-    Γ ⊢< Ax (ty 0) > B -->> Nat : Sort (ty 0) ->
-    Γ ⊢< prop > e : obseq (Ax (ty 0)) (Sort (ty 0)) A B ->
-    Γ ⊢< ty 0 > a : A ->
-    Γ ⊢< ty 0 > cast (ty 0) A B e a -->> a : B.
+    Γ ⊢d< Ax (ty 0) > A -->> Nat : Sort (ty 0) ->
+    Γ ⊢d< Ax (ty 0) > B -->> Nat : Sort (ty 0) ->
+    Γ ⊢d< prop > e : obseq (Ax (ty 0)) (Sort (ty 0)) A B ->
+    Γ ⊢d< ty 0 > a : A ->
+    Γ ⊢d< ty 0 > cast (ty 0) A B e a -->> a : B.
 Proof.
     intros A_red B_red eWt aWt.
     eapply redd_trans.
@@ -158,11 +158,11 @@ Proof.
 Qed.
 
 Lemma redd_cast_sort_sort Γ l A B e a:
-    Γ ⊢< Ax (Ax l) > A -->> Sort l : Sort (Ax l) ->
-    Γ ⊢< Ax (Ax l) > B -->> Sort l : Sort (Ax l) ->
-    Γ ⊢< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) A B ->
-    Γ ⊢< Ax l > a : A ->
-    Γ ⊢< Ax l > cast (Ax l) A B e a -->> a : B.
+    Γ ⊢d< Ax (Ax l) > A -->> Sort l : Sort (Ax l) ->
+    Γ ⊢d< Ax (Ax l) > B -->> Sort l : Sort (Ax l) ->
+    Γ ⊢d< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) A B ->
+    Γ ⊢d< Ax l > a : A ->
+    Γ ⊢d< Ax l > cast (Ax l) A B e a -->> a : B.
 Proof.
     intros A_red B_red eWt aWt.
     eapply redd_trans.
@@ -179,15 +179,15 @@ Proof.
 Qed.
 
 Lemma redd_cast_pi_pi Γ i k A B S T S' T' e s' a :
-    Γ ⊢< Ax (Ru i (ty k)) > A -->> Pi i (ty k) S T : Sort (Ru i (ty k)) ->
-    Γ ⊢< Ax (Ru i (ty k)) > B -->> Pi i (ty k) S' T' : Sort (ty (ru i k)) ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i (ty k))) (Sort (Ru i (ty k))) A B ->
-    Γ ⊢< i > s' : S' ->
-    Γ ⊢< Ru i (ty k) > a : A ->
+    Γ ⊢d< Ax (Ru i (ty k)) > A -->> Pi i (ty k) S T : Sort (Ru i (ty k)) ->
+    Γ ⊢d< Ax (Ru i (ty k)) > B -->> Pi i (ty k) S' T' : Sort (ty (ru i k)) ->
+    Γ ⊢d< prop > e : obseq (Ax (Ru i (ty k))) (Sort (Ru i (ty k))) A B ->
+    Γ ⊢d< i > s' : S' ->
+    Γ ⊢d< Ru i (ty k) > a : A ->
     let s := cast i S' S (injpi1 i (ty k) S S' T T' e) s' in
     let app' := app i (ty k) S T a s in
     let res' := cast (ty k) (T <[ s..]) (T' <[ s'..]) (injpi2 i (ty k) S S' T T' e s')  app' in
-    Γ ⊢< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> res' : T' <[s'..].
+    Γ ⊢d< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> res' : T' <[s'..].
 Proof.
     intros A_red B_red eWt s'Wt aWt s app' res'.
     eapply redd_to_conv in A_red as temp.
@@ -195,7 +195,7 @@ Proof.
     eapply redd_to_conv in B_red as temp.
     eapply validity_conv_right, type_inv_pi in temp as (S'Wt & T'Wt).
 
-    eassert (Γ ⊢< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> _ : T' <[ s'..]).
+    eassert (Γ ⊢d< ty k > app i (ty k) S' T' (cast (Ru i (ty k)) A B e a) s' -->> _ : T' <[ s'..]).
     {
       eapply redd_app; eauto.
       eapply redd_conv.
@@ -231,7 +231,7 @@ Qed.
 Lemma LR_eq_to_iff_rel k A1 A2 ϵA B1 B2 ϵB e :
     ⊩< (ty k) > A1 ≡ A2 ↓ ϵA ->
     ⊩< (ty k) > B1 ≡ B2 ↓ ϵB ->
-    ∙ ⊢< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
+    ∙ ⊢d< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
     ϵA <~> ϵB. *)
 
 Lemma prefundamental_cast l A1 A2 ϵA B1 B2 ϵB :
@@ -239,13 +239,13 @@ Lemma prefundamental_cast l A1 A2 ϵA B1 B2 ϵB :
     ⊩< l > B1 ≡ B2 ↓ ϵB ->
     (forall a1 a2 e1 e2,
         ϵA a1 a2 ->
-        ∙ ⊢< l > a1 ≡ a2 : A1 ->
-        ∙ ⊢< prop > e1 ≡ e2 : obseq (Ax l) (Sort l) A1 B1 ->
+        ∙ ⊢d< l > a1 ≡ a2 : A1 ->
+        ∙ ⊢d< prop > e1 ≡ e2 : obseq (Ax l) (Sort l) A1 B1 ->
         ϵB (cast l A1 B1 e1 a1) (cast l A2 B2 e2 a2)) /\
     (forall b1 b2 e1 e2,
         ϵB b1 b2 ->
-        ∙ ⊢< l > b1 ≡ b2 : B1 ->
-        ∙ ⊢< prop > e1 ≡ e2 : obseq (Ax l) (Sort l) B1 A1 ->
+        ∙ ⊢d< l > b1 ≡ b2 : B1 ->
+        ∙ ⊢d< prop > e1 ≡ e2 : obseq (Ax l) (Sort l) B1 A1 ->
         ϵA (cast l B1 A1 e1 b1) (cast l B2 A2 e2 b2)).
 Proof.
     intros LR_A12 LR_B12.
@@ -371,13 +371,13 @@ Qed.
 
 
 Lemma fundamental_cast Γ k A1 A2 B1 B2 e1 e2 a1 a2 :
-    Γ ⊢< Ax (ty k) > A1 ≡ A2 : Sort (ty k) ->
+    Γ ⊢d< Ax (ty k) > A1 ≡ A2 : Sort (ty k) ->
     Γ ⊨< Ax (ty k) > A1 ≡ A2 : Sort (ty k) ->
-    Γ ⊢< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
+    Γ ⊢d< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
     Γ ⊨< Ax (ty k) > B1 ≡ B2 : Sort (ty k) ->
-    Γ ⊢< prop > e1 ≡ e2 : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
+    Γ ⊢d< prop > e1 ≡ e2 : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
     Γ ⊨< prop > e1 ≡ e2 : obseq (Ax (ty k)) (Sort (ty k)) A1 B1 ->
-    Γ ⊢< ty k > a1 ≡ a2 : A1 ->
+    Γ ⊢d< ty k > a1 ≡ a2 : A1 ->
     Γ ⊨< ty k > a1 ≡ a2 : A1 ->
     Γ ⊨< ty k > cast (ty k) A1 B1 e1 a1 ≡ cast (ty k) A2 B2 e2 a2 : B1.
 Proof.
@@ -396,7 +396,7 @@ Qed.
 Lemma prefundamental_cast_refl l A B ϵA a e :
     ⊩< l > A ≡ B ↓ ϵA ->
     ϵA a a ->
-    ∙ ⊢< prop > e : obseq (Ax l) (Sort l) A B ->
+    ∙ ⊢d< prop > e : obseq (Ax l) (Sort l) A B ->
     ϵA (cast l A B e a) a.
 Proof.
     intros LR_AB.
@@ -440,12 +440,12 @@ Proof.
       assert (ϵT s1 s2 <~> ϵT s1 s1) by eauto using LR_irrel.
       rewrite H5. clear ϵs ϵs' H5 s2.
 
-      assert (∙ ⊢< prop > injpi1 i (ty k) S1 S2 T1 T2 e : obseq (Ax i) (Sort i) S1 S2) as injpi1Wt.
+      assert (∙ ⊢d< prop > injpi1 i (ty k) S1 S2 T1 T2 e : obseq (Ax i) (Sort i) S1 S2) as injpi1Wt.
       { eapply type_conv. eapply type_injpi1; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv.
       eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv.
       eapply conv_obseq; eauto using conv_sym, LR_escape_ty, ctx_typing, conv_sort. }
 
-      eassert (∙ ⊢< prop > injpi2 i (ty k) S1 S2 T1 T2 e s1 : _) as injpi2Wt.
+      eassert (∙ ⊢d< prop > injpi2 i (ty k) S1 S2 T1 T2 e s1 : _) as injpi2Wt.
       { eapply type_injpi2; eauto using LR_escape_ty, validity_conv_left, validity_conv_right, conv_ty_in_ctx_conv, LR_escape_tm, type_conv.
         eapply type_conv; eauto. eapply conv_obseq; eauto using ctx_typing, conv_sort, redd_whnf_to_conv. }
 
@@ -483,11 +483,11 @@ Qed.
 
 
 Lemma fundamental_cast_refl Γ k A B e a :
-    Γ ⊢< Ax (ty k) > A ≡ B : Sort (ty k) ->
+    Γ ⊢d< Ax (ty k) > A ≡ B : Sort (ty k) ->
     Γ ⊨< Ax (ty k) > A ≡ B : Sort (ty k) ->
-    Γ ⊢< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A B ->
+    Γ ⊢d< prop > e : obseq (Ax (ty k)) (Sort (ty k)) A B ->
     Γ ⊨< prop > e ≡ e : obseq (Ax (ty k)) (Sort (ty k)) A B ->
-    Γ ⊢< ty k > a : A ->
+    Γ ⊢d< ty k > a : A ->
     Γ ⊨< ty k > a ≡ a : A ->
     Γ ⊨< ty k > cast (ty k) A B e a ≡ a : B.
 Proof.
@@ -510,12 +510,12 @@ Qed.
 
 
 Lemma red_cast_pi' Γ i n A1 A2 B1 B2 e f X Y l :
-    Γ ⊢< Ax i > A1 : Sort i ->
-    Γ ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
-    Γ ⊢< Ax i > A2 : Sort i ->
-    Γ ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
-    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
+    Γ ⊢d< Ax i > A1 : Sort i ->
+    Γ ,, (i, A1) ⊢d< Ax (ty n) > B1 : Sort (ty n) ->
+    Γ ⊢d< Ax i > A2 : Sort i ->
+    Γ ,, (i, A2) ⊢d< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ ⊢d< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢d< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in
     let B1' := (up_ren S) ⋅ B1 in
@@ -527,21 +527,21 @@ Lemma red_cast_pi' Γ i n A1 A2 B1 B2 e f X Y l :
     X = Pi i (ty n) A2 B2 ->
     Y = t4 ->
     l = Ru i (ty n) ->
-    Γ ⊢< l > cast l (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> Y : X.
+    Γ ⊢d< l > cast l (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) e f --> Y : X.
 Proof.
     intros. subst. eauto using red_cast_pi.
 Qed.
 
 
 Lemma type_inv_cast' Γ i A B e a l T :
-    Γ ⊢< l > cast i A B e a : T ->
-    Γ ⊢< l > cast i A B e a : T /\
-    Γ ⊢< Ax i > A : Sort i /\
-    Γ ⊢< Ax i > B : Sort i /\
-    Γ ⊢< prop > e : obseq (Ax i) (Sort i) A B /\
-    Γ ⊢< i > a : A /\
+    Γ ⊢d< l > cast i A B e a : T ->
+    Γ ⊢d< l > cast i A B e a : T /\
+    Γ ⊢d< Ax i > A : Sort i /\
+    Γ ⊢d< Ax i > B : Sort i /\
+    Γ ⊢d< prop > e : obseq (Ax i) (Sort i) A B /\
+    Γ ⊢d< i > a : A /\
     l = i /\
-    Γ ⊢< Ax i > T ≡ B : Sort l.
+    Γ ⊢d< Ax i > T ≡ B : Sort l.
 Proof.
   intro H.
   apply validity_ty_ty in H as T_Wt.
@@ -553,17 +553,17 @@ Proof.
 Qed.
 
 Lemma fundamental_cast_pi Γ i n A1 A2 B1 B2 e f :
-    Γ ⊢< Ax i > A1 : Sort i ->
+    Γ ⊢d< Ax i > A1 : Sort i ->
     Γ ⊨< Ax i > A1 ≡ A1 : Sort i ->
-    Γ,, (i, A1) ⊢< Ax (ty n) > B1 : Sort (ty n) ->
+    Γ,, (i, A1) ⊢d< Ax (ty n) > B1 : Sort (ty n) ->
     Γ,, (i, A1) ⊨< Ax (ty n) > B1 ≡ B1 : Sort (ty n) ->
-    Γ ⊢< Ax i > A2 : Sort i ->
+    Γ ⊢d< Ax i > A2 : Sort i ->
     Γ ⊨< Ax i > A2 ≡ A2 : Sort i ->
-    Γ,, (i, A2) ⊢< Ax (ty n) > B2 : Sort (ty n) ->
+    Γ,, (i, A2) ⊢d< Ax (ty n) > B2 : Sort (ty n) ->
     Γ,, (i, A2) ⊨< Ax (ty n) > B2 ≡ B2 : Sort (ty n) ->
-    Γ ⊢< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
+    Γ ⊢d< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
     Γ ⊨< prop > e ≡ e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A1 B1) (Pi i (ty n) A2 B2) ->
-    Γ ⊢< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
+    Γ ⊢d< Ru i (ty n) > f : Pi i (ty n) A1 B1 ->
     Γ ⊨< Ru i (ty n) > f ≡ f : Pi i (ty n) A1 B1 ->
     let A1' := S ⋅ A1 in
     let A2' := S ⋅ A2 in

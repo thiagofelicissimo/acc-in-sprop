@@ -1,7 +1,7 @@
 From Stdlib Require Import Utf8 List Arith Bool Lia.
 From TypedConfluence Require Import
 core unscoped AST SubstNotations RAsimpl AST_rasimpl
-Util BasicAST Contexts Typing TypingP BasicMetaTheory BasicMetaTheoryP TypeUniquenessP Fundamental ReductionUntyped CHeqProps CDecoration.
+Util BasicAST Contexts Typing BasicMetaTheory Fundamental ReductionUntyped CHeqProps CDecoration.
 From Stdlib Require Import Setoid Morphisms Relation_Definitions.
 Require Import Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -12,23 +12,6 @@ Import ListNotations.
 Import CombineNotations.
 
 Open Scope subst_scope.
-(* New notations for source derivations *)
-
-Notation "Γ ∋< l >× x : T" :=
-  (Typing.varty Γ x l T) (at level 50, l, x, T at next level).
-
-Notation "Γ ⊢< l >× t : A" :=
-  (Typing.typing Γ l t A) (at level 50, l, t, A at next level).
-
-Notation "Γ ⊢< l >× t ≡ u : T" :=
- (Typing.conversion Γ l t u T) (at level 50, l, t, u, T at next level).
-
-Notation "⊢× Γ" :=
-  (Typing.ctx_typing Γ) (at level 50).
-
-Notation "⊢× Γ ≡ Δ"  :=
-  (Typing.ConvCtx Γ Δ) (at level 50, Δ at next level).
-
 
 
 (* Potential translations *)
@@ -39,10 +22,10 @@ Definition ctx_dec (Γ Δ : ctx) :=
 Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 19).
 
 Definition tr_ctx Γ Δ :=
-  ⊢ Δ ∧ Γ ⊂ Δ.
+  ⊢p Δ ∧ Γ ⊂ Δ.
 
 Definition tr_ty_data l t A Γ' t' A' :=
-  Γ' ⊢< l > t' : A' ∧ t ⊏ t' ∧ A ⊏ A'.
+  Γ' ⊢p< l > t' : A' ∧ t ⊏ t' ∧ A ⊏ A'.
 
 Notation "D ⊨⟨ l ⟩ t : A ↦ u : B" :=
   (tr_ty_data l t A D u B)
@@ -76,13 +59,13 @@ Inductive has_type_head : term → type_head → Prop :=
 
 Lemma keep_head_ty_aux Γ l A t h u :
   t ⊏ u ->
-  Γ ⊢< l > u : A -> 
+  Γ ⊢p< l > u : A -> 
   has_type_head t h ->
   exists B e v, 
     t ⊏ v /\
     has_type_head v h /\
-    Γ ⊢< l > v : B /\
-    Γ ⊢< prop > e : heq l A B u v.
+    Γ ⊢p< l > v : B /\
+    Γ ⊢p< prop > e : heq l A B u v.
 Proof.
   intros. induction H1.
   - generalize Γ l A H0. clear Γ l A H0. dependent induction H; intros.
@@ -183,12 +166,12 @@ Qed.
 
 Lemma keep_head_ty Γ l A A0 h :
   A0 ⊏ A ->
-  Γ ⊢< Ax l > A : Sort l -> 
+  Γ ⊢p< Ax l > A : Sort l -> 
   has_type_head A0 h ->
   exists B e, 
     A0 ⊏ B /\
     has_type_head B h /\
-    Γ ⊢< prop > e : obseq (Ax l) (Sort l) A B.
+    Γ ⊢p< prop > e : obseq (Ax l) (Sort l) A B.
 Proof.
   intros. eapply keep_head_ty_aux in H1; eauto.
   destruct H1 as (B & e & v & refines & has_head & v_Wt & e_Wt).
@@ -304,7 +287,7 @@ Proof.
 Qed.
 
 Lemma varty_trans Γ Γ' x l A :
-  Γ ∋< l >× x : A →
+  Γ ∋< l > x : A →
   tr_ctx Γ Γ' →
   ∃ A', Γ' ∋< l > x : A' ∧ A ⊏ A'.
 Proof.
@@ -334,7 +317,7 @@ Proof.
 Qed.
 
 Lemma tr_var_known Γ Γ' x A A' l :
-  Γ ∋< l >× x : A →
+  Γ ∋< l > x : A →
   Γ' ∋< l > x : A' →
   tr_ctx Γ Γ' →
   Γ' ⊨⟨ l ⟩ var x : A ↦ var x : A'.
@@ -350,7 +333,7 @@ Proof.
 Qed.
 
 Lemma tr_var Γ Γ' x A l :
-  Γ ∋< l >× x : A →
+  Γ ∋< l > x : A →
   tr_ctx Γ Γ' →
   Γ' ⊨⟨ l ⟩ var x : A.
 Proof.
@@ -363,16 +346,6 @@ Proof.
 Qed.
 
 
-(* we suppose the two theories have the same axioms, and that the type of an axiom is
-  well-typed in a theory if and only if it is well-typed in the other *)
-Axiom tr_assm_sig :
-  ∀ c A,
-    nth_error Typing.assm_sig c = Some A <-> nth_error assm_sig c = Some A.
-
-Axiom tr_assm2_sig :
-  ∀ c A,
-    nth_error assm_sig c = Some A -> 
-    ∙ ⊢< Ax prop > A : Sort prop <-> Typing.typing ∙ (Ax prop) A (Sort prop).
     
 Lemma tr_ctx_cons Γ Γ' A A' i :
   tr_ctx Γ Γ' →
@@ -455,7 +428,7 @@ Proof.
 Qed.
 
 Definition tr_subst_data Γ' σ σ' Δ' :=
-  Γ' ⊢s σ' : Δ' ∧ dec_subst σ σ'.
+  Γ' ⊢ps σ' : Δ' ∧ dec_subst σ σ'.
 
 Notation "Γ ⊨s σ : Δ ⇒ σ'" :=
   (tr_subst_data Γ σ σ' Δ)
@@ -673,9 +646,9 @@ Inductive eqtrans Γ' t u A : level -> Prop :=
     A ⊏ A' ->
     t ⊏ t' ->
     u ⊏ u' ->
-    Γ' ⊢< ty i > t' : A' ->
-    Γ' ⊢< ty i > u' : A' ->
-    Γ' ⊢< prop > e : heq (ty i) A' A' t' u' ->
+    Γ' ⊢p< ty i > t' : A' ->
+    Γ' ⊢p< ty i > u' : A' ->
+    Γ' ⊢p< prop > e : heq (ty i) A' A' t' u' ->
     eqtrans Γ' t u A (ty i).
 
 Notation "D ⊨⟨ l ⟩ t = u : A" := 
@@ -686,9 +659,9 @@ Inductive heqtrans Γ' l t u (A B : term) A' B' : Prop :=
   | heqtrans_in e t' u' :
     t ⊏ t' ->
     u ⊏ u' ->
-    Γ' ⊢< l > t' : A' ->
-    Γ' ⊢< l > u' : B' ->
-    Γ' ⊢< prop > e : heq l A' B' t' u' ->
+    Γ' ⊢p< l > t' : A' ->
+    Γ' ⊢p< l > u' : B' ->
+    Γ' ⊢p< prop > e : heq l A' B' t' u' ->
     heqtrans Γ' l t u A B A' B'.
 
   
@@ -698,10 +671,10 @@ Notation "D ⊨⟨ l ⟩ t : A ↦ A' = u : B ↦ B'" :=
 
 
 Lemma type_hetero_to_homo' : forall n Γ t u A e,
-  Γ ⊢< ty n > t : A ->
-  Γ ⊢< ty n > u : A ->
-  Γ ⊢< prop > e : heq (ty n) A A t u ->
-  exists e', Γ ⊢< prop > e' : obseq (ty n) A t u.
+  Γ ⊢p< ty n > t : A ->
+  Γ ⊢p< ty n > u : A ->
+  Γ ⊢p< prop > e : heq (ty n) A A t u ->
+  exists e', Γ ⊢p< prop > e' : obseq (ty n) A t u.
 Proof.
   intros. eapply type_hetero_to_homo in H1; eauto.
 Qed.
@@ -709,9 +682,9 @@ Qed.
 Lemma tr_eq_ty_geth Γ n t u A A' B B' e:
   A ⊏ A' ->
   B ⊏ B' ->
-  Γ ⊢< Ax (ty n) > A' : Sort (ty n) ->
-  Γ ⊢< Ax (ty n) > B' : Sort (ty n) ->
-  Γ ⊢< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A' B' -> 
+  Γ ⊢p< Ax (ty n) > A' : Sort (ty n) ->
+  Γ ⊢p< Ax (ty n) > B' : Sort (ty n) ->
+  Γ ⊢p< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A' B' -> 
   Γ ⊨⟨ ty n ⟩ t = u : A ->
   Γ ⊨⟨ ty n ⟩ t : A ↦ A' = u : B ↦ B'.
 Proof.
@@ -730,7 +703,7 @@ Proof.
   4:eapply A''_eq_A'. all:eauto using validity_ty_ty.
   eapply type_heq_cast in H3 as u'_eq_u''.
   4:eapply A''_eq_B'. all:eauto using validity_ty_ty.
-  eassert (exists e0, Γ ⊢< prop > e0 : 
+  eassert (exists e0, Γ ⊢p< prop > e0 : 
     heq (ty n) A' B' (cast (ty n) A'' A' e1 t') (cast (ty n) A'' B' e2 u'))
     as (e'' & t''_eq_u'').
   { eexists. eapply type_heq_trans. 5:eapply u'_eq_u''.
@@ -744,7 +717,7 @@ Qed.
 
 Lemma tr_eq_ty_sgeth Γ n t u A A':
   A ⊏ A' ->
-  Γ ⊢< Ax (ty n) > A' : Sort (ty n) ->
+  Γ ⊢p< Ax (ty n) > A' : Sort (ty n) ->
   Γ ⊨⟨ ty n ⟩ t = u : A ->
   Γ ⊨⟨ ty n ⟩ t : A ↦ A' = u : A ↦ A'.
 Proof.
@@ -755,11 +728,11 @@ Qed.
 
 Lemma tr_tm_get Γ l t A A':
   A ⊏ A' ->
-  Γ ⊢< Ax l > A' : Sort l ->
+  Γ ⊢p< Ax l > A' : Sort l ->
   Γ ⊨⟨ l ⟩ t : A ->
   exists t',
     t ⊏ t' /\
-    Γ ⊢< l > t' : A'.
+    Γ ⊢p< l > t' : A'.
 Proof.
   intros A_dec_A' A'_Wt t_tr.
   destruct t_tr as (A'' & t' & t'_Wt & t_dec_t' & A_dec_A'').
@@ -775,9 +748,9 @@ Qed.
 Lemma tr_eq_prop_geth Γ t u A A' B B' e:
   A ⊏ A' ->
   B ⊏ B' ->
-  Γ ⊢< Ax prop > A' : Sort prop ->
-  Γ ⊢< Ax prop > B' : Sort prop ->
-  Γ ⊢< prop > e : heq (Ax prop) (Sort prop) (Sort prop) A' B' -> 
+  Γ ⊢p< Ax prop > A' : Sort prop ->
+  Γ ⊢p< Ax prop > B' : Sort prop ->
+  Γ ⊢p< prop > e : heq (Ax prop) (Sort prop) (Sort prop) A' B' -> 
   Γ ⊨⟨ prop ⟩ t : A ->
   Γ ⊨⟨ prop ⟩ u : B ->
   Γ ⊨⟨ prop ⟩ t : A ↦ A' = u : B ↦ B'.
@@ -796,9 +769,9 @@ Qed.
 (* Lemma OLD_tr_eq_prop_geth Γ t u A A' B B' e:
   A ⊏ A' ->
   B ⊏ B' ->
-  Γ ⊢< Ax prop > A' : Sort prop ->
-  Γ ⊢< Ax prop > B' : Sort prop ->
-  Γ ⊢< prop > e : heq (Ax prop) (Sort prop) (Sort prop) A' B' -> 
+  Γ ⊢p< Ax prop > A' : Sort prop ->
+  Γ ⊢p< Ax prop > B' : Sort prop ->
+  Γ ⊢p< prop > e : heq (Ax prop) (Sort prop) (Sort prop) A' B' -> 
   Γ ⊨⟨ prop ⟩ t : A ->
   Γ ⊨⟨ prop ⟩ u : A ->
   Γ ⊨⟨ prop ⟩ t : A ↦ A' = u : B ↦ B'.
@@ -816,10 +789,10 @@ Qed. *)
 
 
 Lemma decombine_subst_aux Γ i A1 A2 e :
-  Γ ⊢< Ax i > A1 : Sort i ->
-  Γ ⊢< Ax i > A2 : Sort i ->
-  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A1 A2 ->
-  Γ ,, (i, A1) ⊢< i > cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ e) (var 0) : S ⋅ A2.
+  Γ ⊢p< Ax i > A1 : Sort i ->
+  Γ ⊢p< Ax i > A2 : Sort i ->
+  Γ ⊢p< prop > e : obseq (Ax i) (Sort i) A1 A2 ->
+  Γ ,, (i, A1) ⊢p< i > cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ e) (var 0) : S ⋅ A2.
 Proof.
   intros.
   econstructor; eauto. 
@@ -828,10 +801,10 @@ Proof.
 Qed.
 
 Lemma cast_subst Γ i A1 A2 e :
-  Γ ⊢< Ax i > A1 : Sort i ->
-  Γ ⊢< Ax i > A2 : Sort i ->
-  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A1 A2 ->
-  Γ ,, (i, A1) ⊢s (cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ e) (var 0).: (S >> var)) : Γ ,, (i, A2).
+  Γ ⊢p< Ax i > A1 : Sort i ->
+  Γ ⊢p< Ax i > A2 : Sort i ->
+  Γ ⊢p< prop > e : obseq (Ax i) (Sort i) A1 A2 ->
+  Γ ,, (i, A1) ⊢ps (cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ e) (var 0).: (S >> var)) : Γ ,, (i, A2).
 Proof.
   intros.
   econstructor;ssimpl.
@@ -846,15 +819,15 @@ Proof.
 Qed.
 
 Lemma cast_subst2 Γ i j A2 A1 B2 B1 eA eB :
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢p< Ax j > B2 : Sort j ->
+  Γ ,, (i, A1) ⊢p< Ax j > B1 : Sort j ->
   
-  Γ ⊢< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
+  Γ ⊢p< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
   let Aeq := heq i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) (var 1) (var 0) in
 
-  Γ ,, (i, A2) ⊢< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]) ->
+  Γ ,, (i, A2) ⊢p< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]) ->
 
-  Γ ,, (i, A2) ,, (j, B2) ⊢s (cast j (S ⋅ B2) (S ⋅ ((B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]))) (S ⋅ eB) (var 0) .: 
+  Γ ,, (i, A2) ,, (j, B2) ⊢ps (cast j (S ⋅ B2) (S ⋅ ((B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]))) (S ⋅ eB) (var 0) .: 
     (cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1) .: (S >> S >> var))) :  Γ ,, (i, A1) ,, (j, B1).
 Proof.
   intros.
@@ -895,56 +868,6 @@ Proof.
   1:eapply WellSubst_weak_two; eauto using ctx_typing, validity_ty_ctx, subst_id.
 Qed.
 
-(* Lemma cast_subst2 Γ i j A1 A2 B1 B2 eA eB :
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-  
-  Γ ⊢< prop > eA : obseq (Ax i) (Sort i) A1 A2 ->
-  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-
-  Γ ,, (i, A1) ⊢< prop > eB : obseq (Ax j) (Sort j) B1 (B2<[cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ eA) (var 0).: (S >> var)]) ->
-
-  Γ ,, (i, A1) ,, (j, B1) ⊢s (cast j (S ⋅ B1) (S ⋅ ((B2<[cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ eA) (var 0).: (S >> var)]))) (S ⋅ eB) (var 0) .: 
-    (cast i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) ((S >> S) ⋅ eA) (var 1) .: (S >> S >> var))) :  Γ ,, (i, A2) ,, (j, B2).
-Proof.
-  intros.
-  eapply validity_ty_ctx in H as H'. dependent destruction H'. clear H'.
-  eapply validity_ty_ctx in H0 as H0'. dependent destruction H0'. clear H0'.
-  econstructor. 
-  1:econstructor. all:ssimpl.
-  1:replace (S >> (S >> var)) with (var >> ren_term (S >> S)) by (rasimpl; reflexivity).
-  1:eapply WellSubst_weak_two; eauto using ctx_typing, validity_ty_ctx, subst_id.
-  1:{ eapply meta_conv.
-    1:econstructor.
-    1-3:eapply type_ren ; eauto using WellRen_S, ctx_typing, validity_ty_ctx, WellRen_weak.
-    2:rasimpl;reflexivity.
-    econstructor.
-    2:eapply varty_meta.
-    2:econstructor;econstructor.
-    1:eauto using ctx_typing, validity_ty_ctx.
-    rasimpl;reflexivity. }
-  eapply meta_conv.
-  1:econstructor.
-  1,3:eapply type_ren ; eauto using WellRen_S, ctx_typing, validity_ty_ctx, WellRen_weak.
-  1:rasimpl;f_equal; rasimpl; f_equal; f_equal; f_equal; rasimpl; reflexivity.
-  3:rasimpl;reflexivity.
-  2:econstructor. 3:econstructor. 2:eauto using validity_ty_ctx, ctx_typing.
-  eapply subst_ty; eauto using validity_ty_ctx, ctx_typing.
-  econstructor.
-  all:ssimpl.
-  2:{ eapply meta_conv.
-    1:econstructor.
-    1-3:eapply type_ren ; eauto using WellRen_S, ctx_typing, validity_ty_ctx, WellRen_weak.
-    2:rasimpl;reflexivity.
-    econstructor.
-    2:eapply varty_meta.
-    2:econstructor;econstructor.
-    1:eauto using ctx_typing, validity_ty_ctx.
-    rasimpl;reflexivity. }
-  1:replace (S >> (S >> var)) with (var >> ren_term (S >> S)) by (rasimpl; reflexivity).
-  1:eapply WellSubst_weak_two; eauto using ctx_typing, validity_ty_ctx, subst_id.
-Qed. *)
-
 Lemma cast_subst_refines t u i A B e : 
   t ⊏ u ->
   t ⊏ u <[ (cast i A B e (var 0)) .: (S >> var)].
@@ -974,35 +897,14 @@ Proof.
   - simpl. unfold ">>". econstructor.
 Qed.
 
-(* 
 
 Lemma decombine_subst Γ i A1 A2 e :
-  Γ ⊢< Ax i > A1 : Sort i ->
-  Γ ⊢< Ax i > A2 : Sort i ->
-  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A1 A2 ->
+  Γ ⊢p< Ax i > A1 : Sort i ->
+  Γ ⊢p< Ax i > A2 : Sort i ->
+  Γ ⊢p< prop > e : obseq (Ax i) (Sort i) A2 A1 ->
   let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in    
   exists e',
-  Γ ,, (i, A1) ⊢s (e' .: ((cast i (S ⋅ A1) (S ⋅ A2) (S ⋅ e) (var 0)) .: var)) : Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq).
-Proof.
-  intros.
-  eapply decombine_subst_aux in H1 as h1; eauto.
-  eexists. 
-  econstructor. 1:econstructor.
-  2,3:unfold ">>"; simpl; rasimpl.
-  2:eauto.
-  2:unfold Aeq. 2:rewrite heq_subst. 2:rasimpl.
-  2:eapply type_heq_cast; eauto using type_ren, ctx_typing, WellRen_S, validity_ty_ctx.
-  2:econstructor. 3:econstructor. 2:econstructor;eauto using validity_ty_ctx.
-  ssimpl. eapply subst_id; eauto using ctx_typing, validity_ty_ctx.
-Qed.  *)
-
-Lemma decombine_subst Γ i A1 A2 e :
-  Γ ⊢< Ax i > A1 : Sort i ->
-  Γ ⊢< Ax i > A2 : Sort i ->
-  Γ ⊢< prop > e : obseq (Ax i) (Sort i) A2 A1 ->
-  let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in    
-  exists e',
-  Γ ,, (i, A2) ⊢s (e' .: ((var 0) .: ((cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ e) (var 0)) .: (S >> var)))) : Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq).
+  Γ ,, (i, A2) ⊢ps (e' .: ((var 0) .: ((cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ e) (var 0)) .: (S >> var)))) : Γ ,, (i, A1) ,, (i, S ⋅ A2) ,, (prop, Aeq).
 Proof.
   intros.
   eapply decombine_subst_aux in H1 as h1; eauto.
@@ -1028,13 +930,13 @@ Proof.
 Qed. 
 
 Lemma cast_subst2_aux  Γ i j A2 A1 B2 B1 eA e :
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
-  Γ ⊢< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
+  Γ ,, (i, A2) ⊢p< Ax j > B2 : Sort j ->
+  Γ ,, (i, A1) ⊢p< Ax j > B1 : Sort j ->
+  Γ ⊢p< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
   let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
-  Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) ⊢< prop > e : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1) ((up_ren S >> S) ⋅ B2) ->
+  Γ ,, (i, A1) ,, (i, S ⋅ A2),, (prop, Aeq) ⊢p< prop > e : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1) ((up_ren S >> S) ⋅ B2) ->
   exists eB,
-    Γ ,, (i, A2) ⊢< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]).
+    Γ ,, (i, A2) ⊢p< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]).
 Proof.
   intros.
   eapply validity_ty_ctx in H as H'. dependent destruction H'. clear H'.
@@ -1053,17 +955,17 @@ Proof.
 Qed.
 
 Lemma decombine_subst2 Γ i j A2 A1 B2 B1 eA eB :
-  Γ ,, (i, A2) ⊢< Ax j > B2 : Sort j ->
-  Γ ,, (i, A1) ⊢< Ax j > B1 : Sort j ->
+  Γ ,, (i, A2) ⊢p< Ax j > B2 : Sort j ->
+  Γ ,, (i, A1) ⊢p< Ax j > B1 : Sort j ->
   
-  Γ ⊢< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
+  Γ ⊢p< prop > eA : obseq (Ax i) (Sort i) A2 A1 ->
   let Aeq := heq i ((S >> S) ⋅ A1) ((S >> S) ⋅ A2) (var 1) (var 0) in
   let Beq := heq j ((((S >> S) >> S) >> S) ⋅ B1) ((((up_ren S >> S) >> S) >> S) ⋅ B2) (var 1) (var 0) in
 
-  Γ ,, (i, A2) ⊢< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)])  ->
+  Γ ,, (i, A2) ⊢p< prop > eB : obseq (Ax j) (Sort j) B2 (B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)])  ->
 
   exists eA' eB',
-  Γ ,, (i, A2) ,, (j, B2) ⊢s  (eB' .: ( (var 0) .: (cast j (S ⋅ B2) (S ⋅ ((B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]))) (S ⋅ eB) (var 0)  .:
+  Γ ,, (i, A2) ,, (j, B2) ⊢ps  (eB' .: ( (var 0) .: (cast j (S ⋅ B2) (S ⋅ ((B1<[cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0).: (S >> var)]))) (S ⋅ eB) (var 0)  .:
     ( eA' .: ((var 1) .:  (cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1)  .: (S >> S >> var))))))) :  
     (((((Γ,, (i, A1)),, (i, S ⋅ A2)),, (prop, Aeq)),, (j, (S >> S) ⋅ B1)),, (j, ((up_ren S >> S) >> S) ⋅ B2)),, (prop, Beq).
 Proof.
@@ -1072,7 +974,7 @@ Proof.
   eapply validity_ty_ctx in H0 as H0'. dependent destruction H0'. clear H0'.
 
   eapply decombine_subst_aux in H1 as h1; eauto.
-  eassert ((Γ,, (i, A2)),, (j, B2) ⊢< j > cast j (S ⋅ B2) (S ⋅ B1 <[ cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0) .: S >> var]) (S ⋅ eB) (var 0) : _).
+  eassert ((Γ,, (i, A2)),, (j, B2) ⊢p< j > cast j (S ⋅ B2) (S ⋅ B1 <[ cast i (S ⋅ A2) (S ⋅ A1) (S ⋅ eA) (var 0) .: S >> var]) (S ⋅ eB) (var 0) : _).
   { econstructor.
     1-3:eapply type_ren; eauto using WellRen_S, ctx_typing, validity_ty_ctx.
     1:eapply subst_ty; eauto using validity_ty_ctx.
@@ -1080,7 +982,7 @@ Proof.
     1:eapply cast_subst; eauto.
     econstructor. 2:econstructor. eauto using ctx_typing, validity_ty_ctx. }
   
-  assert ((Γ,, (i, A2)),, (j, B2) ⊢< i > cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1) : A1 <[ λ x : nat, var (S (S x))]).
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢p< i > cast i ((S >> S) ⋅ A2) ((S >> S) ⋅ A1) ((S >> S) ⋅ eA) (var 1) : A1 <[ λ x : nat, var (S (S x))]).
   { eapply meta_conv.
     1:eapply meta_tm_conv.
     1:eapply type_ren.
@@ -1089,13 +991,13 @@ Proof.
     all:rasimpl. 1:reflexivity.
     1:substify. ssimpl. unfold ">>". reflexivity. }
 
-  assert ((Γ,, (i, A2)),, (j, B2) ⊢< i > var 1 : A2 <[ λ x : nat, var (S (S x))]).
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢p< i > var 1 : A2 <[ λ x : nat, var (S (S x))]).
   { econstructor; eauto using ctx_typing, validity_ty_ctx.
     eapply varty_meta.
     1:eauto using varty.
     substify. ssimpl. unfold ">>". reflexivity. }
 
-  assert ((Γ,, (i, A2)),, (j, B2) ⊢< j > 
+  assert ((Γ,, (i, A2)),, (j, B2) ⊢p< j > 
     cast j (S ⋅ B2) (B1 <[ cast i ((S ⋅ A2) <[ S >> var]) ((S ⋅ A1) <[ S >> var]) ((S ⋅ eA) <[ S >> var]) ((S >> var) 0) .: (S >> S) >> var]) (S ⋅ eB) (var 0)
     : B1 <[ cast i ((λ x : nat, S (S x)) ⋅ A2) ((λ x : nat, S (S x)) ⋅ A1) ((λ x : nat, S (S x)) ⋅ eA) (var 1) .: λ x : nat, var (S (S x))]).
   { 
@@ -1176,12 +1078,12 @@ Qed.
 
 
 Lemma type_heq_trans' : forall Γ l A B C c b a e1 e2,
-  Γ ⊢< l > a : A ->
-  Γ ⊢< l > b : B ->
-  Γ ⊢< l > c : C ->
-  Γ ⊢< prop > e1 : heq l A B a b →
-  Γ ⊢< prop > e2 : heq l B C b c → 
-  exists e, Γ ⊢< prop > e : heq l A C a c.  
+  Γ ⊢p< l > a : A ->
+  Γ ⊢p< l > b : B ->
+  Γ ⊢p< l > c : C ->
+  Γ ⊢p< prop > e1 : heq l A B a b →
+  Γ ⊢p< prop > e2 : heq l B C b c → 
+  exists e, Γ ⊢p< prop > e : heq l A C a c.  
 Proof.
   intros. eexists. eapply type_heq_trans. 4,5:eassumption. all:eauto.
 Qed.
@@ -1192,28 +1094,28 @@ Lemma tr_eq_ty_cons_geth Γ' n i A1 A2 A1' A2' B1 B2 B1' B2' t u  e e_ :
   A2 ⊏ A2' ->
   B2 ⊏ B2' ->
   let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
-  Γ' ,, (i, A1') ⊢< Ax (ty n) > B1' : Sort (ty n) ->
-  Γ' ,, (i, A2') ⊢< Ax (ty n) > B2' : Sort (ty n) ->
-  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
-  Γ' ⊢< prop > e_ : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ,, (i, A1') ⊢p< Ax (ty n) > B1' : Sort (ty n) ->
+  Γ' ,, (i, A2') ⊢p< Ax (ty n) > B2' : Sort (ty n) ->
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢p< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
+  Γ' ⊢p< prop > e_ : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
   Γ' ,, (i, A1') ⊨⟨ ty n ⟩ t = u : B1 ->
   exists t' u',
     t ⊏ t' /\
     u ⊏ u' /\
-    Γ' ,, (i, A1') ⊢< ty n > t' : B1' /\
-    Γ' ,, (i, A2') ⊢< ty n > u' : B2' /\
+    Γ' ,, (i, A1') ⊢p< ty n > t' : B1' /\
+    Γ' ,, (i, A2') ⊢p< ty n > u' : B2' /\
     exists e',
-      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e' : heq (ty n) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2')  
+      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢p< prop > e' : heq (ty n) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2')  
         ((S >> S) ⋅ t') ((up_ren S >> S) ⋅ u').
 Proof.
   intros.  rename H6 into A1'_heq_A2'.
 
-  assert (Γ' ⊢< Ax i > A1' : Sort i) as A1'_Wt by 
+  assert (Γ' ⊢p< Ax i > A1' : Sort i) as A1'_Wt by 
     (eapply validity_ty_ctx in H3; dependent destruction H3; eauto).
-  assert (Γ' ⊢< Ax i > A2' : Sort i) as A2'_Wt by
+  assert (Γ' ⊢p< Ax i > A2' : Sort i) as A2'_Wt by
     (eapply validity_ty_ctx in H4; dependent destruction H4; eauto).
 
-  assert (exists e_', Γ' ⊢< prop > e_' : obseq (Ax i) (Sort i) A2' A1') as A2'_eq_A1'
+  assert (exists e_', Γ' ⊢p< prop > e_' : obseq (Ax i) (Sort i) A2' A1') as A2'_eq_A1'
   by eauto using type_hetero_to_homo, type_heq_sym. 
   destruct A2'_eq_A1' as (e_' & A2'_eq_A1').
 
@@ -1294,17 +1196,17 @@ Lemma tr_eq_ty_cons_geth_sort Γ' l i A1 A2 A1' A2'  t u  e :
   A1 ⊏ A1' ->
   A2 ⊏ A2' ->
   let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
-  Γ' ⊢< Ax i > A1' : Sort i ->
-  Γ' ⊢< Ax i > A2' : Sort i ->
-  Γ' ⊢< prop > e : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ⊢p< Ax i > A1' : Sort i ->
+  Γ' ⊢p< Ax i > A2' : Sort i ->
+  Γ' ⊢p< prop > e : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
   Γ' ,, (i, A1') ⊨⟨ Ax l ⟩ t = u : Sort l ->
   exists t' u',
     t ⊏ t' /\
     u ⊏ u' /\
-    Γ' ,, (i, A1') ⊢< Ax l > t' : Sort l /\
-    Γ' ,, (i, A2') ⊢< Ax l > u' : Sort l /\
+    Γ' ,, (i, A1') ⊢p< Ax l > t' : Sort l /\
+    Γ' ,, (i, A2') ⊢p< Ax l > u' : Sort l /\
     exists e',
-      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > e' : heq (Ax l) (Sort l) (Sort l) ((S >> S) ⋅ t') ((up_ren S >> S) ⋅ u').
+      Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢p< prop > e' : heq (Ax l) (Sort l) (Sort l) ((S >> S) ⋅ t') ((up_ren S >> S) ⋅ u').
 Proof.
   intros.
   eapply tr_eq_ty_cons_geth; eauto.
@@ -1338,29 +1240,29 @@ Lemma tr_eq_ty_cons2_geth Γ' n i j A1 A2 A1' A2' B1 B2 B1' B2' C1 C2 C1' C2' t 
   C1 ⊏ C1' ->
   C2 ⊏ C2' ->
 
-  Γ' ,, (i, A1') ,, (j, B1') ⊢< Ax (ty n) > C1' : Sort (ty n) ->
-  Γ' ,, (i, A2') ,, (j, B2') ⊢< Ax (ty n) > C2' : Sort (ty n) ->
+  Γ' ,, (i, A1') ,, (j, B1') ⊢p< Ax (ty n) > C1' : Sort (ty n) ->
+  Γ' ,, (i, A2') ,, (j, B2') ⊢p< Ax (ty n) > C2' : Sort (ty n) ->
 
-  Γ' ⊢< prop > eA : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
+  Γ' ⊢p< prop > eA : heq (Ax i) (Sort i) (Sort i) A1' A2' ->
 
   let Aeq := heq i ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0) in
-  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢< prop > eB : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
+  Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) ⊢p< prop > eB : heq (Ax j) (Sort j) (Sort j) ((S >> S) ⋅ B1') ((up_ren S >> S) ⋅ B2') ->
 
   let Beq := heq j ((S >> S >> S >> S) ⋅ B1') ((up_ren S >> S >> S >> S) ⋅ B2') (var 1) (var 0) in
   Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) 
     ,, (j, (S >> S) ⋅ B1') ,, (j,  (up_ren S >> S >> S) ⋅ B2') ,, (prop, Beq)
-    ⊢< prop > eC : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') ->
+    ⊢p< prop > eC : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') ->
   
   Γ' ,, (i, A1') ,, (j, B1') ⊨⟨ ty n ⟩ t = u : C1 ->
   exists t' u',
     t ⊏ t' /\
     u ⊏ u' /\
-    Γ' ,, (i, A1') ,, (j, B1') ⊢< ty n > t' : C1' /\
-    Γ' ,, (i, A2') ,, (j, B2') ⊢< ty n > u' : C2' /\
+    Γ' ,, (i, A1') ,, (j, B1') ⊢p< ty n > t' : C1' /\
+    Γ' ,, (i, A2') ,, (j, B2') ⊢p< ty n > u' : C2' /\
     exists e',
     Γ' ,, (i, A1') ,, (i, S ⋅ A2'),, (prop, Aeq) 
       ,, (j, (S >> S) ⋅ B1') ,, (j,  (up_ren S >> S >> S) ⋅ B2') ,, (prop, Beq)
-      ⊢< prop > e' : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') 
+      ⊢p< prop > e' : heq (ty n) ((up_ren (S >> S) >> S >> S) ⋅ C1') ((up_ren (up_ren S >> S >> S) >> S) ⋅ C2') 
         ((up_ren (S >> S) >> S >> S) ⋅ t') ((up_ren (up_ren S >> S >> S) >> S) ⋅ u').
 Proof. 
   intros A1_dec_A1' A2_dec_A2' B1_dec_B1' B2_dec_B2' C1_dec_C1' C2_dec_C2' C1'Wt C2'Wt A1'_heq_A2' * B1'_heq_B2' * C1'_heq_C2' h.
@@ -1483,14 +1385,14 @@ Lemma tr_eq_conclude Γ' e l A A' B B' t t' u u' :
   u ⊏ u' ->
   A ⊏ A' ->
   B ⊏ B' ->
-  Γ' ⊢< l > t' : A' ->
-  Γ' ⊢< l > u' : B' ->
-  Γ' ⊢< prop > e : heq l A' B' t' u' ->
+  Γ' ⊢p< l > t' : A' ->
+  Γ' ⊢p< l > u' : B' ->
+  Γ' ⊢p< prop > e : heq l A' B' t' u' ->
   Γ' ⊨⟨ l ⟩ t = u : A.
 Proof.
   intros. 
   destruct l. 2:eauto using eqtrans.
-  assert (exists e', Γ' ⊢< prop > e' : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A' B') by eauto using type_hetero_to_type, validity_ty_ty.
+  assert (exists e', Γ' ⊢p< prop > e' : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) A' B') by eauto using type_hetero_to_type, validity_ty_ty.
   destruct H6.
   eapply type_hetero_to_homo' in H6; eauto using validity_ty_ty.
   destruct H6.
@@ -1508,7 +1410,7 @@ Lemma tr_eq_conclude_by_refl Γ' l A A' t t' u u' :
   t ⊏ t' ->
   u ⊏ u' ->
   A ⊏ A' ->
-  Γ' ⊢< l > t' ≡ u' : A' ->
+  Γ' ⊢p< l > t' ≡ u' : A' ->
   Γ' ⊨⟨ l ⟩ t = u : A.
 Proof.
   intros.
@@ -1523,7 +1425,7 @@ Qed.
 Lemma tr_ctx_cons' Γ Γ' A A' l : 
   tr_ctx Γ Γ' ->
   A ⊏ A' ->
-  Γ' ⊢< Ax l > A' : Sort l ->
+  Γ' ⊢p< Ax l > A' : Sort l ->
   tr_ctx (Γ ,, (l, A)) (Γ' ,, (l, A')).
 Proof.
   intros.
@@ -1557,13 +1459,13 @@ Qed.
 
 Lemma typing_conversion_trans :
   (∀ Γ l t A,
-    Γ ⊢< l >× t : A →
+    Γ ⊢d< l > t : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
       Γ' ⊨⟨ l ⟩ t : A
   ) ∧
   (∀ Γ l u v A,
-    Γ ⊢< l >× u ≡ v : A →
+    Γ ⊢d< l > u ≡ v : A →
     ∀ Γ',
       tr_ctx Γ Γ' →
       Γ' ⊨⟨ l ⟩ u = v : A
@@ -1581,13 +1483,12 @@ Proof.
   - intros * ?? hc.
     eexists _,_. eapply tr_Sort. eassumption.
   - intros * ? e ? ih ? hc.
-    eapply tr_assm_sig in e as e'.
+    rewrite <- assm_sig_ty in t; eauto.
     assert (tr_ctx ∙ ∙) by (econstructor; econstructor).
 
     eapply ih in H. eapply tr_tm_get in H; eauto using typing, decoration, ctx_typing.
     destruct H as (A' & ? & ?).
 
-    eapply tr_assm2_sig in t; eauto.
     eexists _, (assm _). split.
     { econstructor. 2,3: eassumption. apply hc. }
     intuition eauto using decoration, dec_refl.
@@ -2062,7 +1963,7 @@ Proof.
     all:eauto using validity_ty_ty.
 
   - intros.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H; eauto).
     eapply tr_eq_conclude.
     1-3:econstructor. 1:eapply dec_sort.
     3:eapply type_heq_refl.
@@ -2072,7 +1973,7 @@ Proof.
   - intros. 
     rename A into A1. rename A' into A2.
     rename B into B1. rename B' into B2.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H2; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H2; eauto).
     eapply H0 in H2 as h0. eapply tr_eq_ty_sgeth in h0; eauto using typing, decoration.
     dependent destruction h0.
     rename t' into A1'. rename u' into A2'.
@@ -2098,7 +1999,7 @@ Proof.
     rename A into A1. rename A' into A2.
     rename B into B1. rename B' into B2.
     rename t into t1. rename t' into t2.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H3; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H3; eauto).
     eapply H0 in H3 as h0. eapply tr_eq_ty_sgeth in h0; eauto using typing, decoration.
     dependent destruction h0.
     rename t' into A1'. rename u' into A2'.
@@ -2133,7 +2034,7 @@ Proof.
     rename A into A1. rename B into B1. rename t into t1. rename u into u1. 
     rename A' into A2. rename B' into B2. rename t' into t2. rename u' into u2.
     destruct j. 2:econstructor.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H6; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H6; eauto).
 
 
     eapply H0 in H6 as h0. eapply tr_eq_ty_sgeth in h0; eauto using typing, decoration.
@@ -2177,7 +2078,7 @@ Proof.
 
   (* case Nat *)
   - intros.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H; eauto).
     eapply tr_eq_conclude.
     1-3:econstructor. 1:eapply dec_sort.
     3:eapply type_heq_refl.
@@ -2185,7 +2086,7 @@ Proof.
 
   (* case zero *)
   - intros.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H; eauto).
     eapply tr_eq_conclude.
     1-3:econstructor. 1:eapply dec_nat.
     3:eapply type_heq_refl.
@@ -2193,7 +2094,7 @@ Proof.
 
   (* case succ *)
   - intros. rename t' into u.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H0; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H0; eauto).
 
     eapply H in H0 as h'.
     eapply tr_eq_ty_geth in h'.
@@ -2212,12 +2113,12 @@ Proof.
   - intros.  destruct l. 2:econstructor.
     rename P into P1. rename P' into P2. rename p_succ into p_succ1. rename p_succ' into p_succ2.
     rename p_zero into p_zero1. rename p_zero' into p_zero2. rename t into t1. rename t' into t2.
-    assert (⊢ Γ') by (destruct H4; eauto).
+    assert (⊢p Γ') by (destruct H4; eauto).
 
     eapply tr_ctx_cons with (i := ty 0) in H4 as hcn.
     2:{ eapply tr_Nat. eassumption. }
 
-    assert (exists e, Γ' ⊢< prop > e : heq (Ax (ty 0)) (Sort (ty 0)) (Sort (ty 0)) Nat Nat).
+    assert (exists e, Γ' ⊢p< prop > e : heq (Ax (ty 0)) (Sort (ty 0)) (Sort (ty 0)) Nat Nat).
     1:{ eexists. eapply type_heq_refl; eauto using typing. }
     destruct H6.
         
@@ -2236,7 +2137,7 @@ Proof.
 
     destruct h0 as (P1' & P2' & ?). intuition eauto. destruct H12.
 
-    assert (exists e, Γ' ⊢< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) (P1'<[zero..]) (P2'<[zero..])).
+    assert (exists e, Γ' ⊢p< prop > e : heq (Ax (ty n)) (Sort (ty n)) (Sort (ty n)) (P1'<[zero..]) (P2'<[zero..])).
     { eexists. eapply subst_ty. 3:eapply H11. 1:eauto.
       Unshelve. 3:exact ((heq_refl (ty 0) Nat zero) .:(zero .: (zero .: var))).
       1:econstructor. 1:econstructor. 1:econstructor.
@@ -2348,7 +2249,7 @@ Proof.
 
   - intros. rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
     rename R into R1. rename R' into R2.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H3; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H3; eauto).
 
     specialize H0 with (1:=H3).
     eapply tr_eq_ty_sgeth in H0; eauto using decoration, typing.
@@ -2398,7 +2299,7 @@ Proof.
 
   - intros * _ _ _ ihA _ _ _ ihR _ _ _ ihP * _ ihp _ iha _ ihq1 _ ihq2 _ _ * hc.
     destruct l. 2:econstructor.
-    assert (⊢ Γ') as Γ'_Wf by (destruct hc;eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct hc;eauto).
     rename A into A1. rename A' into A2. rename R into R1. rename R' into R2.
     rename P into P1. rename P' into P2. rename p into p1. rename p' into p2.
     rename a into a1. rename a' into a2. rename q into q1. rename q' into q2.
@@ -2477,20 +2378,20 @@ Proof.
     assert ((1 .: S >> S) ⋅ P2 ⊏ P02') as P02_dec_P02'.
     { unfold P02'. eauto using rename_dec. }
 
-    eassert (_ ⊢< _ > B2' : _) as B2'Wt by eauto using BWt.
-    eassert (_ ⊢< _ > B1' : _) as B1'Wt by eauto using BWt.
+    eassert (_ ⊢p< _ > B2' : _) as B2'Wt by eauto using BWt.
+    eassert (_ ⊢p< _ > B1' : _) as B1'Wt by eauto using BWt.
 
     eapply type_inv in B1'Wt as temp. dependent destruction temp.
     eapply type_inv in B2'Wt as temp. dependent destruction temp.
 
-    eassert (_ ⊢< _ > R_1' : _) as R_1'Wt by eauto using R0Wt.
-    eassert (_ ⊢< _ > R_2' : _) as R_2'Wt by eauto using R0Wt.
-    eassert ((_ ,, (_, R_1')) ⊢< _ > P_1' : _) as P_1'Wt by eauto using P0Wt.
-    eassert ((_ ,, (_, R_2')) ⊢< _ > P_2' : _) as P_2'Wt by eauto using P0Wt.
-    assert (⊢ (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+    eassert (_ ⊢p< _ > R_1' : _) as R_1'Wt by eauto using R0Wt.
+    eassert (_ ⊢p< _ > R_2' : _) as R_2'Wt by eauto using R0Wt.
+    eassert ((_ ,, (_, R_1')) ⊢p< _ > P_1' : _) as P_1'Wt by eauto using P0Wt.
+    eassert ((_ ,, (_, R_2')) ⊢p< _ > P_2' : _) as P_2'Wt by eauto using P0Wt.
+    assert (⊢p (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
       (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))) as ΓASA.
-    { assert (∀ x y, x = y -> ⊢ x -> ⊢ y) by (intros; subst; eauto).
+    { assert (∀ x y, x = y -> ⊢p x -> ⊢p y) by (intros; subst; eauto).
         eapply H25. 2:eapply ctx_extend2_Wt.
         2,3:eapply type_ren. 4,8:eapply WellRen_S.
         2:eapply H1. 4:eapply H2.
@@ -2499,7 +2400,7 @@ Proof.
         all:eauto.
         rasimpl. reflexivity. }
 
-    assert (⊢ ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+    assert (⊢p ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
       (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
       (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1') ) as ΓAAR1.
@@ -2514,7 +2415,7 @@ Proof.
       1,3:eauto 8 using varty.
       all:rasimpl;reflexivity. }
       
-    assert (⊢ ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+    assert (⊢p ((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
       (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
       (prop, (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2')) as ΓAAR2.
@@ -2530,7 +2431,7 @@ Proof.
       all:rasimpl;reflexivity. }
 
 
-    assert (⊢ (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+    assert (⊢p (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
       (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
       (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1')),, (prop, S ⋅ (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2')) as ΓAAR1R2.
@@ -2547,7 +2448,7 @@ Proof.
       1,3:eauto 6 using varty.
       all:rasimpl; reflexivity. }
 
-    assert (⊢ (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
+    assert (⊢p (((((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (ty n, (S >> S) ⋅ S ⋅ A1')),, (ty n, S ⋅ (up_ren S >> S) ⋅ S ⋅ A2')),, 
       (prop, heq (ty n) ((S >> S) ⋅ (S >> S) ⋅ S ⋅ A1') ((S >> S) ⋅ (up_ren S >> S) ⋅ S ⋅ A2') (var 1) (var 0))),,
       (prop, (S >> S) ⋅ upRen_term_term (S >> S) ⋅ R_1')),, (prop, S ⋅ (up_ren S >> S) ⋅ upRen_term_term (up_ren S >> S) ⋅ R_2') ,,
@@ -2575,7 +2476,7 @@ Proof.
 
 
     assert (exists e', Γ',, (ty n, A1'),, (ty n, S ⋅ A2'),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0)) 
-      ⊢< prop > e' : heq (Ax (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) ((S >> S) ⋅ B1') (((up_ren S >> S) ⋅ B2')))
+      ⊢p< prop > e' : heq (Ax (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) (Sort (Ru (ty n) (ty n0))) ((S >> S) ⋅ B1') (((up_ren S >> S) ⋅ B2')))
       as (? & B1'_eq_B2').
     { eexists. 
       eapply type_heq_pi; fold ren_term.
@@ -2665,7 +2566,7 @@ Proof.
     assert (exists e, (((((Γ',, (ty n, A1')),, (ty n, S ⋅ A2')),, (prop, heq (ty n) ((S >> S) ⋅ A1') ((S >> S) ⋅ A2') (var 1) (var 0))),, 
       (Ru (ty n) (ty n0), (S >> S) ⋅ B1')),, (Ru (ty n) (ty n0), ((up_ren S >> S) >> S) ⋅ B2')),, 
       (prop, heq (Ru (ty n) (ty n0)) ((((S >> S) >> S) >> S) ⋅ B1') ((((up_ren S >> S) >> S) >> S) ⋅ B2') (var 1) (var 0)) 
-      ⊢< prop > e : heq (Ax (ty n0)) (Sort (ty n0)) (Sort (ty n0)) (((up_ren (S >> S) >> S) >> S) ⋅ P01') ((up_ren ((up_ren S >> S) >> S) >> S) ⋅ P02'))
+      ⊢p< prop > e : heq (Ax (ty n0)) (Sort (ty n0)) (Sort (ty n0)) (((up_ren (S >> S) >> S) >> S) ⋅ P01') ((up_ren ((up_ren S >> S) >> S) >> S) ⋅ P02'))
       as (? & P01'_eq_P02').
     { eexists.
       eapply type_ren.
@@ -2711,7 +2612,7 @@ Proof.
   - intros. 
     rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
     rename b into b1. rename b' into b2.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H2; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H2; eauto).
 
     eapply H in H2 as h. clear H.
     eapply H0 in H2 as h0. clear H0.
@@ -2734,7 +2635,7 @@ Proof.
   - intros. destruct i. 2:econstructor.
     rename A into A1. rename A' into A2. rename a into a1. rename a' into a2.
     rename B into B1. rename B' into B2. rename e into e1. rename e' into e2.
-    assert (⊢ Γ') as Γ'_Wf by (destruct H5; eauto).
+    assert (⊢p Γ') as Γ'_Wf by (destruct H5; eauto).
 
     eapply H in H5 as h'. clear H.
     eapply H0 in H5 as h0'. clear H0.
@@ -2896,13 +2797,13 @@ Proof.
     eapply tr_eq_ty_sgeth in iheq; eauto.
     destruct iheq.
 
-    eassert (Γ' ,, (i, A') ⊢< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ t') (var 0) : _).
+    eassert (Γ' ,, (i, A') ⊢p< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ t') (var 0) : _).
     { eapply type_app. 3:eapply type_ren. 3:eapply H4.
       5:rasimpl;reflexivity.
       1,2:eapply type_ren. 
       all: eauto using WellRen_S, WellRen_up, ctx_typing, validity_ty_ctx, type_ren.
       econstructor. 2:econstructor. eauto using ctx_typing, validity_ty_ctx. } 
-    eassert (Γ' ,, (i, A') ⊢< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ u') (var 0) : _).
+    eassert (Γ' ,, (i, A') ⊢p< _ > app _ _ (S ⋅ A') (up_ren S ⋅ B') (S ⋅ u') (var 0) : _).
     { eapply type_app. 3:eapply type_ren. 3:eapply H6.
       5:rasimpl;reflexivity.
       1,2:eapply type_ren. 
@@ -2971,7 +2872,7 @@ Proof.
       ihP as (? & ? & _),
       ihz as (? & ? & _),
       ihs as (? & ? & _). 
-    eassert (Γ' ⊢< l > rec l P' z' s' zero ≡ z' : _) by eauto using conversion.
+    eassert (Γ' ⊢p< l > rec l P' z' s' zero ≡ z' : _) by eauto using conversion.
     eapply tr_eq_conclude_by_refl. 4:eapply H5.
     all:eauto using decoration, substs_decs_two, substs_decs_one.
 
@@ -3014,10 +2915,10 @@ Proof.
       ihz as (? & ? & _),
       ihs as (? & ? & _),
       iht as (? & ? & _).
-    assert (Γ' ⊢< l > rec l P' z' s' (succ t') ≡ s' <[ rec l P' z' s' t' .: t'..] : P' <[ (succ t')..]) by eauto using conversion.
+    assert (Γ' ⊢p< l > rec l P' z' s' (succ t') ≡ s' <[ rec l P' z' s' t' .: t'..] : P' <[ (succ t')..]) by eauto using conversion.
     eapply tr_eq_conclude_by_refl. 4:eapply H7.
     all:eauto using decoration, substs_decs_two, substs_decs_one.
-  - intros ?? l * ? ihA ? ihR ? ihP. cbn zeta. intros ? ihp ? iha ? ihq ? hc.
+  - intros ?? l * ? ? ihA ? ihR ? ihP. cbn zeta. intros ? ihp ? iha ? ihq ? hc.
     specialize ihA with (1 := hc). eapply keep_sort in ihA.
     destruct ihA as [A' ihA].
     eapply tr_ctx_cons in hc as hca. 2: eassumption.
@@ -3083,7 +2984,7 @@ Proof.
     destruct ihq as [q' ihq].
     destruct ihA, ihR, ihP, iha, ihp, ihq.
     intuition eauto.
-    eassert (_ ⊢< _ > _ : obseq _ _ (accel (ty n) (ty l) A' R' P' p' a' q') _) by eauto using typing.
+    eassert (_ ⊢p< _ > _ : obseq _ _ (accel (ty n) (ty l) A' R' P' p' a' q') _) by eauto using typing.
     eapply validity_ty_ty in H10 as H'. eapply type_inv in H'. dependent destruction H'.
     eapply type_homo_to_hetero in H10; eauto.
     eapply tr_eq_conclude.
@@ -3132,15 +3033,15 @@ Proof.
 Qed.
 
 Lemma conservativity e P :
-  ∙ ⊢< ty 0 > P : Sort prop  ->
-  ∙ ⊢< prop >× e : P ->
-  exists e', ∙ ⊢< prop > e' : P.
+  ∙ ⊢p< ty 0 > P : Sort prop  ->
+  ∙ ⊢d< prop > e : P ->
+  exists e', ∙ ⊢p< prop > e' : P.
 Proof.
   intros Hty HP.
   eapply typing_conversion_trans in HP.
   2: repeat econstructor.
   destruct HP as [P' [e' [HP [Hincl Hincl']]]].
-  assert (HP' : ∙ ⊢< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
+  assert (HP' : ∙ ⊢p< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
   eapply dec_to_sim, sim_sym in Hincl'.
   eapply sim_heq_same_ctx in Hincl'; eauto.
   destruct Hincl'.
@@ -3149,37 +3050,7 @@ Proof.
 Qed.
 
 
-Scheme type_mut := Induction for typing Sort Prop
-with conv_mut := Induction for conversion Sort Prop
-with ctx_mut := Induction for ctx_typing Sort Prop.
-Combined Scheme type_conv_ctx_mut from type_mut, conv_mut, ctx_mut.
-
-
-Lemma included_varty Γ l x A :
-  Γ ∋< l > x : A -> Γ ∋< l >× x : A.
-Proof.
-  intros. induction H; eauto using Typing.varty.
-Qed.
-
-Lemma included :
-  (forall Γ l t A, 
-    Γ ⊢< l > t : A -> Typing.typing Γ l t A
-  ) /\ 
-  (forall Γ l t u A, 
-    Γ ⊢< l > t ≡ u : A -> Typing.conversion Γ l t u A
-  ) /\
-  (forall Γ, ⊢ Γ -> Typing.ctx_typing Γ).
-Proof.
-  eapply type_conv_ctx_mut; eauto 6 using Typing.typing, Typing.conversion, Typing.ctx_typing, included_varty, BasicMetaTheory.validity_conv_left, BasicMetaTheory.validity_conv_right, BasicMetaTheory.validity_ty_ctx.
-  - intros. eapply tr_assm_sig in e. econstructor; eauto.
-  - intros. eapply tr_assm_sig in e. econstructor; eauto. 
-  - intros. econstructor; eauto using BasicMetaTheory.validity_conv_left.
-    eapply BasicMetaTheory.validity_conv_right in H1. 
-    eapply Typing.type_conv; eauto.
-    econstructor; eauto. econstructor. eauto using BasicMetaTheory.validity_ty_ctx.
-Qed.
-
-Lemma type_mk_Nat k : ∙ ⊢< ty 0 > mk_Nat k : Nat.
+Lemma type_mk_Nat k : ∙ ⊢p< ty 0 > mk_Nat k : Nat.
 Proof.
   induction k; simpl.
   - eapply type_zero; econstructor.
@@ -3188,23 +3059,21 @@ Qed.
 
 
 Theorem prop_canonicity n : 
-    ∙ ⊢< ty 0 > n : Nat ->
+    ∙ ⊢p< ty 0 > n : Nat ->
     exists k e, eval (erasure n) k /\ 
-    ∙ ⊢< prop > e : obseq (ty 0) Nat n (mk_Nat k) /\
+    ∙ ⊢p< prop > e : obseq (ty 0) Nat n (mk_Nat k) /\
     (forall k', eval (erasure n) k' -> k = k').
 Proof.
-  intros. eapply included in H as H'.
+  intros. eapply p_in_d in H as H'.
   
   eapply computational_canonicity in H' as (k & ? & H' & ?).
   exists k.  
-  eassert (∙ ⊢< _ >× _ : obseq (ty 0) Nat n (mk_Nat k)) as Hcan.
-  1:eapply Typing.type_conv.
-  1:eapply Typing.type_obsrefl.
+  eassert (∙ ⊢d< _ > _ : obseq (ty 0) Nat n (mk_Nat k)) as Hcan.
+  1:eapply type_conv.
+  1:eapply type_obsrefl.
   3:econstructor.
   5:eauto.
-  all:eauto using Typing.typing, BasicMetaTheory.validity_conv_left, BasicMetaTheory.conv_refl, BasicMetaTheory.validity_ty_ctx.
+  all:eauto using typing, validity_conv_left, conv_refl, validity_ty_ctx.
   eapply conservativity in Hcan; eauto using typing, type_mk_Nat, ctx_typing. destruct Hcan.
   eexists. split. 2:split. all:eassumption.
 Qed.
-
-Print Assumptions conservativity.
