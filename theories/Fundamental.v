@@ -129,6 +129,14 @@ Proof.
     eapply conv_refl in H. eapply fundamental_prop in H. eauto.
 Qed.
 
+
+Theorem fundamental_conv Γ l t u A : Γ ⊢d< l > t ≡ u : A -> Γ ⊨< l > t ≡ u : A.
+Proof.
+    intros. destruct l.
+    eapply (proj2 fundamental_ty) in H; eauto using conv_refl.
+    eapply fundamental_prop in H. eauto.
+Qed.
+
 Fixpoint mk_Nat k :=
     match k with
     | O => zero
