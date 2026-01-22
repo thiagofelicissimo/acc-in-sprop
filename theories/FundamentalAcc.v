@@ -13,9 +13,10 @@ From Equations Require Import Equations.
 Import CombineNotations.
 
 
-Definition meta R t u := ∃ p, ∙ ⊢d< prop > p : R <[u .: t ..].
+Definition meta l A R (t u : { x : term | ∙ ⊢d< l > x : A}) 
+  := ∃ p, ∙ ⊢d< prop > p : R <[(proj1_sig u) .: (proj1_sig t) ..].
 
-Axiom ob_to_meta : forall t n A R a, ∙ ⊢d< prop > t : acc (ty n) A R a -> Acc (meta R) a.
+Axiom ob_to_meta : forall n A R a e, ∙ ⊢d< prop > e : acc (ty n) A R (proj1_sig a) -> Acc (meta (ty n) A R) a.
 
 Lemma wk1_type Γ i l t t' B B' A :
     Γ ⊢d< l > t : B ->
@@ -241,10 +242,17 @@ Lemma prefundamental_accel A3 R3 P3 n k A1 A2 ϵA R1 R2 a1 a2 q1 q2 P1 P2 ϵP p1
     ϵP a1 a2 (accel (ty n) (ty k) A1 R1 P1 p1 a1 q1) (accel (ty n) (ty k) A2 R2 P2 p2 a2 q2).
 Proof.
     intros.
-    assert (Acc (meta R1) a1) by eauto using validity_conv_left, ob_to_meta.
+    eassert (exists X, Acc (meta _ _ R1) X /\ proj1_sig X = a1).
+    { assert (∙ ⊢d< ty n > a1 : A1) as a1_Wt by eauto using validity_conv_left.
+      exists (exist _ a1 a1_Wt).
+      split; eauto using validity_conv_left, ob_to_meta. }
+    destruct H11 as (X & H11 & eq). subst.
+    
+    (* eassert (Acc (meta _ _ R1) (exist _ a1 a1_Wt)) by eauto using validity_conv_left, ob_to_meta. *)
+    (* rename a1 into a1_. *)
 
     generalize q1 q2 a2 ϵa H9 H10. clear q1 q2 a2 ϵa H9 H10.
-    induction H11. rename x into a1. intros.
+    induction H11. destruct x as (a1 & a1Wt). intros.
 
     assert (∙ ⊢d< ty k> accel (ty n) (ty k) A2 R2 P2 p2 a2 q2 : P1 <[ a1..]) as temp.
     { eauto using conv_accel', validity_conv_right. }
@@ -258,15 +266,16 @@ Proof.
       eapply red_accel'; eauto 7 using validity_conv_right, conv_ty_in_ctx_ty, conv_sym, type_conv, conv_acc, subst_conv, conv_sym, substs_one.
       eapply subst_conv; eauto using ctx_typing, conv_sym, substs_one. }
     - unfold ϵB. all:clear ϵB. intros; subst.
+      eapply LR_escape_tm in ϵb as temp; eauto. eapply validity_conv_left in temp.
       eapply LR_irred_tm; eauto.
       1,2:shelve.
-      unshelve eapply H10; clear H10.
+      unshelve eapply (H10 (exist _ b1 temp)); clear H10.
       eapply (accinv (ty n) A1 R1 a1 q1 b1 r1).
       eapply (accinv (ty n) A2 R2 a2 q2 b2 r2).
-      unfold meta; eexists; eauto using validity_conv_right.
+      unfold meta; eexists; eauto 7 using validity_conv_right,  validity_conv_left, LR_escape_tm.
       eauto.
       eauto using LR_escape_tm.
-      { eapply conv_irrel.
+      {  eapply conv_irrel.
         - eauto 8 using type_accinv', LR_escape_tm, validity_conv_left.
         - eapply type_conv. eapply type_accinv'; eauto 8 using type_conv, conv_acc, conv_sym, validity_conv_right, LR_escape_tm, substs_one_4, subst_conv, ctx_typing.
         eauto using conv_acc, conv_sym, conv_ty_in_ctx_conv, conv_ty_in_ctx_conv2, LR_escape_tm, ctx_typing, validity_ty_ctx, validity_conv_left. }
