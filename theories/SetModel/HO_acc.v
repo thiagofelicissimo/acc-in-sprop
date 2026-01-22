@@ -21,12 +21,6 @@ Definition ctxExt2 (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) : ZFSet :=
 Definition accTy_HO (n : nat) (A R a : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => subsingl (acc (𝕌el n (A γ)) (fun x y => ∅ ∈ R ⟨ ⟨ γ ; y ⟩ ; x ⟩) (a γ)).
 
-Lemma accTy_HO_cong {n : nat} {Γ : ZFSet} {A1 A2 R1 R2 a1 a2 : ZFSet -> ZFSet}
-  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HRe : ∀ γaa ∈ ctxExt2 n Γ A1, R1 γaa ≡ R2 γaa) (Hae : ∀ γ ∈ Γ, a1 γ ≡ a2 γ) :
-  ∀ γ ∈ Γ, accTy_HO n A1 R1 a1 γ ≡ accTy_HO n A2 R2 a2 γ.
-Proof.
-Admitted.
-
 Lemma accTy_HO_typing {n : nat} {Γ : ZFSet} {A R a : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HR : ∀ γaa ∈ ctxExt2 n Γ A, R γaa ∈ Ω)
   (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el n (A γ)) :
@@ -34,8 +28,6 @@ Lemma accTy_HO_typing {n : nat} {Γ : ZFSet} {A R a : ZFSet -> ZFSet}
 Proof.
   intros γ Hγ. unfold accTy_HO. apply subsingl_typing.
 Qed.
-
-
 
 (* Eliminator of accessibility *)
 
@@ -151,19 +143,7 @@ Proof.
   - intros c Hc. apply 𝕌el_typing. apply HP. now apply ctxExt_typing.
 Qed.
 
-(* Lemma adjust_HO_typing {n m : nat} {Γ γ f a : ZFSet} {A R P p : ZFSet -> ZFSet}  *)
-(*   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (A' := fun γa => A (wk n Γ A γa)) *)
-(*   (HR : ∀ γaa ∈ ext n (ext n Γ A) A', R γaa ∈ Ω) (HP : ∀ γa ∈ ext n Γ A, P γa ∈ 𝕌 m) *)
-(*   (R' := fun γaa => R γaa) *)
-(*   (P' := fun γaah => P ⟨ wk n Γ A (wk n (ext n Γ A) A' (wk 0 (ext n (ext n Γ A) A') (boxTy_HO R) γaah)) *)
-(*                        ; var0 n (ext n Γ A) A' (wk 0 (ext n (ext n Γ A) A') (boxTy_HO R) γaah) ⟩) *)
-(*   (B := fun γa => piTy_HO n m A' (piTy_HO 0 m (boxTy_HO R') P') γa) *)
-(*   (Hp : ∀ γax ∈ ext (max n m) (ext n Γ A) B, p γax ∈ 𝕌el m (P (wk (max n m) (ext n Γ A) B γax))) *)
-(*   (Ha : a ∈ 𝕌el n (A γ)) (Ha2 : ∀ b ∈ 𝕌el n (A γ), ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩ -> acc (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) b)  *)
-(*   (Hγ : γ ∈ Γ) (Hf : f ∈ {b ϵ 𝕌el n (A γ) ∣ ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩} ⇒ 𝕍 m) *)
-(*   (Hf2 : ∀ b ∈ 𝕌el n (A γ), ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩ -> setAppArr {b ϵ 𝕌el n (A γ) ∣ ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩} (𝕍 m) f b ∈ 𝕌el m (P ⟨ γ; b ⟩)) : *)
-(*   p ⟨ ⟨ γ; a ⟩; adjust n m (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) a f ⟩ ∈ 𝕌el m (P ⟨ γ; a ⟩). *)
-
+(* Typing rule for the eliminator of accessibility *)
 Lemma accelimTm_HO_typing {n m : nat} {Γ : ZFSet} {A R P p a : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (A' := fun γa => A (wk n Γ A γa))
   (HR : ∀ γaa ∈ ext n (ext n Γ A) A', R γaa ∈ Ω) (HP : ∀ γa ∈ ext n Γ A, P γa ∈ 𝕌 m)
@@ -209,18 +189,8 @@ Proof.
     apply (ctxExt_typing HB). now apply ctxExt_typing. exact Hf3.
 Qed.
 
-Definition double_wk1 (Γ : ZFSet) (n : nat) (A : ZFSet -> ZFSet) (m : nat) (B : ZFSet -> ZFSet)
-  (l : nat) (C : ZFSet -> ZFSet) (γabc : ZFSet) : ZFSet.
-Admitted.
-
-Definition double_wk2 (Γ : ZFSet) (n : nat) (A : ZFSet -> ZFSet) (m : nat) (B : ZFSet -> ZFSet)
-  (l : nat) (C : ZFSet -> ZFSet) (k : nat) (D : ZFSet -> ZFSet) (γabcd : ZFSet) : ZFSet.
-Admitted.
-
-Definition double_wk3 (Γ : ZFSet) (n : nat) (A : ZFSet -> ZFSet) (m : nat) (B : ZFSet -> ZFSet)
-  (l : nat) (C : ZFSet -> ZFSet) (k : nat) (D : ZFSet -> ZFSet) (j : nat) (E : ZFSet -> ZFSet) (γabcde : ZFSet) : ZFSet.
-Admitted.
-
+(* Computation rule for accessibility. Difficult to read because of all the massaging, but the
+   point is that (accelimTm_HO n m A R P p a γ) unfolds to p applied to the recursive call *)
 Lemma accelimTm_HO_β {n m : nat} {Γ : ZFSet} {A R P p a : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (A' := fun γa => A (wk n Γ A γa))
   (HR : ∀ γaa ∈ ext n (ext n Γ A) A', R γaa ∈ Ω) (HP : ∀ γa ∈ ext n Γ A, P γa ∈ 𝕌 m)
@@ -228,19 +198,13 @@ Lemma accelimTm_HO_β {n m : nat} {Γ : ZFSet} {A R P p a : ZFSet -> ZFSet}
                        ; var0 n (ext n Γ A) A' (wk 0 (ext n (ext n Γ A) A') (boxTy_HO R) γaah) ⟩)
   (B := fun γa => piTy_HO n m A' (piTy_HO 0 m (boxTy_HO R) P') γa)
   (Hp : ∀ γax ∈ ext (max n m) (ext n Γ A) B, p γax ∈ 𝕌el m (P (wk (max n m) (ext n Γ A) B γax)))
-  (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el n (A γ)) (Hq : ∀ γ ∈ Γ, ∅ ∈ accTy_HO n A R a γ)
-  (t2 := fun γa (* ext n Γ A *) => R ⟨ γa ; a (wk n Γ A γa) ⟩)
-  (Awk := fun (* ext 0 (ext n Γ A) t2 *) γah => A' (wk 0 (ext n Γ A) t2 γah))
-  (Awk2 := fun (* ext n (ext 0 (ext n Γ A) t2) Awk *) γaha => A (wk n (ext 0 (ext n Γ A) t2) Awk γaha))
-  (Rwk := fun (* ext n (ext n (ext 0 (ext n Γ A) t2) Awk) Awk2 *) γahaa => R (double_wk2 Γ n A 0 t2 n Awk n Awk2 γahaa))
-  (Pwk := fun (* ext n (ext 0 (ext n Γ A) t2) Awk *) γaha => P (double_wk1 Γ n A 0 t2 n Awk γaha))
-  (P'wk := fun (* ext 0 (ext n (ext n (ext 0 (ext n Γ A) t2) Awk) Awk2) (boxTy_HO Rwk) *) γahaah => double_wk3 Γ n A 0 t2 n Awk n Awk2 0 (boxTy_HO Rwk) γahaah)
-  (Bwk := fun (* ext n (ext 0 (ext n Γ A) t2) Awk *) γaha => piTy_HO n m Awk2 (piTy_HO 0 m (boxTy_HO Rwk) P') γaha)
-  (pwk := fun (* ext (max n m) (ext n (ext 0 (ext n Γ A) t2) Awk) Bwk *) γahax => p (double_wk2 Γ n A 0 t2 n Awk (max n m) Bwk γahax))
-  (t1 := fun γah (* ext 0 (ext n Γ A) t2 *) => accelimTm_HO n m Awk Rwk Pwk pwk (fun γah => var0 n Γ A (wk 0 (ext n Γ A) t2 γah)) γah)
-  (t3 := fun γa (* ext n Γ A *) => lamTm_HO 0 m t2 t1 γa)
-  (t5 := fun γ => lamTm_HO n m A t3 γ) :
-  ∀ γ ∈ Γ, accelimTm_HO n m A R P p a γ ≡ p ⟨ ⟨ γ ; a γ ⟩ ; t5 γ ⟩.
+  (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el n (A γ)) (Hq : ∀ γ ∈ Γ, ∅ ∈ accTy_HO n A R a γ) :
+  ∀ γ ∈ Γ, accelimTm_HO n m A R P p a γ ≡ p ⟨ ⟨ γ ; a γ ⟩ ; adjust n m (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) (a γ)
+                                                              (relToGraph {b ϵ 𝕌el n (A γ) ∣ ∅ ∈ R ⟨ ⟨ γ; a γ ⟩; b ⟩} (𝕍 m)
+                                                                 (HO_rel
+                                                                    (fun b : ZFSet =>
+                                                                       accrec m (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) (fun x : ZFSet => 𝕌el m (P ⟨ γ; x ⟩))
+                                                                         (fun x f : ZFSet => p ⟨ ⟨ γ; x ⟩; adjust n m (𝕌el n (A γ)) (fun x0 y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x0 ⟩) x f ⟩) b))) ⟩.
 Proof.
   (* Typing auxiliary definitions *)
   assert (Nat.max 0 m ≡ m) as Hmax.
@@ -258,15 +222,15 @@ Proof.
     apply piTy_HO_typing. exact HR'. exact HP'. }
   assert (∀ γa ∈ ext n Γ A, B γa ∈ 𝕌 (max n m)) as HB.
   { unfold B. now apply piTy_HO_typing. }
-  (* rough... *)
+  (* Proving the goal *)
   intros γ Hγ.
   assert (acc (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) (a γ)) as Hq'.
   { specialize (Hq γ Hγ). cbn in Hq. apply subsingl_true_if in Hq. exact Hq. }
   cbn. unfold accelimTm_HO. refine (trans _ _).
   - refine (accrec_β (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) (P := fun x => 𝕌el m (P ⟨ γ; x ⟩)) _ _ (Ha γ Hγ) Hq').
-    + clear a Ha Hq Hq' t1 t2 t3 t5 Awk Awk2 Rwk Pwk P'wk Bwk pwk.
+    + clear a Ha Hq Hq'.
       intros a Ha. apply 𝕌el_typing. apply HP. now apply ctxExt_typing. 
-    + clear a Ha Hq Hq' t1 t2 t3 t5 Awk Awk2 Rwk Pwk P'wk Bwk pwk.
+    + clear a Ha Hq Hq'.
       intros a Ha f Hf Ha2 Hf2. assert (⟨ γ ; a ⟩ ∈ ext n Γ A) as Hγa.
       { now apply ctxExt_typing. }
       assert (adjust n m (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) a f ∈ 𝕌el (Nat.max n m) (B ⟨ γ; a ⟩)) as Hf3.
@@ -276,33 +240,6 @@ Proof.
       { apply (ctxExtβ1 HB). now apply ctxExt_typing. apply Hf3. }
       refine (transpS (fun X => _ ∈ 𝕌el m (P X)) H _). apply Hp.
       apply (ctxExt_typing HB). now apply ctxExt_typing. exact Hf3.
-  - refine (fequal (fun X => p ⟨ ⟨ γ ; a γ ⟩ ; X ⟩) _). unfold t5. 
-    (* les deux sont dans 𝕌el m (B ⟨ γ ; a γ ⟩), qui est un pi-type, donc on peut utiliser funext *)
-Admitted.
-
-
-
-Lemma accrec_typing {n : nat} (A : ZFSet) (R : ZFSet -> ZFSet -> SProp)
-  {P : ZFSet -> ZFSet} {rec : ZFSet -> ZFSet -> ZFSet} (HP : ∀ a ∈ A, P a ∈ 𝕍 n)
-  (Hrec : ∀ a ∈ A, ∀ f ∈ { b ϵ A ∣ R b a } ⇒ 𝕍 n,
-      (∀ b ∈ A, R b a -> acc A R b) -> (∀ b ∈ A, R b a -> setAppArr { b ϵ A ∣ R b a } (𝕍 n) f b ∈ P b) -> rec a f ∈ P a)
-  {a : ZFSet} (Ha : a ∈ A) (HRa : acc A R a) :
-  accrec n A R P rec a ∈ P a.
-
-Lemma accrec_β {n : nat} (A : ZFSet) (R : ZFSet -> ZFSet -> SProp)
-  {P : ZFSet -> ZFSet} {rec : ZFSet -> ZFSet -> ZFSet} (HP : ∀ a ∈ A, P a ∈ 𝕍 n)
-  (Hrec : ∀ a ∈ A, ∀ f ∈ { b ϵ A ∣ R b a } ⇒ 𝕍 n,
-      (∀ b ∈ A, R b a -> acc A R b) -> (∀ b ∈ A, R b a -> setAppArr { b ϵ A ∣ R b a } (𝕍 n) f b ∈ P b) -> rec a f ∈ P a)
-  {a : ZFSet} (Ha : a ∈ A) (HRa : acc A R a) :
-  accrec n A R P rec a ≡ rec a (relToGraph { b ϵ A ∣ R b a } (𝕍 n) (HO_rel (fun b => accrec n A R P rec b))).
-
-
-
-(* Clipped version *)
-
-Definition accTy_cl (Γ : ZFSet) (n : nat) (A R a : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
-  clip Γ (accTy_HO n A R a).
-
-Definition accelimTm_cl (Γ : ZFSet) (n m : nat) (A R P p a : ZFSet -> ZFSet) :=
-  clip Γ (accelimTm_HO n m A R P p a).
+  - reflexivity.
+Qed.
 

@@ -8,13 +8,6 @@ Require Import HO HO_prop HO_univ HO_forall HO_nat HO_pi HO_box.
 Definition eqTy_HO (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => subsingl (t γ ≡ u γ).
 
-Lemma eqTy_HO_cong {Γ : ZFSet} {A1 A2 a1 a2 b1 b2 : ZFSet -> ZFSet} 
-  (Hae : ∀ γ ∈ Γ, a1 γ ≡ a2 γ) (Hbe : ∀ γ ∈ Γ, b1 γ ≡ b2 γ) :
-  ∀ γ ∈ Γ, eqTy_HO A1 a1 b1 γ ≡ eqTy_HO A2 a2 b2 γ.
-Proof.
-  intros γ Hγ. unfold eqTy_HO. destruct (Hae γ Hγ). destruct (Hbe γ Hγ). reflexivity.
-Qed.
-
 Lemma eqTy_HO_typing {n : nat} {Γ : ZFSet} {A t u : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Ht : ∀ γ ∈ Γ, t γ ∈ 𝕌el n (A γ)) (Hu : ∀ γ ∈ Γ, u γ ∈ 𝕌el n (A γ)) :
   ∀ γ ∈ Γ, eqTy_HO A t u γ ∈ Ω.
@@ -209,9 +202,4 @@ Proof.
     - refine (hd_piTy' _ _ HA HB H). apply Nat.le_max_l. apply Nat.le_max_r. }
   now apply (zero_ne_suc ∅).
 Qed.
-
-(* Clipped versions *)
-
-Definition eqTy_cl (Γ : ZFSet) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
-  clip Γ (eqTy_HO A t u).
 

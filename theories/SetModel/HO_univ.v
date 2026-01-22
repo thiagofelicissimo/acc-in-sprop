@@ -20,16 +20,3 @@ Proof.
   + apply setMkPair_typing. apply three_typing. apply empty_in_univ.
 Qed.
 
-(* Clipped version *)
-
-Definition univTy_cl (n : nat) (Γ : ZFSet) : ZFSet -> ZFSet := clip Γ (univTy_HO n).
-
-Lemma univTy_cl_typing {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, univTy_cl n Γ γ ∈ 𝕌 (S n).
-Proof.
-  apply clipped_typing_𝕌. now apply univTy_HO_typing.
-Qed.
-
-Lemma el_univTy_cl {n : nat} {Γ γ : ZFSet} (Hγ : γ ∈ Γ) : 𝕌el (S n) (univTy_cl n Γ γ) ≡ 𝕌 n.
-Proof.
-  unfold univTy_cl. destruct (sym (clip_inside Γ (univTy_HO n) γ Hγ)). now apply el_univTy.
-Qed.

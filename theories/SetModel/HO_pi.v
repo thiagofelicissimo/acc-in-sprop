@@ -9,17 +9,6 @@ Definition piTy_HO (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFS
   fun γ => ⟨ setPi (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩))
            ; ⟨ ZFone ; typeTelescope2 nA nB A B γ ⟩ ⟩.
 
-Lemma piTy_HO_cong {nA nB : nat} {Γ : ZFSet} {A1 A2 B1 B2 : ZFSet -> ZFSet} 
-  (HAe : ∀ γ ∈ Γ, A1 γ ≡ A2 γ) (HBe : ∀ γa ∈ ctxExt nA Γ A1, B1 γa ≡ B2 γa) :
-  ∀ γ ∈ Γ, piTy_HO nA nB A1 B1 γ ≡ piTy_HO nA nB A2 B2 γ.
-Proof.
-  intros γ Hγ. unfold piTy_HO. refine (fequal2 (fun X Y => ⟨ X ; ⟨ ZFone ; Y ⟩ ⟩) _ _).
-  - destruct (HAe γ Hγ). apply setPi_cong. intros a Ha. refine (fequal (𝕌el nB) _).
-    apply HBe. apply setMkSigma_typing ; try assumption. clear γ Hγ a Ha. unfold 𝕌el.
-    intros γ Hγ. apply 𝕌el_typing'.
-  - now apply (typeTelescope2_cong (Γ := Γ)).
-Qed.
-
 Lemma piTy_HO_typing {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet}
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) :
   ∀ γ ∈ Γ, piTy_HO nA nB A B γ ∈ 𝕌 (max nA nB).
@@ -343,17 +332,3 @@ Proof.
                 ((ctxExtβ1 HA Hγ Ha)) ((ctxExtβ2 HA Hγ Ha))).
 Qed.
 
-(* Clipped versions (requires excluded middle) *)
-
-Definition piTy_cl (Γ : ZFSet) (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
-  clip Γ (piTy_HO nA nB A B).
-
-Definition lamTm_cl (Γ : ZFSet) (nA nB : nat) (A t : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
-  clip Γ (lamTm_HO nA nB A t).
-
-Definition appTm_cl (Γ : ZFSet) (nA nB : nat) (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
-  clip Γ (appTm_HO nA nB A t u).
-
-(* Lemma piTy_cl_typing {nA nB : nat} {Γ : ZFSet} {A : ZFSet -> ZFSet} {B : ZFSet -> ZFSet} *)
-(*   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 nA) (HB : ∀ γa ∈ ctxExt nA Γ A, B γa ∈ 𝕌 nB) : *)
-(*   ∀ γ ∈ Γ, piTy_cl Γ nA nB A B γ ∈ 𝕌 (max nA nB). *)
