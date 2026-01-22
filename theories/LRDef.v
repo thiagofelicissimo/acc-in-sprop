@@ -35,7 +35,7 @@ Definition ϵPi i j S1 S2 (ϵS : TmRel) T1 T2 (ϵT : term -> term -> TmRel) : Tm
         ∙ ⊢d< Ru i j > f1 ≡ f2 : Pi i j S1 T1 /\
         forall s1 s2 (ϵs : ϵS s1 s2), ϵT s1 s2 (app i j S1 T1 f1 s1) (app i j S2 T2 f2 s2).
 
-
+(* we use a module to hide the implementation details *)
 Module Type LogRelM.
     Axiom LR : level -> LogRel.
 
@@ -396,3 +396,33 @@ Module LogRelImpl : LogRelM.
 End LogRelImpl.
 
 Export LogRelImpl.
+
+
+
+Reserved Notation "⊩s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).
+
+
+(* reducibility for substitutions *)
+Inductive LR_subst : ctx -> (nat -> term) -> (nat -> term) -> Prop :=
+| LR_sempty (σ τ : nat -> term) : ⊩s σ ≡ τ : ∙
+| LR_scons (σ τ : nat -> term) (Δ : ctx) l A R :
+  ⊩s (↑ >> σ) ≡ (↑ >> τ) : Δ ->
+  ⊩< l > A <[ (↑ >> σ) ] ≡ A <[ (↑ >> τ)] ↓ R ->
+  R (σ var_zero) (τ var_zero) ->
+  ⊩s σ ≡ τ : Δ ,, (l , A)
+where "⊩s σ ≡ τ : Δ" := (LR_subst Δ σ τ).
+
+
+
+
+(* validity *)
+Definition LRv Γ l t u A :=
+    forall σ1 σ2,
+        ⊩s σ1 ≡ σ2 : Γ ->
+        exists R,
+            ⊩< l > A <[ σ1 ] ≡ A <[ σ2 ] ↓ R
+            /\ R (t <[ σ1 ]) (u <[ σ2 ]).
+Notation "Γ ⊨< l > t ≡ u : A" := (LRv Γ l t u A) (at level 50, l, t, u, A at next level).
+
+
+

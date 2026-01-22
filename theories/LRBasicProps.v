@@ -646,19 +646,6 @@ Qed.
 
 
 
-Reserved Notation "⊩s σ ≡ τ : Δ" (at level 50, σ, τ, Δ at next level).
-
-
-(* reducibility for substitutions *)
-Inductive LR_subst : ctx -> (nat -> term) -> (nat -> term) -> Prop :=
-| LR_sempty (σ τ : nat -> term) : ⊩s σ ≡ τ : ∙
-| LR_scons (σ τ : nat -> term) (Δ : ctx) l A R :
-  ⊩s (↑ >> σ) ≡ (↑ >> τ) : Δ ->
-  ⊩< l > A <[ (↑ >> σ) ] ≡ A <[ (↑ >> τ)] ↓ R ->
-  R (σ var_zero) (τ var_zero) ->
-  ⊩s σ ≡ τ : Δ ,, (l , A)
-where "⊩s σ ≡ τ : Δ" := (LR_subst Δ σ τ).
-
 
 (* escape lemma for subst reducibility *)
 Lemma LR_subst_escape σ τ Δ : ⊩s σ ≡ τ : Δ -> ∙ ⊢ds σ ≡ τ : Δ.
@@ -689,15 +676,6 @@ Proof.
     eauto using LR_subst.
 Qed.
 
-
-(* validity *)
-Definition LRv Γ l t u A :=
-    forall σ1 σ2,
-        ⊩s σ1 ≡ σ2 : Γ ->
-        exists R,
-            ⊩< l > A <[ σ1 ] ≡ A <[ σ2 ] ↓ R
-            /\ R (t <[ σ1 ]) (u <[ σ2 ]).
-Notation "Γ ⊨< l > t ≡ u : A" := (LRv Γ l t u A) (at level 50, l, t, u, A at next level).
 
 (* We prove that validity is a PER *)
 
