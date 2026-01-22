@@ -628,6 +628,7 @@ Qed.
 
 (* Translation of conversion *)
 
+(* not exactly the same statement as the one written in the paper, however they are logically equivalent *)
 Inductive eqtrans Γ' t u A : level -> Prop :=
   | eqtrans_prop : eqtrans Γ' t u A prop
   | eqtrans_ty i t' u' A' e :
