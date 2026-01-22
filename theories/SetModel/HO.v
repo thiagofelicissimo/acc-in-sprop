@@ -129,6 +129,13 @@ Definition ctx_wk (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) (γa : ZFSet) := s
 
 Definition ctx_var0 (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) (γa : ZFSet) := setSndSigma n Γ (fun γ => 𝕌el n (A γ)) γa.
 
+Lemma ctxExt_typing {n : nat} {Γ γ a : ZFSet} {A : ZFSet -> ZFSet} 
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Hγ : γ ∈ Γ) (Ha : a ∈ 𝕌el n (A γ)) : ⟨ γ ; a ⟩ ∈ ctxExt n Γ A.
+Proof.
+  apply setMkSigma_typing ; try assumption.
+  clear γ a Hγ Ha. intros γ Hγ. apply 𝕌el_typing. now apply HA.
+Qed.
+
 Lemma ctx_wk_typing {n : nat} {Γ γa : ZFSet} {A : ZFSet -> ZFSet} 
   (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Hγa : γa ∈ ctxExt n Γ A) :
   ctx_wk n Γ A γa ∈ Γ.

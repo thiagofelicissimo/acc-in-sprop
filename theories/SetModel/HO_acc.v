@@ -1,20 +1,11 @@
-Require Import library Arith.
+From Stdlib Require Import Arith.
+Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat ZF_acc.
-Require Import HO HO_pi HO_box.
+Require Import HO HO_pi HO_forall HO_box.
 
 Definition ext := ctxExt.
 Definition var0 := ctx_var0.
 Definition wk := ctx_wk.
-
-Lemma ctxExt_typing {n : nat} {Γ γ a : ZFSet} {A : ZFSet -> ZFSet} 
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (Hγ : γ ∈ Γ) (Ha : a ∈ 𝕌el n (A γ)) : ⟨ γ ; a ⟩ ∈ ctxExt n Γ A.
-Proof.
-  apply setMkSigma_typing ; try assumption.
-  clear γ a Hγ Ha. intros γ Hγ. apply 𝕌el_typing. now apply HA.
-Qed.
-
-Definition ctxExt2 (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) : ZFSet :=
-  ctxExt n (ctxExt n Γ A) (fun γa => A (wk n Γ A γa)).
 
 (* Accessibility predicate *)
 
@@ -22,14 +13,61 @@ Definition accTy_HO (n : nat) (A R a : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => subsingl (acc (𝕌el n (A γ)) (fun x y => ∅ ∈ R ⟨ ⟨ γ ; y ⟩ ; x ⟩) (a γ)).
 
 Lemma accTy_HO_typing {n : nat} {Γ : ZFSet} {A R a : ZFSet -> ZFSet}
-  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HR : ∀ γaa ∈ ctxExt2 n Γ A, R γaa ∈ Ω)
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HR : ∀ γaa ∈ ext n (ext n Γ A) (fun γa => A (wk n Γ A γa)), R γaa ∈ Ω)
   (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el n (A γ)) :
   ∀ γ ∈ Γ, accTy_HO n A R a γ ∈ Ω.
 Proof.
   intros γ Hγ. unfold accTy_HO. apply subsingl_typing.
 Qed.
 
-(* Eliminator of accessibility *)
+(* Introduction rule for accessibility *)
+
+Definition accinTm_HO (n : nat) (A R a : ZFSet -> ZFSet) : ZFSet -> ZFSet := fun _ => ∅.
+
+Lemma accinTm_HO_typing {n : nat} {Γ : ZFSet} {A R a : ZFSet -> ZFSet}
+  (A' := fun γa => A (wk n Γ A γa))
+  (A'' := fun γaa => A' (wk n (ext n Γ A) A' γaa))
+  (HA : ∀ γ ∈ Γ, A γ ∈ 𝕌 n) (HR : ∀ γaa ∈ ext n (ext n Γ A) A', R γaa ∈ Ω) (Ha : ∀ γ ∈ Γ, a γ ∈ 𝕌el n (A γ))
+  (Hq : ∀ γ ∈ Γ, ∅ ∈ forallTy_HO n A (implTy_HO (fun γa => R ⟨ ⟨ γ ; a (wk n Γ A γa) ⟩ ; var0 n Γ A γa ⟩)
+                                                (accTy_HO n A' (fun γaaa => R ⟨ ⟨ wk n Γ A (wk n (ext n Γ A) A' (wk n (ext n (ext n Γ A) A') A'' γaaa)) ; var0 n (ext n Γ A) A' (wk n (ext n (ext n Γ A) A') A'' γaaa) ⟩ ; var0 n (ext n (ext n Γ A) A') A'' γaaa ⟩) (var0 n Γ A))) γ) :
+  ∀ γ ∈ Γ, ∅ ∈ accTy_HO n A R a γ.
+Proof.
+  assert (∀ γa ∈ ext n Γ A, A' γa ∈ 𝕌 n) as HA'.
+  { intros γa Hγa. apply HA. now apply ctx_wk_typing. }
+  assert (∀ γaa ∈ ext n (ext n Γ A) A', A'' γaa ∈ 𝕌 n) as HA''.
+  { intros γaa Hγaa. apply HA'. now apply ctx_wk_typing. }
+  intros γ Hγ. apply subsingl_true_iff. apply acc_intro.
+  - now apply Ha.
+  - intros b Hb Hb2. specialize (Hq γ Hγ). apply subsingl_true_if in Hq. specialize (Hq b Hb).
+    apply subsingl_true_if in Hq. assert (∅ ∈ R ⟨ ⟨ γ; a (wk n Γ A ⟨ γ; b ⟩) ⟩; var0 n Γ A ⟨ γ; b ⟩ ⟩).
+    { clear Hq. refine (transp2S (fun X Y => ∅ ∈ R ⟨ ⟨ γ ; a X ⟩ ; Y ⟩) (sym _) (sym _) Hb2).
+      now apply ctxExtβ1. now apply ctxExtβ2. }
+    apply Hq in H. apply subsingl_true_if in H.
+    assert (𝕌el n (A γ) ≡ 𝕌el n (A' ⟨ γ ; b ⟩)) as H1.
+    { refine (fequal (fun X => 𝕌el n (A X)) (sym _)).  now apply ctxExtβ1. } destruct H1.
+    assert (b ≡ var0 n Γ A ⟨ γ ; b ⟩) as H1.
+    { refine (sym _). now apply ctxExtβ2. } destruct H1.
+    refine (acc_cong (𝕌el n (A γ)) _ _ _ _ H). clear H. intros c Hc d Hd Hdc.
+    assert (d ∈ 𝕌el n (A' ⟨ γ ; b ⟩)).
+    { refine (transpS (fun X => d ∈ 𝕌el n (A X)) (sym _) Hd). now apply ctxExtβ1. }
+    assert (c ∈ 𝕌el n (A'' ⟨ ⟨ γ; b ⟩; d ⟩)).
+    { refine (transpS (fun X => c ∈ 𝕌el n (A X)) (sym _) Hc). refine (trans (fequal (wk n Γ A) _) _).
+      apply ctxExtβ1 ; try assumption. now apply ctxExt_typing. now apply ctxExtβ1. }
+    refine (transp2S (fun X Y => ∅ ∈ R ⟨ X ; Y ⟩) (fequal2 (fun X Y => ⟨ X ; Y ⟩) (sym _) (sym _)) (sym _) Hdc).
+    + refine (trans (fequal (fun X => wk n Γ A (wk n (ext n Γ A) A' X)) _) _).
+      { apply ctxExtβ1 ; try assumption. apply ctxExt_typing ; try assumption. now apply ctxExt_typing. }
+      refine (trans (fequal (wk n Γ A) _) _).
+      {  apply ctxExtβ1 ; try assumption. now apply ctxExt_typing. }
+      now apply ctxExtβ1.
+    + refine (trans (fequal (fun X => var0 n (ext n Γ A) A' X) _) _).
+      { apply ctxExtβ1 ; try assumption. apply ctxExt_typing ; try assumption. now apply ctxExt_typing. }
+      apply ctxExtβ2 ; try assumption. now apply ctxExt_typing.
+    + apply ctxExtβ2 ; try assumption. apply ctxExt_typing ; try assumption. now apply ctxExt_typing.
+Qed.
+
+(* Eliminator of accessibility
+   Here, we need some auxiliary functions to "adjust" the shape of the recursion hypothesis
+   (i.e., to convert beween (Π (b : { x ∈ A | R x a}) . P b) and (Π (b : A) Π (_ : R b a) . P b)) *)
 
 Definition adjust_aux (m : nat) (A : ZFSet) (R : ZFSet -> ZFSet -> SProp) (a f b : ZFSet) :=
   relToGraph (subsingl (R b a)) (𝕍 m) (HO_rel (fun _ => setAppArr { x ϵ A ∣ R x a } (𝕍 m) f b)).
@@ -102,7 +140,7 @@ Lemma adjust_HO_typing {n m : nat} {Γ γ f a : ZFSet} {A R P p : ZFSet -> ZFSet
   (Hf2 : ∀ b ∈ 𝕌el n (A γ), ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩ -> setAppArr {b ϵ 𝕌el n (A γ) ∣ ∅ ∈ R ⟨ ⟨ γ; a ⟩; b ⟩} (𝕍 m) f b ∈ 𝕌el m (P ⟨ γ; b ⟩)) :
   adjust n m (𝕌el n (A γ)) (fun x y : ZFSet => ∅ ∈ R ⟨ ⟨ γ; y ⟩; x ⟩) a f ∈ 𝕌el (Nat.max n m) (B ⟨ γ; a ⟩).
 Proof.
-(* Typing auxiliary definitions *)
+  (* Typing auxiliary definitions *)
   assert (Nat.max 0 m ≡ m) as Hmax.
   { rewrite (PeanoNat.Nat.max_0_l m). reflexivity. }
   assert (∀ γa ∈ ext n Γ A, A' γa ∈ 𝕌 n) as HA'.
