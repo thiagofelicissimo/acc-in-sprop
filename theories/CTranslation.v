@@ -16,11 +16,6 @@ Open Scope subst_scope.
 
 (* Potential translations *)
 
-Definition ctx_dec (Γ Δ : ctx) :=
-  Forall2 (λ u v, fst u = fst v ∧ snd u ⊏ snd v) Γ Δ.
-
-Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 19).
-
 Definition tr_ctx Γ Δ :=
   ⊢p Δ ∧ Γ ⊂ Δ.
 

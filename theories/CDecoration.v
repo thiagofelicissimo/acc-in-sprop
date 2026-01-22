@@ -150,6 +150,12 @@ Inductive decoration : term → term → Prop :=
 where "u ⊏ v" := (decoration u v).
 
 
+Definition ctx_dec (Γ Δ : ctx) :=
+  Forall2 (λ u v, fst u = fst v ∧ snd u ⊏ snd v) Γ Δ.
+
+Notation " Γ ⊂ Δ " := (ctx_dec Γ Δ) (at level 19).
+
+
 
 Reserved Notation " t ~ t' " (at level 19).
 
@@ -284,6 +290,7 @@ Inductive simdec : term → term → Prop :=
     cast i A B e a ~ b
 
 where "u ~ v" := (simdec u v).
+
 
 Lemma sim_cast i A A' B B' e e' a a' :
     a ~ a' →
@@ -513,6 +520,7 @@ Definition renX m := 3 * m.
 Definition renR m := 1 + (3 * m).
 Definition renL m := 2 + (3 * m).
 
+(* invariant: the contexts are compatible *)
 Fixpoint pack (Γ1 Γ2 : ctx) := 
   match Γ1, Γ2 with 
   | cons (l, A1) Γ1, cons (l', A2) Γ2 => (* invariant: l = l' *)
