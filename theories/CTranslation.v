@@ -3020,21 +3020,21 @@ Proof.
     all:eauto.
 Qed.
 
-Lemma conservativity e P :
-  ∙ ⊢p< ty 0 > P : Sort prop  ->
-  ∙ ⊢d< prop > e : P ->
-  exists e', ∙ ⊢p< prop > e' : P.
+Lemma conservativity e l A :
+  ∙ ⊢p< Ax l > A : Sort l  ->
+  ∙ ⊢d< l > e : A ->
+  exists e', ∙ ⊢p< l > e' : A.
 Proof.
-  intros Hty HP.
-  eapply typing_conversion_trans in HP.
+  intros Hty HA.
+  eapply typing_conversion_trans in HA.
   2: repeat econstructor.
-  destruct HP as [P' [e' [HP [Hincl Hincl']]]].
-  assert (HP' : ∙ ⊢p< Ax prop > P' : Sort prop) by now eapply validity_ty_ty in HP.
+  destruct HA as [A' [e' [HA [Hincl Hincl']]]].
+  assert (HA' : ∙ ⊢p< Ax l > A' : Sort l) by now eapply validity_ty_ty in HA.
   eapply dec_to_sim, sim_sym in Hincl'.
   eapply sim_heq_same_ctx in Hincl'; eauto.
   destruct Hincl'.
   eapply type_hetero_to_homo in H; eauto.
-  eapply type_cast in HP; eauto.
+  eapply type_cast in HA; eauto.
 Qed.
 
 
