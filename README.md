@@ -52,7 +52,7 @@ which is used by Autosubst to automatically generate the syntax and notions of r
 
 - [Fundamental.v](theories/Fundamental.v): Proof of the fundamental theorem of the logical relation. As a corollary, we derive canonicity for $\mathcal{T}_\equiv$.
 
-- [CompCanonicity.v](theories/CompCanonicity.v): Proof of computational canonicity for $\mathcal{T}_\equiv$, in which the natural number is computed through untyped reduction of the erasure of the term.
+- [CompCanonicity.v](theories/CompCanonicity.v): Proof of effective canonicity for $\mathcal{T}_\equiv$, in which the natural number is computed through untyped reduction of the erasure of the term.
 
 
 ### Conservativity of $\mathcal{T}_\equiv$ over $\mathcal{T}_=$
