@@ -65,3 +65,40 @@ which is used by Autosubst to automatically generate the syntax and notions of r
 - [CDecoration.v](theories/CDecoration.v): Definition of the decoration relation and proof of the fundamental lemma of the translation, stating that related well-typed terms in $\mathcal{T}_=$ are heterogeneously equal.
 
 - [CTranslation.v](theories/CTranslation.v): Proof of the decorating translation from  $\mathcal{T}_\equiv$ to $\mathcal{T}_=$. As a corollary, we deduce the conservativity of $\mathcal{T}_\equiv$ over $\mathcal{T}_=$. Combined with the result of [CompCanonicity.v](theories/CompCanonicity.v), we derive propositional canonicity for $\mathcal{T}_=$.
+
+
+### Set theoretic model
+
+Higher-order IZF_R with omega universes:
+
+- [ZF_axioms.v](theories/SetModel/ZF_axioms.v): axioms
+
+- [ZF_library.v](theories/SetModel/ZF_library.v): unions, cartesian products, function sets, dependent function sets
+
+- [ZF_nat.v](theories/SetModel/ZF_nat.v): set-theoretic natural numbers with large eliminator
+
+- [ZF_acc.v](theories/SetModel/ZF_acc.v): set-theoretic accessibility predicate with large eliminator
+
+Higher-order model of OTT :
+
+- [HO.v](theories/SetModel/HO.v): preliminaries
+
+- [HO_univ.v](theories/SetModel/HO_univ.v): universes
+
+- [HO_prop.v](theories/SetModel/HO_prop.v): type of propositions with definitional proof irrelevance
+
+- [HO_pi.v](theories/SetModel/HO_pi.v): proof-relevant dependent products (with beta/eta)
+
+- [HO_sigma.v](theories/SetModel/HO_sigma.v): dependent sums (with beta/eta)
+
+- [HO_nat.v](theories/SetModel/HO_nat.v): natural numbers with large eliminator (with beta)
+
+- [HO_box.v](theories/SetModel/HO_box.v): boxed proposiitons (with eta)
+
+- [HO_false.v](theories/SetModel/HO_false.v): false proposition (not inhabited in the empty context)
+
+- [HO_forall.v](theories/SetModel/HO_forall.v): proof-irrelevant dependent products
+
+- [HO_obseq.v](theories/SetModel/HO_obseq.v): observational equality, cast, cast-on-refl, funext, propext, injectivity of pi, cast-on-functions, no confusion (nat ≠ pi)
+
+- [HO_acc.v](theories/SetModel/HO_acc.v): accessibility predicate and its eliminator (with beta)
