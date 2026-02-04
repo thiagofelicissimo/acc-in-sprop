@@ -7,6 +7,13 @@ Require Import ZF_axioms ZF_library ZF_nat.
 Definition acc (A : ZFSet) (R : ZFSet -> ZFSet -> SProp) (a : ZFSet) : SProp :=
   ∀ X ∈ 𝒫 A, (∀ b ∈ A, (∀ c ∈ A, R c b -> c ∈ X) -> b ∈ X) -> a ∈ X.
 
+Lemma acc_cong (A : ZFSet) (R1 R2 : ZFSet -> ZFSet -> SProp) (a : ZFSet)
+  (HR : ∀ a ∈ A, ∀ b ∈ A, R2 a b -> R1 a b) : acc A R1 a -> acc A R2 a.
+Proof.
+  intros Ha X HX Hacc. apply Ha ; try assumption. intros b Hb Hb2. apply Hacc ; try assumption.
+  intros c Hc Hc2. apply Hb2 ; try assumption. now apply HR.
+Qed.
+
 Lemma acc_intro (A : ZFSet) (R : ZFSet -> ZFSet -> SProp) (a : ZFSet)
   (Ha : a ∈ A) (IHa : ∀ b ∈ A, R b a -> acc A R b) : acc A R a.
 Proof.
