@@ -1,6 +1,6 @@
-# Formalization for the paper "TODOCHANGE"
+# Formalization for the paper "Definitional Proof Irrelevance Made Accessible"
 
-This repository contains the formalization of most proofs given in the paper "TODOCHANGE".
+This repository contains the formalization of most proofs given in the paper "Definitional Proof Irrelevance Made Accessible".
 
 ## Building
 

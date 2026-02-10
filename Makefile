@@ -16,3 +16,11 @@ force _CoqProject Makefile: ;
 	@+$(MAKE) -f Makefile.coq $@
 
 .PHONY: all clean autosubst
+
+
+doc:
+	$(MAKE) coqdoc
+	sed -i 's/doc\/\([^\/]*\)\/stdlib/doc\/\1\/corelib/g' doc/coqdoc/*
+	pandoc --standalone --output=index.html --css=doc/github-pandoc.css --metadata title="Acc in SProp" README.md
+
+.PHONY: doc
