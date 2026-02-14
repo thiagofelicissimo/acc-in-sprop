@@ -65,7 +65,7 @@ which is used by Autosubst to automatically generate the syntax and notions of r
 
 - [HEq.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.HEq.html): Definition of heterogeneous equality in $`\mathcal{T}_=`$ and proofs of its important properties. To make the proofs practically feasible, here we work internally to the object theory: we postulate sufficiently many primitives to turn Rocq into a proof assistant for $`\mathcal{T}_=`$.
 
-- [CHEqProps.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.CHEqProps.html): Postulates of the external versions of the terms and proofs constructed internally in the file [HEq.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.HEq.html).
+- [CHEqProps.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.CHeqProps.html): Postulates of the external versions of the terms and proofs constructed internally in the file [HEq.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.HEq.html).
 
 - [CDecoration.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.CDecoration.html): Definition of the decoration relation and proof of the fundamental lemma of the translation, stating that related well-typed terms in $`\mathcal{T}_=`$ are heterogeneously equal.
 
