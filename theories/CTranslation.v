@@ -3016,16 +3016,24 @@ Proof.
     all:eauto.
 Qed.
 
-Lemma conservativity e l A :
-  ∙ ⊢p< Ax l > A : Sort l  ->
-  ∙ ⊢d< l > e : A ->
-  exists e', ∙ ⊢p< l > e' : A.
+
+Lemma ctx_trans_refl Γ : Γ ⊂ Γ.
+Proof.
+  induction Γ.
+  - econstructor.
+  - econstructor. 2:eassumption. intuition eauto using dec_refl.
+Qed.
+
+Lemma conservativity Γ e l A :
+  Γ ⊢p< Ax l > A : Sort l  ->
+  Γ ⊢d< l > e : A ->
+  exists e', Γ ⊢p< l > e' : A.
 Proof.
   intros Hty HA.
   eapply typing_conversion_trans in HA.
-  2: repeat econstructor.
+  2:econstructor;eauto using validity_ty_ctx, ctx_trans_refl.
   destruct HA as [A' [e' [HA [Hincl Hincl']]]].
-  assert (HA' : ∙ ⊢p< Ax l > A' : Sort l) by now eapply validity_ty_ty in HA.
+  eapply validity_ty_ty in HA as HA'.
   eapply dec_to_sim, sim_sym in Hincl'.
   eapply sim_heq_same_ctx in Hincl'; eauto.
   destruct Hincl'.
