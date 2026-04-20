@@ -9,7 +9,7 @@ Set Universe Polymorphism.
 (* --- START OF THE DEF OF OBS EQ --- *)
 
 Inductive obseq@{u} (A : Type@{u}) (a : A) : forall (b : A), SProp :=
-| obseq_refl : obseq A a a.
+| obseq_refl : obseq A a a. (* generates automatically obseq_sind, which corresponds to transp *)
 Notation "a ~ b" := (obseq _ a b) (at level 50).
 Arguments obseq {A} a _.
 Arguments obseq_refl {A a} , [A] a.
@@ -44,10 +44,6 @@ Definition apd {A} {a} (P : forall b : A, a ~ b -> Type) (b : A) (e : a ~ b) : (
   obseq_sind _ a (fun b e => (P a obseq_refl) ~ (P b e)) obseq_refl b e.
 
 Definition obseq_rect : forall (A : Type) (a : A) (P : forall b : A, obseq a b -> Type),
-    P a obseq_refl -> forall (b : A) (e : obseq a b), P b e :=
-  fun A a P t b e => cast (P a obseq_refl) (P b e) (apd P b e) t.
-
-Definition obseq_rec : forall (A : Type) (a : A) (P : forall b : A, obseq a b -> Set),
     P a obseq_refl -> forall (b : A) (e : obseq a b), P b e :=
   fun A a P t b e => cast (P a obseq_refl) (P b e) (apd P b e) t.
 
@@ -101,8 +97,6 @@ Axiom cast_pi_sprop : forall A B A' B' e f,
                             (obseq_forall_2_sprop e x)
                             (f (cast_prop A' A (obseq_forall_1_sprop e) x)).                    
 
-Parameter propext : forall {A B : SProp}, (A -> B) -> (B -> A) -> A ~ B.
-
 (* --- END OF THE DEF OF OBS EQ --- *)
 
 (* postulating Acc *)
@@ -134,7 +128,7 @@ Definition heq_ty (A B : Type) (a : A) (b : B) :=
 Notation "a == b" := (heq_ty _ _ a b) (at level 90).
 
 
-Inductive True : SProp := I.
+Inductive True : SProp := I. (* can also be defined as forall P, P *)
 
 (* the heterogeneous equality at sort SProp *)
 Definition heq_prop (A B : SProp) (a : A) (b : B) : SProp := True.
@@ -287,7 +281,6 @@ Proof.
     intros. econstructor.
 Qed.
 
-(* more auxiliary lemmas *)
 
 Definition heq_ty_ty_funext : forall {A : Type} {B1 B2 : A -> Type} {f : forall x : A, B1 x} {g : forall x : A, B2 x} (p : forall x, f x == g x), f == g.
 Proof.
@@ -523,7 +516,7 @@ Lemma heq_ty_acc_el {A1 A2 R1 R2 a1 a2 P1 P2 p1 p2 q1 q2}
     (e3 : a1 == a2)
     : (acc_el A1 R1 P1 p1 a1 q1) == (acc_el A2 R2 P2 p2 a2 q2).
 Proof.
-    pose proof (e31 := fst e3). destruct e31.
+    pose proof (e31 := fst e3). destruct e31. 
     eapply (@heq_prop_ty_app _ _ _ _ (acc_el A1 R1 P1 p1 a1) (acc_el A1 R2 P2 p2 a2)). 
     2:econstructor.
     eapply (@heq_ty_ty_app _ _ _ _ (acc_el A1 R1 P1 p1) (acc_el A1 R2 P2 p2)).
