@@ -21,13 +21,11 @@ Proof.
 Qed.
 
 
-(* These are consequences of the standard model. We do not need to add sort_neq_nat, pi_neq_nat
-  and pi_neq_sort because these are derivable from these axioms, using symmetry of obs_eq, which
-  can be derived from J and obsrefl. Actually, we only added J and obsrefl to this formalization
-  so that symmetry could be derivable. *)
+(* The following axioms taken together express assumption A of the paper *)
 Axiom nat_neq_sort : forall e, ∙ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Sort prop) -> False.
 Axiom nat_neq_pi  : forall i j A B e, ∙ ⊢d< prop > e : obseq (ty 1) (Sort (ty 0)) Nat (Pi i j A B) -> False.
 Axiom sort_neq_pi  : forall l i j A B e, ∙ ⊢d< prop > e : obseq (Ax (Ax l)) (Sort (Ax l)) (Sort l) (Pi i j A B) -> False.
+(* The following axiom is equivalent to the fact that, if the two function types have different heads, we get a contradiction *)
 Axiom pi_sort_inj : forall i n i' n' A A' B B' e,
     Ru i (ty n) = Ru i' (ty n') ->
     ∙ ⊢d< prop > e : obseq (Ax (Ru i (ty n))) (Sort (Ru i (ty n))) (Pi i (ty n) A B) (Pi i' (ty n') A' B') ->
