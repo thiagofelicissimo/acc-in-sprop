@@ -3,7 +3,7 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO HO_univ.
 
-(* Sigma types *)
+(* Sigma types. Similar to Pi types *)
 
 Definition sigmaTy_HO (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => ⟨ setSigma (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩))

@@ -1,8 +1,8 @@
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 
-(* Accessibility predicate
-   The code is somewhat technical but not very difficult *)
+(* In this file, we define an accessibility predicate in IZF set theory, along with its
+   large elimination principle. The code is somewhat technical but not very difficult *)
 
 Definition acc (A : ZFSet) (R : ZFSet -> ZFSet -> SProp) (a : ZFSet) : SProp :=
   ∀ X ∈ 𝒫 A, (∀ b ∈ A, (∀ c ∈ A, R c b -> c ∈ X) -> b ∈ X) -> a ∈ X.

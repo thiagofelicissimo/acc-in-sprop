@@ -1,14 +1,15 @@
 Require Import library.
 Require Import ZF_axioms ZF_library.
 
-(* Natural numbers *)
+(* In this file, we define the large eliminator of natural numbers in IZF set theory,
+   plus a few useful lemmas on natural numbers. *)
 
-Definition ZFzero  := ∅.             (* nat *)
-Definition ZFone   := ZFsuc ZFzero.  (* pi *)
-Definition ZFtwo   := ZFsuc ZFone.   (* sigma *)
-Definition ZFthree := ZFsuc ZFtwo.   (* type *)
-Definition ZFfour  := ZFsuc ZFthree. (* prop *)
-Definition ZFfive  := ZFsuc ZFfour.  (* box *)
+Definition ZFzero  := ∅.             (* code for nat *)
+Definition ZFone   := ZFsuc ZFzero.  (* code for pi *)
+Definition ZFtwo   := ZFsuc ZFone.   (* code for sigma *)
+Definition ZFthree := ZFsuc ZFtwo.   (* code for the universe of types *)
+Definition ZFfour  := ZFsuc ZFthree. (* code for prop *)
+Definition ZFfive  := ZFsuc ZFfour.  (* code for box *)
 
 Lemma zero_typing : ZFzero ∈ ω.
 Proof.

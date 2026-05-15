@@ -1,8 +1,13 @@
 Require Import library.
 Require Import ZF_axioms.
 
-(* In this file, we replicate the basic set theoretic constructions (cartesian products, function
-   types, dependent sums, dependent products, etc). *)
+(* In this file, we replicate the basic set theoretic constructions:
+   - cartesian products
+   - function sets (exponentials)
+   - dependent sums
+   - dependent products. *)
+
+(* We start with a handful of useful lemmas *)
 
 Lemma subset_trans {A B C : ZFSet} : A ⊂ B -> B ⊂ C -> A ⊂ C.
 Proof.

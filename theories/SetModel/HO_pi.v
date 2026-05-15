@@ -3,7 +3,8 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO HO_univ HO_box.
 
-(* Pi types *)
+(* In this file, we define the interpretation of Π types in our model.
+   In particular, we show that they are injective: [Π A B = Π C D] implies [A = C] and [B = D] *)
 
 Definition piTy_HO (nA nB : nat) (A : ZFSet -> ZFSet) (B : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => ⟨ setPi (max nA nB) (𝕌el nA (A γ)) (fun a => 𝕌el nB (B ⟨ γ ; a ⟩))

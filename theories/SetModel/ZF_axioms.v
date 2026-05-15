@@ -1,7 +1,7 @@
 Require Import library.
 
-(* This file postulates the ZF axioms in higher order logic (HOL), which has itself been embedded in
-   the logic of Rocq (see library.v).
+(* This file postulates the axioms of [IZF + ω Grothendieck universes] in higher order logic (HOL), which
+   has itself been embedded in  the logic of Rocq (see the file [library.v] for detailed explanations).
    The axioms are skolemised, meaning that we replace existential axioms with higher-order functions *)
 
 (* Sort for sets *)
@@ -55,17 +55,14 @@ Notation "⋃" := ZFunion.
 Axiom ZFinunion : forall (A a : ZFSet), a ∈ ⋃ A ↔ ∃ x ∈ A, a ∈ x.
 
 (* Skolemised replacement axiom. Here again, we use a higher-order axiom instead of an axiom scheme.
-   TODO: we don't really need replacement since we have Grothendieck universes... *)
+   Note that we don't actually *need* replacement, since we postulate Grothendieck universes which
+   are closed under functions. *)
 Parameter ZFreplacement : ZFSet -> (ZFSet -> ZFSet -> SProp) -> ZFSet.
 Notation "'{' y '∥' P '∥' x 'ϵ' A '}'" := (ZFreplacement A (fun x y => P)) (at level 0).
 Axiom ZFinreplacement : forall (A : ZFSet) (φ : ZFSet -> ZFSet -> SProp) (b : ZFSet),
     (∀ x ∈ A, exU ZFSet (φ x)) -> (b ∈ { y ∥ φ x y ∥ x ϵ A } ↔ ∃ x ∈ A, φ x b).
 
-(* Skolemised infinity axiom.
-   TODO: this formulation allows induction over ω for all HOL predicates. This is unusual: the
-   traditional method consists in postulating a set closed under successor, and then carving ω
-   out of it with comprehension.
-   *)
+(* Skolemised infinity axiom *)
 Parameter ZFinfinity : ZFSet.
 Definition ω := ZFinfinity.
 Definition ZFsuc : ZFSet -> ZFSet := fun x => { x ; setSingl x }.
@@ -77,12 +74,13 @@ Definition 𝒫 := ZFpower.
 Axiom ZFinpower : forall (A x : ZFSet), x ∈ 𝒫 A ↔ x ⊂ A.
 
 (* Russell's definite description operator
-   TODO: I think that it is conservative over IZF, but I am not 100% sure *)
+   I think that this operator is conservative over [IZF + ω universes], but I am not 100% sure.
+   In any case, it can be defined in [IZF + (ω+1) universes]. *)
 Parameter ZFdescr : ZFSet -> ZFSet.
 Definition ι := ZFdescr.
 Axiom ZFindescr : forall (A : ZFSet), (exU ZFSet (fun a => a ∈ A)) -> ι A ∈ A.
 
-(* countably many Grothendieck universes *)
+(* Countably many Grothendieck universes *)
 Parameter ZFuniv : nat -> ZFSet.
 Definition 𝕍 := ZFuniv.
 Axiom ZFuniv_uncountable : forall n, ω ∈ 𝕍 n.

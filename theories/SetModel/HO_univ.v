@@ -2,6 +2,8 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO.
 
+(* Interpretation of the universe of types in our higher-order model *)
+
 Definition univTy_HO (n : nat) : ZFSet -> ZFSet := fun _ => ⟨ 𝕌 n ; ⟨ ZFthree ; ∅ ⟩ ⟩.
 
 Lemma univTy_HO_typing {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, univTy_HO n γ ∈ 𝕌 (S n).

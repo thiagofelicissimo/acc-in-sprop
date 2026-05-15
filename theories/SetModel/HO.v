@@ -2,6 +2,13 @@ From Stdlib Require Import Arith.
 Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 
+(* This file is the beginning of our higher-order model of observational type theory in IZF set theory.
+   Most notably, we define the universe 𝕌, which contains the "codes" for the types. Each code consists of
+   - The set of its elements
+   - A natural number which represents its head constructor (0 for nat, 1 for pi, 2 for sigma, etc)
+   - A list of subtypes, on which we want injectivity. For instance, in the case of A → B, we want
+     injectivity on A and B. *)
+
 Definition 𝕌 (n : nat) := 𝕍 n × (ω × 𝕍 n).
 Definition 𝕌el (n : nat) (A : ZFSet) := setFstPair (𝕍 n) (ω × 𝕍 n) A.
 Definition 𝕌hd (n : nat) (A : ZFSet) := setFstPair ω (𝕍 n) (setSndPair (𝕍 n) (ω × 𝕍 n) A).
@@ -12,7 +19,11 @@ Proof.
   intro HA. now apply setFstPair_typing. 
 Qed.
 
-(* Somewhat sketchier (makes use of ZFuniv_descr), use only if necessary *)
+(* This is a more powerful version of [𝕌el_typing] which makes use of the axiom ZFuniv_descr, whose
+   constructive status I am somewhat unsure of (maybe it requires collection instead of replacement).
+   We use it in only one place (congruence for lambda abstraction), and I am pretty sure that we could
+   do without it. *)
+
 Lemma 𝕌el_typing' {n : nat} {A : ZFSet} : 𝕌el n A ∈ 𝕍 n. 
 Proof.
   unfold 𝕌el. unfold setFstPair. apply ZFuniv_descr. intros x Hx. apply ZFincomp in Hx. now destruct Hx.
@@ -58,7 +69,7 @@ Proof.
     + eapply univ_le_incl. exact H. now apply setSndPair_typing.
 Qed.
 
-(* Propositions *)
+(* Universe of propositions *)
 
 Definition unit_set := setSingl ∅.
 Notation "⋆" := unit_set.
@@ -121,7 +132,7 @@ Proof.
     + refine (transpS (fun X => X ⊂ _) H _). easy.
 Qed.
 
-(* Extended contexts *)
+(* The contexts of our model will simply be sets. We define context extension as a dependent sum *)
 
 Definition ctxExt (n : nat) (Γ : ZFSet) (A : ZFSet -> ZFSet) := setSigma n Γ (fun γ => 𝕌el n (A γ)).
 
@@ -188,7 +199,9 @@ Proof.
   clear γ Hγ a Ha. intros γ Hγ. apply 𝕌el_typing. now apply HA.
 Qed.
 
-(* Telescopes (useful for labels) *)
+(* Given a type [A] and a dependent type [B], we define the "telescope" of A and B to
+   be the pair of A and the graph of B. We want the dependent product [Π A B] to be injective
+   with respect to the telescope of A and B, so we will store the telescope in its label. *)
 
 Definition typeToGraph (nA nB : nat) (A : ZFSet) (B : ZFSet -> ZFSet) :=
   relToGraph (𝕌el nA A) (𝕌 nB) (HO_rel B).

@@ -1,16 +1,15 @@
-(* Our model construction is supposed to take place in ZF set theory, which is a set of axioms that
+(* Our model construction is supposed to take place in IZF set theory, which is a set of axioms that
    can be put on top of first order logic (FOL). However, we certainly do not want to do a deep
    embedding of FOL in the logic of Rocq!
    Instead, we will use a shallow embedding of HOL into Rocq's logic (by carefully avoiding the use
-   of dependent types and universes) and then postulate the skolemised axioms of ZF in HOL. This
+   of dependent types and universes) and then postulate the skolemised axioms of IZF in HOL. This
    file does the shallow embedding of HOL into Rocq.
 
-   - We use [SProp] as our type of truth values (note that we postulate classical logic, so
-     [SProp] becomes isomorphic to [bool]).
+   - We use [SProp] as our type of truth values.
    - Dependent function types are not allowed, only universal quantifiers are allowed
      (i.e., we can write [forall] only when writing an inhabitant of [SProp]).
    - We allow prenex polymorphism over [Set], but we do not use universes otherwise.
-   - Inductive types are used to simulate the logical connectives [∧] [∨] [⊤] [⊥] [∃] [=].
+   - SProp-valued inductive types are used to simulate the logical connectives [∧] [∨] [⊤] [⊥] [∃] [=].
    - Large elimination is disallowed thanks to them living in [SProp].
  *)
 
@@ -36,22 +35,28 @@ Inductive orS (A B : SProp) : SProp :=
 | orS_intror : B -> orS A B.
 Notation "A ∨ B" := (orS A B) (at level 85, right associativity).
 
+(* False *)
 Inductive FalseS : SProp :=.
 
+(* True *)
 Inductive TrueS : SProp := ttS.
 
+(* Negation *)
 Definition notS : SProp -> SProp := fun A => A -> FalseS.
 Notation "¬ A" := (notS A) (at level 75, right associativity).
 
+(* Logical equivalence *)
 Definition bi_impl : SProp -> SProp -> SProp := fun A B => (A -> B) ∧ (B -> A).
 Notation "A ↔ B" := (bi_impl A B) (at level 95, no associativity).
 
+(* Equality *)
 Inductive eqS (A : Set) (a : A) : A -> SProp :=
 | eqS_refl : eqS A a a.
 Arguments eqS {_}.
 Arguments eqS_refl {_}.
 Notation "x ≡ y" := (eqS x y) (at level 70, no associativity).
 
+(* Transport (only for [SProp]-valued predicates) *)
 Definition transpS {A : Set} (P : A -> SProp) {a b : A} : a ≡ b -> P a -> P b.
 Proof.
   intros e p. exact (eqS_sind A a (fun b _ => P b) p b e).
@@ -61,6 +66,7 @@ Lemma transp2S {A B : Set} (P : A -> B -> SProp) {a a' : A} {b b' : B} : a ≡ a
   intros ea eb t. destruct ea. destruct eb. exact t.
 Qed.
 
+(* Function congruence *)
 Lemma fequal {A B : Set} (f : A -> B) {a a' : A} : a ≡ a' -> f a ≡ f a'.
   intro e. destruct e. reflexivity.
 Qed.
@@ -73,6 +79,7 @@ Lemma fequal3 {A B C D : Set} (f : A -> B -> C -> D) {a a' : A} {b b' : B} {c c'
   intros e1 e2 e3. destruct e1. destruct e2. destruct e3. reflexivity.
 Qed.
 
+(* Symmetry and transitivity *)
 Lemma sym {A : Set} {a b : A} : a ≡ b -> b ≡ a.
 Proof.
   intro e. exact (eqS_sind A a (fun b _ => b ≡ a) (eqS_refl a) b e).
@@ -83,9 +90,11 @@ Proof.
   intros e1 e2. apply (transpS (fun c => a ≡ c) e2). exact e1.
 Qed.
 
+(* Existential quantifier *)
 Inductive exS (A : Set) (B : A -> SProp) : SProp :=
 | exS_intro : forall x : A, B x -> exS A B.
 
+(* Unique existence *)
 Definition uniqueS {A : Set} (P : A -> SProp) (x : A) :=
   P x ∧ forall (x':A), P x' -> x ≡ x'.
 

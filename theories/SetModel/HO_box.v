@@ -2,7 +2,9 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO.
 
-(* Boxed propositions (think of them as a record with one field of type P) *)
+(* Boxed propositions (think of them as a record with one field of type P).
+   They allow us to have a uniform treatment of proof-relevant and proof-irrelevant
+   domains in our interpretation of dependent products *)
 
 Definition boxTy_HO (P : ZFSet -> ZFSet) : ZFSet -> ZFSet := fun γ => ⟨ P γ ; ⟨ ZFfive ; ∅ ⟩ ⟩.
 

@@ -3,7 +3,7 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO HO_prop HO_univ HO_forall HO_nat HO_pi HO_box.
 
-(* Observational equality *)
+(* Observational equality. *)
 
 Definition eqTy_HO (A t u : ZFSet -> ZFSet) : ZFSet -> ZFSet :=
   fun γ => subsingl (t γ ≡ u γ).

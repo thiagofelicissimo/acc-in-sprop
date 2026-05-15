@@ -2,6 +2,8 @@ Require Import library.
 Require Import ZF_axioms ZF_library ZF_nat.
 Require Import HO HO_pi HO_univ.
 
+(* Natural numbers *)
+
 Definition natTy_HO : ZFSet -> ZFSet := fun _ => ⟨ ω ; ⟨ ∅ ; ∅ ⟩ ⟩.
 
 Lemma natTy_HO_typing {n : nat} {Γ : ZFSet} : ∀ γ ∈ Γ, natTy_HO γ ∈ 𝕌 n.
