@@ -74,6 +74,8 @@ which is used by Autosubst to automatically generate the syntax and notions of r
 
 ### Set theoretic model
 
+- [library.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.SetModel.library.html): shallow embedding of HOL in the type theory of Rocq
+
 Higher-order IZF_R with omega universes:
 
 - [ZF_axioms.v](https://thiagofelicissimo.github.io/acc-in-sprop/doc/coqdoc/AccInSProp.theories.SetModel.ZF_axioms.html): axioms
